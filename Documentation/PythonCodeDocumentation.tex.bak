@@ -1,0 +1,160 @@
+\documentclass[a4paper,12]{article}
+\usepackage{amsmath, amsfonts, amssymb, amsthm, bm, graphics, bbm, color}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{mathtools}
+\usepackage[table]{xcolor}
+\usepackage{url}
+\usepackage{mathabx}
+\usepackage{cancel}
+\usepackage{multicol}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{mathalfa}
+\usepackage{hyperref}
+%\usepackage{unicode-math}
+\captionsetup{font=footnotesize}
+\captionsetup{width=\textwidth}
+\DeclareMathAlphabet\mathbfcal{OMS}{cmsy}{b}{n}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{Corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+
+\newcommand\y{\cellcolor{gray!50}}
+
+\newcommand\p{\cellcolor{gray!25}}
+
+\makeatletter
+\newcommand\makebig[2]{%
+  \@xp\newcommand\@xp*\csname#1\endcsname{\bBigg@{#2}}%
+  \@xp\newcommand\@xp*\csname#1l\endcsname{\@xp\mathopen\csname#1\endcsname}%
+  \@xp\newcommand\@xp*\csname#1r\endcsname{\@xp\mathclose\csname#1\endcsname}%
+}
+\makeatother
+
+\makebig{biggg} {3.0}
+\makebig{Biggg} {3.5}
+\makebig{bigggg}{4.0}
+\makebig{Bigggg}{4.5}
+\makebig{biggggg}{5.0}
+\makebig{Biggggg}{5.5}
+\makebig{bigggggg}{6.0}
+\makebig{Bigggggg}{6.5}
+
+\newcommand\bovermat[2]{%
+    \makebox[0pt][l]{$\smash{\overbrace{\phantom{%
+                    \begin{matrix}#2\end{matrix}}}^{\text{#1}}}$}#2}
+
+\newcommand\bundermat[2]{%
+    \makebox[0pt][l]{$\smash{\underbrace{\phantom{%
+                    \begin{matrix}#2\end{matrix}}}_{\text{#1}}}$}#2}
+
+\newcommand\partialphantom{\vphantom{\frac{\partial e_{P,M}}{\partial w_{1,1}}}}
+
+
+\newcommand{\raisesym}[2]{\raisebox{0.5\depth}{$#1\Biggggg \}$}}
+
+\makeatletter
+\newcommand*{\shifttext}[2]{%
+  \settowidth{\@tempdima}{#2}%
+  \makebox[\@tempdima]{\hspace*{#1}#2}%
+}
+
+% redefine paper size
+\setlength{\oddsidemargin}{0in}
+\setlength{\textwidth}{6.4in}
+\setlength{\topmargin}{-0.5in}
+\setlength{\textheight}{9.9in}
+\setlength{\headheight}{0in}
+
+\newcommand{\dif}{\mathrm{d}}
+\newcommand{\im}{\mathrm{i}}
+
+\begin{document}
+
+\title{\texttt{MPT-Calculator}: A Python-NGSolve Implementation of Magnetic Polarizabiltiy Tensor Accelerated by POD}
+
+\author{B. A. Wilson and P. D. Ledger\\
+Zienkiewicz Centre for Computational Engineering, College of Engineering,\\Swansea University \\
+ b.a.wilson@swansea.ac.uk, p.d.ledger@swansea.ac.uk}
+
+\maketitle
+
+\pagenumbering{arabic}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Overview of the MPT
+%\section{Overview of the MPT}
+
+\section{Introduction}
+
+The purpose of this document is to provide an overview on how to install and use the \texttt{MPT-Calculator}, which is a high order finite element method (FEM) implementation using \href{https://ngsolve.org}{\texttt{NGSolve}}~\cite{NGSolve,zaglmayrphd,netgendet} for computing the magnetic polarizability tensor for object characterisation in metal detection. In the case of frequency sweeps, this is accelerated by the Proper Orthogonal Decomposition (POD) technique. We begin, in Section~\ref{sect:eddycurrent}, with an overview of the underlying mathematical theory describing the eddy current model and forward and inverse problems of metal detection. The formulae for the explicit calculation of the magnetic polarizability description of conducting permeable objects are included in this section along with references to the technical details. The installation of the program is described in Section~\ref{sect:install}. Then, in Section~\ref{sect:overview}, an overview of the structure of the code is provided. In Section~\ref{sect.geo} a description of how to create your own geometry file is provided and then in Section~\ref{sect:examples} a series of examples that can be obtained with the software are included.
+
+\input{eddycurrent}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Installing
+\section{Installation} \label{sect:install}
+\input{Installation.tex} 
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Overview of the code
+\section{Overview and structure of the code} \label{sect:overview}
+
+\input{OverviewAndStructure.tex} 
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Creating your own geometry file
+\section{Creating your own geometry file}\label{sect.geo}
+
+\input{GeometryFile.tex}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Examples
+\section{Examples} \label{sect:examples}
+\input{Examples.tex}
+
+
+
+
+
+
+\newpage
+%\begin{thebibliography}{1000}
+%
+%
+%\bibitem{Schoberl Zaglmayr 2005}
+%J. Sch\"{o}berl and S. Zaglmayr,
+%\textrm{ High order N\`{e}d\`{e}lec elements with local complete sequence properties,}
+%\textit{ COMPEL-The international journal for computation and mathematics in electrical and electronic engineering}
+%\textrm{, Vol. 24, no. 2, pp.374-384, 2005}
+%
+%\bibitem{NGSolve}
+%NGSolve
+%\texttt{https://ngsolve.org}
+%
+%
+%
+%\end{thebibliography}
+
+\bibliographystyle{plain}
+\bibliography{documentationbib}
+
+\end{document}

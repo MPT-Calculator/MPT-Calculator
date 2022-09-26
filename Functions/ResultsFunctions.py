@@ -271,7 +271,7 @@ def FullSave(Geometry, Array, TensorArray, EigenValues, N0, Pod, PODArray, PODTo
     return
     
 
-def FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol, alpha, Order, MeshSize, mur, sig, ErrorTensors, VTK):
+def FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol, alpha, Order, MeshSize, mur, sig, ErrorTensors, VTK, using_OCC):
     
     #Find how the user wants the data saved
     FolderStructure = SaverSettings()
@@ -361,5 +361,9 @@ def FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol, 
     zipObj.close()
     os.replace(objname+'.zip','../Results/'+sweepname+'/Input_files/'+objname+'.zip')
     os.chdir('..')
-    
-    return
+
+    #If using OCC, copy .py file:
+    if using_OCC is True:
+        copyfile('OCC_Geometry/' + Geometry[:-4]+'.py', "Results/"+sweepname+"/Input_files/"+Geometry[:-4]+'.py')
+
+    return 0
