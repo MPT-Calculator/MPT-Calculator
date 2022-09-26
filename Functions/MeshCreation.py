@@ -1,5 +1,5 @@
 import subprocess
-
+import runpy
 
 #Function definition which creates a mesh for a given .geo file
 #Inputs -name of a .geo file (string)
@@ -227,3 +227,31 @@ def VolMatUpdater(Geometry,OldMesh):
     sig=dict(zip(matlist,siglist))
     
     return matlist, mur, sig, inorout
+
+
+
+def Generate_From_Python(OCC_file):
+    """
+    James Elgy - 2022
+    Function to generate from python script using OCC geometry.
+    Function also generates associated .geo file in order to comply with the rest of MPT-Calculator.
+    """
+    out = runpy.run_path(f'OCC_Geometry/{OCC_file}')
+    mur = out['mur']
+    sigma = out['sigma']
+    object_name = out['object_name']
+
+    # Writing associated .geo file. This is to maintain compatability with the existing MPT-Calculator.
+    with open('GeoFiles/' + OCC_file[:-3] + '.geo', 'w') as file:
+        file.write('algebraic3d\n')
+        file.write('\n')
+        file.write('tlo rest -transparent -col=[0,0,1];#air')
+        file.write('\n')
+
+        if type(object_name) is list:
+            for obj, obj_mur, obj_sigma in zip(object_name, mur, sigma):
+                file.write(f'tlo {obj} -col=[1,0,0];#{obj} -mur=' + str(obj_mur) + ' -sig=' + str(obj_sigma) + '\n')
+        else:
+            file.write(f'tlo {object_name} -col=[1,0,0];#{object_name} -mur=' + str(mur) + ' -sig=' + str(sigma))
+
+

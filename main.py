@@ -10,6 +10,7 @@
 # Importing
 import sys
 import numpy as np
+import subprocess
 import os
 from matplotlib import pyplot as plt
 
@@ -28,7 +29,7 @@ from JamesFunctions import *
 # ngsglobals.msg_level = 0
 
 
-def main(hp=(), curve_degree=5, start_stop=(), alpha='', geofile='default', frequency_array='default'):
+def main(hp=(), curve_degree=5, start_stop=(), alpha='', geometry='default', frequency_array='default', use_OCC=False):
     """
     Main function to run 1D MPT calculator. Some common options have been added as function arguments to make iteration
     easier.
@@ -37,8 +38,9 @@ def main(hp=(), curve_degree=5, start_stop=(), alpha='', geofile='default', freq
     :param curve_degree: int for order of curved surface approximation. 5 is usually sufficient.
     :param start_stop: tuple for starting frequency and stopping frequency. e.g. start_stop=(Start, Finish, Points)
     :param alpha: float for Alpha.
-    :param geofile: string proxy for GeoFile.
+    :param geometry: string proxy for GeoFile or OCC py file.
     :param frequency_array: list for explicit override used to specify exact frequencies of interest.
+    :param use_OCC: bool for control over using OCC geometry generated via python.
 
     :return TensorArray: Numpy 9xN complex array of tensor coefficients.
     :return EigenValues: Numpy 3xN complex array of eigenvalues.
@@ -71,15 +73,29 @@ def main(hp=(), curve_degree=5, start_stop=(), alpha='', geofile='default', freq
     #User Inputs
 
     #Geometry
-    #(string) Name of the .geo file to be used in the frequency sweep i.e.
-    # "sphere.geo"
-    if geofile != 'default':
-        Geometry = geofile
+    if use_OCC is True:
+        if geometry != 'default':
+            OCC_file = geometry
+        else:
+            # (string) Name of the .py file to be used generate a mesh i.e.
+            # "OCC_sphere.py"
+            OCC_file = 'OCC_sphere.py'
+
+        Generate_From_Python(OCC_file)
+        Geometry = OCC_file[:-3] + '.geo'
     else:
-        Geometry = 'sphere.geo'
+        #(string) Name of the .geo file to be used in the frequency sweep i.e.
+        # "sphere.geo"
+        if geometry != 'default':
+            Geometry = geometry
+        else:
+            Geometry = 'sphere.geo'
     print(Geometry)
+
+
+
+
     #Scaling to be used in the sweep in meters
-    # alpha = 1e-2
     if OVERWRITE_ALPHA == False:
         alpha = 1e-3
     #(float) scaling to be applied to the .geo file i.e. if you have defined
@@ -143,6 +159,10 @@ def main(hp=(), curve_degree=5, start_stop=(), alpha='', geofile='default', freq
     #Load the default settings
     CPUs,BigProblem,PODPoints,PODTol,OldMesh = DefaultSettings()
 
+    # Here, we overwrite the OldMesh option, since using the OCC geometry will generate a mesh already.
+    if use_OCC is True:
+        OldMesh = True
+
     if OldMesh == False:
         #Create the mesh
         Meshmaker(Geometry,MeshSize)
@@ -174,7 +194,7 @@ def main(hp=(), curve_degree=5, start_stop=(), alpha='', geofile='default', freq
     PODArray = np.logspace(Start,Finish,PODPoints)
 
     #Create the folders which will be used to save everything
-    sweepname = FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol, alpha, Order, MeshSize, mur, sig, ErrorTensors, vtk_output)
+    sweepname = FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol, alpha, Order, MeshSize, mur, sig, ErrorTensors, vtk_output, use_OCC)
 
 
     #Run the sweep
@@ -237,4 +257,4 @@ def main(hp=(), curve_degree=5, start_stop=(), alpha='', geofile='default', freq
 
 
 if __name__ == '__main__':
-    main()
+    main(use_OCC=True)
