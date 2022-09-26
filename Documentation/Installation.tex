@@ -1,0 +1,16 @@
+Due to the code being written in python and using \texttt{NGSolve} the user is required to install both of these in order to use the \texttt{MPT-Calculator}.  Please follow the instructions available at \href{https://ngsolve.org/}{\texttt{https://ngsolve.org/}} in order to install the high order finite element and meshing library  \texttt{NGSolve}~\cite{NGSolve,zaglmayrphd,netgendet}  released under the LPLG license and ensure a compatible version of Python 3 is installed
+%(this varies for different versions of NGSolve and operating systems, although this is documented at \href{https://ngsolve.org/}{\texttt{https://ngsolve.org/}})
+which is available at \href{https://www.python.org}{\texttt{https://www.python.org}}. Note that the compatible versions of Python 3 and NGSolve are different on Linux and Mac OS and one should check the NGSolve webpage for up to date information. The code is compatible with \texttt{NGSolve} 6.2.1907 and after. The examples in section \ref{sect:examples} have been run using version 6.2.2004 and version 3.8.2 of \texttt{Python 3}~\cite{python} and meshes for this have also been provided for users runnings different version of NGSolve. The code has been tested on version 10.14.6 of \texttt{MAC OS} and 18.04 of \texttt{Ubuntu}.\\
+\\
+\noindent
+Along with these installations, the \texttt{MPT-Calculator} relies on a number of python packages, which the user is required to install they are as follows \texttt{sys}, \texttt{numpy}, \texttt{os}, \texttt{time}, \texttt{multiprocessing\_on\_dill}, \texttt{cmath}, \texttt{subprocess}, \texttt{matplotlib}. On a MAC or Linux they can be installed from the command line using the command\\
+\\
+\texttt{pip3 install "package to be installed"}\\
+\\
+where \texttt{ "package to be installed"} is replaced with the appropriate package name. The user is then required to download or clone the repository of this \texttt{MPT-Calculator} from github. Finally users on Ubuntu are required to enter the following lines into their \texttt{.bashrc} file,\\
+\\
+\texttt{export OMP\_NUM\_THREADS=1}\\
+\texttt{export MKL\_NUM\_THREADS=1}\\
+\texttt{export MKL\_THREADING\_LAYER=sequential}\\
+\\
+This is due to the code calling multiple instances of NGSolve in multiprocessing mode.

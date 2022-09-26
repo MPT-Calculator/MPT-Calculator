@@ -1,0 +1,51 @@
+This is BibTeX, Version 0.99d (TeX Live 2016)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: PythonCodeDocumentation.aux
+The style file: plain.bst
+Database file #1: documentationbib.bib
+Warning--to sort, need author or key in python
+Warning--to sort, need author or key in matplotlib
+Warning--empty journal in wilsonledger2019
+Warning--empty school in zaglmayrphd
+You've used 18 entries,
+            2118 wiz_defined-function locations,
+            605 strings with 6827 characters,
+and the built_in function-call counts, 5278 in all, are:
+= -- 512
+> -- 240
+< -- 1
++ -- 100
+- -- 78
+* -- 351
+:= -- 905
+add.period$ -- 53
+call.type$ -- 18
+change.case$ -- 93
+chr.to.int$ -- 0
+cite$ -- 22
+duplicate$ -- 184
+empty$ -- 421
+format.name$ -- 78
+if$ -- 1094
+int.to.chr$ -- 0
+int.to.str$ -- 18
+missing$ -- 13
+newline$ -- 92
+num.names$ -- 32
+pop$ -- 87
+preamble$ -- 1
+purify$ -- 75
+quote$ -- 0
+skip$ -- 136
+stack$ -- 0
+substring$ -- 323
+swap$ -- 21
+text.length$ -- 1
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 72
+warning$ -- 4
+while$ -- 45
+width$ -- 20
+write$ -- 188
+(There were 4 warnings)
