@@ -23,7 +23,6 @@ from FullSolvers import *
 from PODSolvers import *
 from ResultsFunctions import *
 from Checkvalid import *
-from JamesFunctions import *
 
 # from ngsolve import ngsglobals
 # ngsglobals.msg_level = 0
@@ -145,7 +144,7 @@ def main(hp=(), curve_degree=5, start_stop=(), alpha='', geometry='default', fre
 
     #POD
     #I want to use POD in the frequency sweep
-    Pod = True
+    Pod = False
     #(boolean) True if POD is to be used, the number of snapshots can be
     #edited in in the Settings.py file
 

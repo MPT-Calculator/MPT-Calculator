@@ -32,6 +32,6 @@ def count_prismatic_elements(filename):
     return prism_elements, tet_elements
 
 if __name__ == '__main__':
-    filename = r'../VolFiles/remeshed_matt_key_9_steel.vol'
+    filename = r'../VolFiles/OCC_sphere.vol'
     n_prisms, n_tets = count_prismatic_elements(filename)
     print(f' N Prisms = {n_prisms}, N Tets = {n_tets}')
