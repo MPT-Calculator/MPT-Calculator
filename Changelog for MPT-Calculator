@@ -26,6 +26,10 @@ Changelog for MPT-Calculator:
     - Changed pool initialisation from fork to spawn in FullSweepMulti. This was to attempt to fix a bug where the program would stall in multiprocessing on linux.
 	- To enable changing pool initialisation, I've use multiprocessing.
 
+- main_2d.py:
+    - Added functionality for 2D ROM and associated functions. Subject to change.
 
+- OCC_Geometry:
+    - Added OCC_Geometry folder and simple worked examples.
 
 
