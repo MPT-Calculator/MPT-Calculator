@@ -13,7 +13,7 @@ import sys
 import psutil
 import time
 import math
-import multiprocessing_on_dill as multiprocessing
+import multiprocessing as multiprocessing
 
 import cmath
 import numpy as np
@@ -23,7 +23,6 @@ from ngsolve import *
 
 sys.path.insert(0,"Functions")
 from MPTFunctions import *
-from JamesFunctions import POD_NN_permeability, POD_NN_multithreaded
 sys.path.insert(0,"Settings")
 from Settings import SolverParameters
 
@@ -82,28 +81,22 @@ def FullSweep(Object,Order,alpha,inorout,mur,sig,Array,BigProblem):
     Theta0j = GridFunction(fes)
     Theta0Sol = np.zeros([ndof,3])
 
-    POD_permeability = False
-    if POD_permeability:
-        # POD_NN_permeability(fes,Order,alpha,mu,inout,evec,Tolerance,Maxsteps,epsi,1,Solver, sig)
-        POD_NN_multithreaded(fes, Order, alpha, mu, inout, evec, Tolerance, Maxsteps, epsi,1, Solver, sig)
-        # filename = r'C:\Users\James\Desktop\MPT_calculator_James\Theta0Sol_test_sph=0.08_log.csv'
-        # POD_NN_permeability_from_disk(filename, fes, alpha)
-    else:
-        #Run in three directions and save in an array for later
-        for i in range(3):
-            Theta0Sol[:,i] = Theta0(fes,Order,alpha,mu,inout,evec[i],Tolerance,Maxsteps,epsi,i+1,Solver)
-        print(' solved theta0 problems    ')
 
-        #Calculate the N0 tensor
-        VolConstant = Integrate(1-mu**(-1),mesh)
-        for i in range(3):
-            Theta0i.vec.FV().NumPy()[:] = Theta0Sol[:,i]
-            for j in range(3):
-                Theta0j.vec.FV().NumPy()[:] = Theta0Sol[:,j]
-                if i==j:
-                    N0[i,j] = (alpha**3)*(VolConstant+(1/4)*(Integrate(mu**(-1)*(InnerProduct(curl(Theta0i),curl(Theta0j))),mesh)))
-                else:
-                    N0[i,j] = (alpha**3/4)*(Integrate(mu**(-1)*(InnerProduct(curl(Theta0i),curl(Theta0j))),mesh))
+    #Run in three directions and save in an array for later
+    for i in range(3):
+        Theta0Sol[:,i] = Theta0(fes,Order,alpha,mu,inout,evec[i],Tolerance,Maxsteps,epsi,i+1,Solver)
+    print(' solved theta0 problems    ')
+
+    #Calculate the N0 tensor
+    VolConstant = Integrate(1-mu**(-1),mesh)
+    for i in range(3):
+        Theta0i.vec.FV().NumPy()[:] = Theta0Sol[:,i]
+        for j in range(3):
+            Theta0j.vec.FV().NumPy()[:] = Theta0Sol[:,j]
+            if i==j:
+                N0[i,j] = (alpha**3)*(VolConstant+(1/4)*(Integrate(mu**(-1)*(InnerProduct(curl(Theta0i),curl(Theta0j))),mesh)))
+            else:
+                N0[i,j] = (alpha**3/4)*(Integrate(mu**(-1)*(InnerProduct(curl(Theta0i),curl(Theta0j))),mesh))
 
         #Copy the tensor
         # N0+=np.transpose(N0-np.eye(3)@N0)
@@ -198,7 +191,7 @@ def FullSweepMulti(Object,Order,alpha,inorout,mur,sig,Array,CPUs,BigProblem):
             NewInput = (fes,Order,alpha,mu,inout,evec[i],Tolerance,Maxsteps,epsi,"No Print",Solver)
         Runlist.append(NewInput)
     #Run on the multiple cores
-    with multiprocessing.Pool(processes=Theta0CPUs, initializer=set_niceness) as pool:
+    with multiprocessing.get_context("spawn").Pool(Theta0CPUs) as pool:
         Output = pool.starmap(Theta0, Runlist)
     print(' solved theta0 problems    ')
     
@@ -262,7 +255,7 @@ def FullSweepMulti(Object,Order,alpha,inorout,mur,sig,Array,CPUs,BigProblem):
         Runlist.append((Core_Distribution[i],mesh,fes,fes2,Theta0Sol,xivec,alpha,sigma,mu,inout,Tolerance,Maxsteps,epsi,Solver,N0,NumberofFrequencies,False,True,counter,False))
     
     #Run on the multiple cores
-    with multiprocessing.Pool(processes=Theta1_CPUs, initializer=set_niceness) as pool:
+    with multiprocessing.get_context("spawn").Pool(Theta1_CPUs) as pool:
         Outputs = pool.starmap(Theta1_Sweep, Runlist)
     
     #Unpack the results
@@ -276,11 +269,11 @@ def FullSweepMulti(Object,Order,alpha,inorout,mur,sig,Array,CPUs,BigProblem):
     return TensorArray, EigenValues, N0, numelements, (ndof, ndof2)
 
 
-def set_niceness():
-    # is called at every process start
-    p = psutil.Process(os.getpid())
-    if sys.platform == 'win32':
-        # set to lowest priority, this is windows only, on Unix use ps.nice(19)
-        p.nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
-    else:
-        p.nice(19)
+# def set_niceness():
+#     # is called at every process start
+#     p = psutil.Process(os.getpid())
+#     if sys.platform == 'win32':
+#         # set to lowest priority, this is windows only, on Unix use ps.nice(19)
+#         p.nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
+#     else:
+#         p.nice(19)

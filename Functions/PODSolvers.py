@@ -1,6 +1,8 @@
 """
 Edit 06 Aug 2022: James Elgy
 Changed how N0 was calculated for PODSweep to be consistent with PODSweepMulti.
+Changed pool generation to spawn to fix linux bug.
+
 """
 #Importing
 
@@ -655,7 +657,7 @@ def PODSweepMulti(Object,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotP
             Runlist.append((Core_Distribution[i],mesh,fes,fes2,Theta0Sol,xivec,alpha,sigma,mu,inout,Tolerance,Maxsteps,epsi,Solver,N0,NumberofSnapshots,True,False,counter,BigProblem))
     
     #Run on the multiple cores
-    with multiprocessing.Pool(Theta1_CPUs) as pool:
+    with multiprocessing.get_context("spawn").Pool(Theta1_CPUs) as pool:
         Outputs = pool.starmap(Theta1_Sweep, Runlist)
 
     try:

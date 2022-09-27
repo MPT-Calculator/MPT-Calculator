@@ -1,6 +1,8 @@
 """
 James Elgy 2022
 Script to run 2D MPT_calculator using the MultiParamSweep class with either RNN, PODP, or PODN
+Currently only supports one object. i.e. a single cube.
+Parameter names follow the same convention as main.py.
 """
 
 
@@ -15,30 +17,70 @@ from MultiPermeability import *
 from Settings import *
 from ML_MPT_Predictor import ML, DataLoader
 import pandas as pd
+from shutil import copyfile
 
+
+
+# Flag options about which method to use for the ROM modelling.
 PODP = True
 PODN = False
 NNR = False
 
+
 # Object Settings
-Mesh_Name = 'sphere.vol'
+
+# Vol file mesh name. e.g. 'sphere.vol'
+Mesh_Name = 'OCC_sphere.vol'
+
+# Alpha scaling term as float in m.
 Alpha = 0.001
+# (float) scaling to be applied to the .vol file i.e. if you have defined
+# a sphere of unit radius in a .geo file   alpha = 0.01   would simulate a
+# sphere with a radius of 0.01m ( or 1cm)
+
+# The order of the elements in the mesh
 Order = 2
+# (int) this defines the order of each of the elements in the mesh
+
+# List of conductivites for each object in the mesh.
 Conductivity = [1e6]
+# (list) this defines an ordered list of conductivities for each object in the mesh. e.g. if you have two objects sphere
+# and box, then [1e6, 2e5] would give the sphere 1e6 and the box 2e5.
+
 
 # Sweep Settings:
+
+# About the Frequency sweep (frequencies are in radians per second)
+# Minimum frequency (Powers of 10 i.e Start = 2 => 10**2)
 Start = 1
+
+# Maximum frequency (Powers of 10 i.e Start = 8 => 10**8)
 Finish = 5
-Points = 32
+
+# (int) Number of logarithmically spaced points in the frequency sweep
+Points = 10
+
+# Equivalent mur settings. These are stored linearly. i.e. a Mur_Finish of 13 would give an upper bound of mur=13.
 Mur_Start = 1
-Mur_Finish = 50
-Mur_Points = 32
+Mur_Finish = 10
+Mur_Points = 10
 
 # ROM Settings:
-N_Snapshots = 16
-Mur_N_Snapshots = 16
+
+# Number of frequency snapshots used in the ROM.
+N_Snapshots = 5
+# (int) number of frequencies to use when generating the ROM. Typically 16 is suffieicnet.
+
+# Number of mur values to use in the ROM
+Mur_N_Snapshots = 5
+# (int) number of mur snapshots to use for the 2D ROM.
+
+# Truncation tolerances for the SVD. Smaller provides more accuracy for greater computational expence.
 Theta0_Tol = 1e-6
 Theta1_Tol = 1e-6
+# (float) Truncation tolerances for the SVD used in the PODN and PODP schemes.
+
+#### RUN THE SCRIPT ####
 
 PlotPod, PODErrorBars, EddyCurrentTest, vtk_output, Refine_vtk = AdditionalOutputs()
 
@@ -74,7 +116,7 @@ MPS.frequency_array = np.logspace(Start, Finish, N_Snapshots)
 MPS.mur_max = Mur_Finish
 MPS.mur_min = Mur_Start
 MPS.mur_points = Mur_N_Snapshots
-MPS.permeability_array_ROM = np.logspace(Mur_Start, Mur_Finish, Mur_Points)
+MPS.permeability_array_ROM = np.linspace(Mur_Start, Mur_Finish, Mur_Points)
 MPS.frequency_array_ROM = np.logspace(Start, Finish, Points)
 MPS.generate_new_snapshot_mur_positions()
 
@@ -168,6 +210,10 @@ if PODN is True:
     MPS.plot_real_component(use_ROM=True, style='surf', plot_errorbars=PODErrorBars)
     MPS.plot_imag_component(use_ROM=True, style='surf', plot_errorbars=PODErrorBars)
     MPS.save_results(prefix='PODN')
+
+copyfile('main_2d.py', foldername+'/main_2d.py')
+copyfile('Settings/Settings.py', foldername+'/Settings.py')
+
 
 print('Done')
 

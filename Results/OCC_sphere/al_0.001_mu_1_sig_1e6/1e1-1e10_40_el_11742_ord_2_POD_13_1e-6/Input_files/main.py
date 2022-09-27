@@ -38,9 +38,11 @@ def main(hp=(), curve_degree=5, start_stop=(), alpha='', geometry='default', fre
     :param curve_degree: int for order of curved surface approximation. 5 is usually sufficient.
     :param start_stop: tuple for starting frequency and stopping frequency. e.g. start_stop=(Start, Finish, Points)
     :param alpha: float for Alpha.
-    :param geofile: string proxy for GeoFile.
+    :param geometry: string proxy for GeoFile or OCC py file.
     :param frequency_array: list for explicit override used to specify exact frequencies of interest.
-    :param use_OCC: bool for control over using OCC geometry generated via python.
+    :param use_OCC: bool for control over using OCC geometry generated via python. When used, the mesh will be
+    generated via the OCC package and stored in the VolFiles folder. An associated .geo file is also created containing
+    the material names and parameters. In this case, MeshSize in main.py does nothing.
 
     :return TensorArray: Numpy 9xN complex array of tensor coefficients.
     :return EigenValues: Numpy 3xN complex array of eigenvalues.
@@ -73,11 +75,12 @@ def main(hp=(), curve_degree=5, start_stop=(), alpha='', geometry='default', fre
     #User Inputs
 
     #Geometry
-
     if use_OCC is True:
         if geometry != 'default':
             OCC_file = geometry
         else:
+            # (string) Name of the .py file to be used generate a mesh i.e.
+            # "OCC_sphere.py"
             OCC_file = 'OCC_sphere.py'
 
         Generate_From_Python(OCC_file)

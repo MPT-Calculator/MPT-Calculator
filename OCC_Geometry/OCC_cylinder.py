@@ -3,7 +3,7 @@ from ngsolve import *
 
 """
 James Elgy - 2022:
-sphere example for Netgen OCC geometry mesh generation.
+Cylinder example for Netgen OCC geometry mesh generation.
 """
 
 

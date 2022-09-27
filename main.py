@@ -23,7 +23,6 @@ from FullSolvers import *
 from PODSolvers import *
 from ResultsFunctions import *
 from Checkvalid import *
-from JamesFunctions import *
 
 # from ngsolve import ngsglobals
 # ngsglobals.msg_level = 0
@@ -40,7 +39,9 @@ def main(hp=(), curve_degree=5, start_stop=(), alpha='', geometry='default', fre
     :param alpha: float for Alpha.
     :param geometry: string proxy for GeoFile or OCC py file.
     :param frequency_array: list for explicit override used to specify exact frequencies of interest.
-    :param use_OCC: bool for control over using OCC geometry generated via python.
+    :param use_OCC: bool for control over using OCC geometry generated via python. When used, the mesh will be
+    generated via the OCC package and stored in the VolFiles folder. An associated .geo file is also created containing
+    the material names and parameters. In this case, MeshSize in main.py does nothing.
 
     :return TensorArray: Numpy 9xN complex array of tensor coefficients.
     :return EigenValues: Numpy 3xN complex array of eigenvalues.
@@ -143,7 +144,7 @@ def main(hp=(), curve_degree=5, start_stop=(), alpha='', geometry='default', fre
 
     #POD
     #I want to use POD in the frequency sweep
-    Pod = True
+    Pod = False
     #(boolean) True if POD is to be used, the number of snapshots can be
     #edited in in the Settings.py file
 
@@ -257,4 +258,4 @@ def main(hp=(), curve_degree=5, start_stop=(), alpha='', geometry='default', fre
 
 
 if __name__ == '__main__':
-    main(use_OCC=True)
+    main(use_OCC=False)
