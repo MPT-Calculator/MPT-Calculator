@@ -74713,6 +74713,57 @@ bcnames
 7   outer
 
 
+materials
+2
+1 air
+2 sphere
+
+
+bcnames
+7
+1   default
+2   outer
+3   outer
+4   outer
+5   outer
+6   outer
+7   outer
+
+
+materials
+2
+1 air
+2 sphere
+
+
+bcnames
+7
+1   default
+2   outer
+3   outer
+4   outer
+5   outer
+6   outer
+7   outer
+
+
+materials
+2
+1 air
+2 sphere
+
+
+bcnames
+7
+1   default
+2   outer
+3   outer
+4   outer
+5   outer
+6   outer
+7   outer
+
+
 
 
 #          pnum             index

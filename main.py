@@ -28,7 +28,8 @@ from Checkvalid import *
 # ngsglobals.msg_level = 0
 
 
-def main(hp=(), curve_degree=5, start_stop=(), alpha='', geometry='default', frequency_array='default', use_OCC=False):
+def main(hp=(), curve_degree=5, start_stop=(), alpha='', geometry='default', frequency_array='default', use_OCC=False,
+         use_POD=False, use_parallel=True):
     """
     Main function to run 1D MPT calculator. Some common options have been added as function arguments to make iteration
     easier.
@@ -145,11 +146,15 @@ def main(hp=(), curve_degree=5, start_stop=(), alpha='', geometry='default', fre
     #POD
     #I want to use POD in the frequency sweep
     Pod = False
+    if use_POD is True:
+        Pod = True
     #(boolean) True if POD is to be used, the number of snapshots can be
     #edited in in the Settings.py file
 
     #MultiProcessing
     MultiProcessing = True
+    if use_parallel is False:
+        MultiProcessing = False
     #(boolean) #I have multiple cores at my disposal and have enough spare RAM
     # to run the frequency sweep in parallel (Edit the number of cores to be
     #used in the Settings.py file)
