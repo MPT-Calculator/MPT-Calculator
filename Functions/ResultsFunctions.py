@@ -352,7 +352,7 @@ def FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol, 
         copyfile("Functions/PlotEditor.py","Results/"+sweepname+"/PlotEditor.py")
     copyfile("GeoFiles/"+Geometry,"Results/"+sweepname+"/Input_files/"+Geometry)
     copyfile("Settings/Settings.py","Results/"+sweepname+"/Input_files/Settings.py")
-    copyfile("main.py","Results/"+sweepname+"/Input_files/main.py")
+    copyfile("runner.py","Results/"+sweepname+"/Input_files/runner.py")
     
     #Create a compressed version of the .vol file
     os.chdir('VolFiles')

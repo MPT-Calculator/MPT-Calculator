@@ -514,14 +514,14 @@ def PODSweep(Object,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sw
 
     if PlotPod==True:
         if PODErrorBars==True:
-            return TensorArray, EigenValues, N0, PODTensors, PODEigenValues, numelements, ErrorTensors
+            return TensorArray, EigenValues, N0, PODTensors, PODEigenValues, numelements, ErrorTensors, (ndof, ndof2)
         else:
-            return TensorArray, EigenValues, N0, PODTensors, PODEigenValues, numelements
+            return TensorArray, EigenValues, N0, PODTensors, PODEigenValues, numelements, (ndof, ndof2)
     else:
         if PODErrorBars==True:
-            return TensorArray, EigenValues, N0, numelements, ErrorTensors
+            return TensorArray, EigenValues, N0, numelements, ErrorTensors, (ndof, ndof2)
         else:
-            return TensorArray, EigenValues, N0, numelements
+            return TensorArray, EigenValues, N0, numelements, (ndof, ndof2)
 
 
 def PODSweepMulti(Object,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,CPUs,sweepname,SavePOD,PODErrorBars,BigProblem):
@@ -1019,11 +1019,11 @@ def PODSweepMulti(Object,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotP
     print(' frequency sweep complete')
     if PlotPod==True:
         if PODErrorBars==True:
-            return TensorArray, EigenValues, N0, PODTensors, PODEigenValues, numelements, ErrorTensors
+            return TensorArray, EigenValues, N0, PODTensors, PODEigenValues, numelements, ErrorTensors, (ndof, ndof2)
         else:
-            return TensorArray, EigenValues, N0, PODTensors, PODEigenValues, numelements
+            return TensorArray, EigenValues, N0, PODTensors, PODEigenValues, numelements, (ndof, ndof2)
     else:
         if PODErrorBars==True:
-            return TensorArray, EigenValues, N0, numelements, ErrorTensors
+            return TensorArray, EigenValues, N0, numelements, ErrorTensors, (ndof, ndof2)
         else:
-            return TensorArray, EigenValues, N0, numelements
+            return TensorArray, EigenValues, N0, numelements, (ndof, ndof2)
