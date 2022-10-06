@@ -25,7 +25,7 @@ def DefaultSettings():
     #(float)
     
     #Use an old mesh
-    OldMesh = False
+    OldMesh = True
     #(boolean) Note that this still requires the relavent .geo file to obtain
     #information about the materials in the mesh
     
@@ -38,7 +38,7 @@ def AdditionalOutputs():
     #calculations and will slow down sweep by around 2% for default settings)
     
     #Produce certificate bounds for POD outputs
-    PODErrorBars = True
+    PODErrorBars = False
     #(boolean)
     
     #Test where the eddy-current model breaks for the object
