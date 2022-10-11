@@ -6,7 +6,7 @@ import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spl
 import scipy.linalg as slin
-import multiprocessing_on_dill as multiprocessing
+import multiprocessing as multiprocessing
 import netgen.meshing as ngmeshing
 import sys
 from ngsolve import *
