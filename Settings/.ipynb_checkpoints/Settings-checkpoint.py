@@ -25,7 +25,7 @@ def DefaultSettings():
     #(float)
     
     #Use an old mesh
-    OldMesh = True
+    OldMesh = False
     #(boolean) Note that this still requires the relavent .geo file to obtain
     #information about the materials in the mesh
     

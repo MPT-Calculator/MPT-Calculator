@@ -1,12 +1,41 @@
 import subprocess
 import runpy
+from netgen.csg import CSGeometry
 
 #Function definition which creates a mesh for a given .geo file
 #Inputs -name of a .geo file (string)
 #       -How fine the mesh should be (integer 1<=n<=5)
 def Meshmaker(Geometry,Mesh):
+    """
+    Function to generate Netgen Mesh from .geo file and saves it as a similarly named .vol file
+
+    :param Geometry: str path to the .geo file to be meshed.
+    :param Mesh: int mesh granularity:
+                 1 = very coarse
+                 2 = coarse
+                 1 = moderate
+                 1 = fine
+                 1 = very fine
+
+    edit: James Elgy - 11 Oct 2022:
+    Currently pip installations of netgen do not allow all command line arguments.
+    See https://ngsolve.org/forum/ngspy-forum/1595-loading-geometry-from-command-line#4357
+
+    I've added an option to mesh the .geo file using the CSGeometry package.
+
+    """
+
+
     #Remove the .geo part of the file extention
     objname=Geometry[:-4]
+
+    use_CSG = False
+    if use_CSG:
+        geo = CSGeometry(Geometry)
+        mesh = geo.GenerateMesh(maxh=0.5)
+        mesh.Save(objname + '.vol')
+        return
+
     #Define how fine the mesh will be
     if Mesh==1:
         Meshsizing='-verycoarse'

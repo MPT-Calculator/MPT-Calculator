@@ -4,7 +4,7 @@
 import os
 import sys
 import time
-import multiprocessing_on_dill as multiprocessing
+import multiprocessing as multiprocessing
 
 import cmath
 import numpy as np
