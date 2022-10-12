@@ -29,11 +29,11 @@ def Meshmaker(Geometry,Mesh):
     #Remove the .geo part of the file extention
     objname=Geometry[:-4]
 
-    use_CSG = False
+    use_CSG = True
     if use_CSG:
-        geo = CSGeometry(Geometry)
-        mesh = geo.GenerateMesh(maxh=0.5)
-        mesh.Save(objname + '.vol')
+        geo = CSGeometry('GeoFiles/' + Geometry)
+        mesh = geo.GenerateMesh(maxh=Mesh)
+        mesh.Save('VolFiles/' + objname + '.vol')
         return
 
     #Define how fine the mesh will be

@@ -1,8 +1,8 @@
 algebraic3d
 
 
-solid sphout = sphere (0, 0, 0; 200);
-solid sphin = sphere (0, 0, 0; 1);
+solid sphout = sphere (0, 0, 0; 100);
+solid sphin = sphere (0, 0, 0; 1) -maxh=0.5;
 
 solid rest = sphout and not sphin;
 

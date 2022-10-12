@@ -28,13 +28,14 @@ from Checkvalid import *
 # ngsglobals.msg_level = 0
 
 
-def main(hp=(), curve_degree=5, start_stop=(), alpha='', geometry='default', frequency_array='default', use_OCC=False,
+def main(h=1000, order=2, curve_degree=5, start_stop=(), alpha='', geometry='default', frequency_array='default', use_OCC=False,
          use_POD=False, use_parallel=True):
     """
     Main function to run 1D MPT calculator. Some common options have been added as function arguments to make iteration
     easier.
 
-    :param hp: tuple containing (MeshSize, Order) e.g. hp=(2,3) will set MeshSize=2 and Order=3.
+    :param h: int for the mesh size. E.g. setting h=2 will result in MeshSize=2
+    :param p: int for the order of the elements.
     :param curve_degree: int for order of curved surface approximation. 5 is usually sufficient.
     :param start_stop: tuple for starting frequency and stopping frequency. e.g. start_stop=(Start, Finish, Points)
     :param alpha: float for Alpha.
@@ -47,7 +48,7 @@ def main(hp=(), curve_degree=5, start_stop=(), alpha='', geometry='default', fre
     :return TensorArray: Numpy 9xN complex array of tensor coefficients.
     :return EigenValues: Numpy 3xN complex array of eigenvalues.
     :return N0: Numpy 3x3 complex N0 tensor.
-    :return ndofs: int number of degrees of freedom used in the simulation.
+    :return ndofs: tuple number of degrees of freedom used in the simulation for theta0 and theta1.
     :return EddyCurrentTest: if true, returns float frequency of eddy current limit.
 
     Example:
@@ -56,11 +57,6 @@ def main(hp=(), curve_degree=5, start_stop=(), alpha='', geometry='default', fre
         TensorArray, EigenValues, N0, elements, Array, ndofs, EddyCurrentTest = main(hp=(2,p), geofile='sphere.geo')
 
     """
-
-    if len(hp) == 2:
-        OVERWRITE_HP = True
-    else:
-        OVERWRITE_HP = False
 
     if len(start_stop) == 3:
         OVERWRITE_START_STOP = True
@@ -108,16 +104,16 @@ def main(hp=(), curve_degree=5, start_stop=(), alpha='', geometry='default', fre
     #About the mesh
     #How fine should the mesh be
     MeshSize = 2
-    if OVERWRITE_HP:
-        MeshSize = hp[0]
+    if h != 2:
+        MeshSize = h
     #(int 1-5) this defines how fine the mesh should be for regions that do
     #not have maxh values defined for them in the .geo file (1=verycoarse,
     #5=veryfine)
 
     #The order of the elements in the mesh
     Order = 2
-    if OVERWRITE_HP:
-        Order = hp[1]
+    if order != 2:
+        Order = order
     #(int) this defines the order of each of the elements in the mesh
 
     #About the Frequency sweep (frequencies are in radians per second)
@@ -171,6 +167,7 @@ def main(hp=(), curve_degree=5, start_stop=(), alpha='', geometry='default', fre
 
     if OldMesh == False:
         #Create the mesh
+        print('generating mesh')
         Meshmaker(Geometry,MeshSize)
     else:
         #Check whether to add the material information to the .vol file
@@ -219,26 +216,26 @@ def main(hp=(), curve_degree=5, start_stop=(), alpha='', geometry='default', fre
             if MultiProcessing==True:
                 if PlotPod==True:
                     if PODErrorBars==True:
-                        TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ErrorTensors = PODSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,CPUs,sweepname,SavePOD,PODErrorBars,BigProblem)
+                        TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ErrorTensors, ndofs = PODSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,CPUs,sweepname,SavePOD,PODErrorBars,BigProblem)
                     else:
-                        TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements = PODSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,CPUs,sweepname,SavePOD,PODErrorBars,BigProblem)
+                        TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ndofs = PODSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,CPUs,sweepname,SavePOD,PODErrorBars,BigProblem)
                 else:
                     if PODErrorBars==True:
-                        TensorArray, EigenValues, N0, elements, ErrorTensors = PODSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,CPUs,sweepname,SavePOD,PODErrorBars,BigProblem)
+                        TensorArray, EigenValues, N0, elements, ErrorTensors, ndofs = PODSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,CPUs,sweepname,SavePOD,PODErrorBars,BigProblem)
                     else:
-                        TensorArray, EigenValues, N0, elements = PODSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,CPUs,sweepname,SavePOD,PODErrorBars,BigProblem)
+                        TensorArray, EigenValues, N0, elements, ndofs = PODSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,CPUs,sweepname,SavePOD,PODErrorBars,BigProblem)
             else:
                 if PlotPod==True:
                     if PODErrorBars==True:
-                        TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ErrorTensors = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,BigProblem)
+                        TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ErrorTensors, ndofs = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,BigProblem)
                     else:
-                        TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,BigProblem)
+                        TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ndofs = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,BigProblem)
                 else:
                     if PODErrorBars==True:
-                        TensorArray, EigenValues, N0, elements, ErrorTensors = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,BigProblem)
+                        TensorArray, EigenValues, N0, elements, ErrorTensors, ndofs = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,BigProblem)
                     else:
-                        TensorArray, EigenValues, N0, elements = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,BigProblem)
-            ndofs = -1
+                        TensorArray, EigenValues, N0, elements, ndofs = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,BigProblem)
+
 
         else:
             if MultiProcessing==True:
