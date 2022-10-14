@@ -255,9 +255,31 @@ def main(h=1000, order=2, curve_degree=5, start_stop=(), alpha='', geometry='def
     else:
         FullSave(Geometry, Array, TensorArray, EigenValues, N0, Pod, PODArray, PODTol, elements, alpha, Order, MeshSize, mur, sig, ErrorTensors,EddyCurrentTest)
 
-    return TensorArray, EigenValues, N0, elements, Array, ndofs, EddyCurrentTest
+
+
+    # Constructing Return Dictionary
+    ReturnDict = {}
+    ReturnDict['TensorArray'] = TensorArray
+    ReturnDict['EigenValues'] = EigenValues
+    ReturnDict['N0'] = N0
+    ReturnDict['NElements'] = elements
+    ReturnDict['FrequencyArray'] = Array
+    ReturnDict['NDOF'] = ndofs
+
+    if EddyCurrentTest is not False:
+        ReturnDict['EddyCurrentTest'] = EddyCurrentTest
+
+    if use_POD is True:
+        ReturnDict['PODFrequencyArray'] = PODArray
+        ReturnDict['PODTensorArray'] = PODTensors
+        ReturnDict['PODEigenValues'] = PODEigenValues
+        if PODErrorBars is True:
+            ReturnDict['PODErrorBars'] = ErrorTensors
+
+
+    return ReturnDict #TensorArray, EigenValues, N0, elements, Array, ndofs, EddyCurrentTest
 
 
 
 if __name__ == '__main__':
-    main(use_OCC=False, geometry='sphere2.geo')
+    ReturnDict = main(use_OCC=False, geometry='sphere.geo')
