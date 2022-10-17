@@ -1,6 +1,6 @@
 import subprocess
 import runpy
-from netgen.csg import CSGeometry
+from netgen.csg import *
 
 #Function definition which creates a mesh for a given .geo file
 #Inputs -name of a .geo file (string)
@@ -32,7 +32,19 @@ def Meshmaker(Geometry,Mesh):
     use_CSG = True
     if use_CSG:
         geo = CSGeometry('GeoFiles/' + Geometry)
-        mesh = geo.GenerateMesh(maxh=Mesh)
+        if Mesh == 'verycoarse':
+            mesh = geo.GenerateMesh(meshsize.very_coarse)
+        elif Mesh == 'coarse':
+            mesh = geo.GenerateMesh(meshsize.coarse)
+        elif Mesh == 'moderate':
+            mesh = geo.GenerateMesh(meshsize.moderate)
+        elif Mesh == 'fine':
+            mesh = geo.GenerateMesh(meshsize.fine)
+        elif Mesh == 'veryfine':
+            mesh = geo.GenerateMesh(meshsize.very_fine)
+        else:
+            mesh = geo.GenerateMesh(maxh=Mesh)
+
         mesh.Save('VolFiles/' + objname + '.vol')
         return
 

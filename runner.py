@@ -28,7 +28,7 @@ from Checkvalid import *
 # ngsglobals.msg_level = 0
 
 
-def main(h=1000, order=2, curve_degree=5, start_stop=(), alpha='', geometry='default', frequency_array='default', use_OCC=False,
+def main(h=2, order=2, curve_degree=5, start_stop=(), alpha='', geometry='default', frequency_array='default', use_OCC=False,
          use_POD=False, use_parallel=True):
     """
     Main function to run 1D MPT calculator. Some common options have been added as function arguments to make iteration
@@ -282,4 +282,4 @@ def main(h=1000, order=2, curve_degree=5, start_stop=(), alpha='', geometry='def
 
 
 if __name__ == '__main__':
-    ReturnDict = main(use_OCC=False, geometry='sphere.geo')
+    ReturnDict = main(geometry='sphere_test.geo', h='coarse')
