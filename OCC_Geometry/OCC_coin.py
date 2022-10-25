@@ -3,9 +3,9 @@ from ngsolve import *
 from netgen.webgui import Draw as DrawGeo
 import numpy as np
 
-object_name = ['outer_frame', 'inner_cyln', 'plating']
 sigma = [5.26E+06, 1.63E+07, 1E6]
 mur = [1.15, 1, 100]
+material_name = ['Nickel_Silver','Brass','Nickel_plating']
 
 r = 23.43/2
 r_inner = 7.4
@@ -24,12 +24,15 @@ cy = frame.center[1]
 inner_cyln = Cylinder(Pnt(cx,cy,0),Z, r=r_inner, h=t)
 frame_outer = frame - inner_cyln
 
-inner_cyln.mat(object_name[1])
-frame_outer.mat(object_name[0])
+# inner_cyln.name = object_name[1]
+# frame_outer.name = object_name[0]
+
+inner_cyln.mat(material_name[1])
+frame_outer.mat(material_name[0])
+
 inner_cyln.bc('inner_cyln')
 frame_outer.bc('frame_outer')
-inner_cyln.name = 'inner_cyln'
-frame_outer.name = 'frame_outer'
+
 inner_cyln.maxh = 1
 frame_outer.maxh = 1
 
@@ -44,7 +47,11 @@ joined_object = Glue([coin, box])
 geo = OCCGeometry(joined_object)
 nmesh = geo.GenerateMesh()
 
-nmesh.BoundaryLayer(boundary=".*", thickness=[5e-5], material=object_name[2],
-                           domains='inner_cyln', outside=False)
+nmesh.BoundaryLayer(boundary=".*", thickness=[5e-5], material=material_name[2],
+                           domains=material_name[1], outside=False)
+
+from ngsolve import *
+Mesh = Mesh(nmesh)
+print(Mesh.GetMaterials())
 
 nmesh.Save(r'VolFiles/OCC_coin.vol')

@@ -9,9 +9,10 @@ sphere example for Netgen OCC geometry mesh generation.
 
 
 # Setting mur, sigma, and defining the top level object name:
-object_name = 'sphere'
-mur = 1
-sigma = 1e6
+material_name = ['steel']
+mur = [1]
+sigma = [1e6]
+# mat_name = 'test'
 
 # setting radius
 r = 1
@@ -24,7 +25,7 @@ box = Box(Pnt(-1000, -1000, -1000), Pnt(1000,1000,1000))
 
 # setting material and bc names:
 # For compatability, we want the non-conducting region to have the 'outer' boundary condition and be labeled as 'air'
-sphere.mat(object_name)
+sphere.mat(material_name[0])
 sphere.bc('default')
 box.mat('air')
 box.bc('outer')

@@ -1,6 +1,6 @@
 from netgen.occ import *
 
-object_name = 'cube'
+material_name = ['cube']
 sigma = 1e6
 mur = 100
 
@@ -9,8 +9,8 @@ cube = geo.shape.Move((-geo.shape.center.x, -geo.shape.center.y, -geo.shape.cent
 
 #cube = Box(Pnt(-5,-5,-5), Pnt(5,5,5))
 cube.bc('default')
-cube.mat(object_name)
-cube.solids.name = object_name
+cube.mat(material_name[0])
+cube.solids.name = material_name[0]
 cube.faces.name = 'default'
 cube.maxh = 1
 
@@ -21,6 +21,6 @@ box.maxh=1000
 
 joined_object = Glue([box, cube])
 nmesh = OCCGeometry(joined_object).GenerateMesh(meshsize.coarse)
-nmesh.BoundaryLayer(boundary=".*", thickness=[0.5], material=object_name, domains=object_name, outside=False)
+nmesh.BoundaryLayer(boundary=".*", thickness=[0.5], material=material_name[0], domains=material_name[0], outside=False)
 
 nmesh.Save(r'VolFiles/OCC_step_cube_prism.vol')

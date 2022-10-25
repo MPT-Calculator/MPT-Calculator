@@ -167,8 +167,9 @@ def Theta1_Sweep(Array,mesh,fes,fes2,Theta0Sols,xivec,alpha,sigma,mu,inout,Toler
         if Multi == False:
             print(' solving theta1 %d/%d    ' % (k+1,NOF), end='\r')
         else:
-            Multi.value += 1
-            print(' solving theta1 %d/%d    ' % (Multi.value,TotalNOF), end='\r')
+            pass
+            # Multi.value += 1
+            # print(' solving theta1 %d/%d    ' % (Multi.value,TotalNOF), end='\r')
         #Create the bilinear form
         a = BilinearForm(fes2, symmetric=True, condense=True)
         a += SymbolicBFI((mu**(-1)) * InnerProduct(curl(u),curl(v)))

@@ -12,6 +12,8 @@
 \usepackage{caption}
 \usepackage{mathalfa}
 \usepackage{hyperref}
+\usepackage{fancyvrb}
+\usepackage{listings}
 %\usepackage{unicode-math}
 \captionsetup{font=footnotesize}
 \captionsetup{width=\textwidth}
@@ -74,13 +76,75 @@
 \newcommand{\dif}{\mathrm{d}}
 \newcommand{\im}{\mathrm{i}}
 
+
+% Defining unicode characters for tree
+\usepackage[utf8]{inputenc}
+\usepackage{newunicodechar}
+\makeatletter
+\verbatim@font
+\newsavebox\v@sp
+\sbox{\v@sp}{\ }
+\newlength{\v@spwd}
+\setlength{\v@spwd}{\wd\v@sp}
+\newunicodechar{└}{\mbox{\kern0.5\v@spwd\vrule height 2ex depth -1ex width 0.2ex\kern-0.2ex\rule[1ex]{0.5\v@spwd}{0.2ex}}}
+\newunicodechar{─}{\rule[1ex]{1\v@spwd}{0.2ex}}
+\newunicodechar{┬}{\rule[1ex]{0.5\v@spwd}{0.2ex}\vrule height 1ex
+depth 0.5ex width0.2ex\kern-0.2ex\rule[1ex]{0.5\v@spwd}{0.2ex}}
+\newunicodechar{├}{\mbox{\kern0.5\v@spwd\vrule height 2ex depth 0.5ex width 0.2ex\kern-0.2ex\rule[1ex]{0.5\v@spwd}{0.2ex}}}
+\newunicodechar{│}{\mbox{\kern0.5\v@spwd\vrule height 2ex depth 0.5ex width
+0.2ex\kern-0.2ex \kern0.5\v@spwd}}
+\makeatother
+\normalfont
+
+% Defining code style:
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.92,0.92}
+
+% 1. General Python Keywords List
+\lstdefinelanguage{PythonPlus}[]{Python}{
+  morekeywords=[1]{,as,assert,nonlocal,with,yield,self,True,False,None,} % Python builtin
+  morekeywords=[2]{,__init__,__add__,__mul__,__div__,__sub__,__call__,__getitem__,__setitem__,__eq__,__ne__,__nonzero__,__rmul__,__radd__,__repr__,__str__,__get__,__truediv__,__pow__,__name__,__future__,__all__,}, % magic methods
+  morekeywords=[3]{,object,type,isinstance,copy,deepcopy,zip,enumerate,reversed,list,set,len,dict,tuple,range,xrange,append,execfile,real,imag,reduce,str,repr,}, % common functions
+  morekeywords=[4]{,Exception,NameError,IndexError,SyntaxError,TypeError,ValueError,OverflowError,ZeroDivisionError,}, % errors
+  morekeywords=[5]{,ode,fsolve,sqrt,exp,sin,cos,arctan,arctan2,arccos,pi, array,norm,solve,dot,arange,isscalar,max,sum,flatten,shape,reshape,find,any,all,abs,plot,linspace,legend,quad,polyval,polyfit,hstack,concatenate,vstack,column_stack,empty,zeros,ones,rand,vander,grid,pcolor,eig,eigs,eigvals,svd,qr,tan,det,logspace,roll,min,mean,cumsum,cumprod,diff,vectorize,lstsq,cla,eye,xlabel,ylabel,squeeze,}, % numpy / math
+}
+
+
+\lstdefinestyle{mystyle}{ 
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue}\bfseries\itshape,
+    keywordstyle=[2]\color{blue}\bfseries,
+    keywordstyle=[3]\color{grass},
+    keywordstyle=[4]\color{red},
+    keywordstyle=[5]\color{orange},
+    stringstyle=\color{darkred},
+    emphstyle=\color{pink}\underbar,
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+
 \begin{document}
 
 \title{\texttt{MPT-Calculator}: A Python-NGSolve Implementation of Magnetic Polarizabiltiy Tensor Accelerated by POD}
 
-\author{B. A. Wilson and P. D. Ledger\\
-Zienkiewicz Centre for Computational Engineering, College of Engineering,\\Swansea University \\
- b.a.wilson@swansea.ac.uk, p.d.ledger@swansea.ac.uk}
+\author{B. A. Wilson$^\dagger$, J. Elgy$^\ddagger$, and P. D. Ledger$^\ddagger$\\
+$^\dagger$Zienkiewicz Centre for Computational Engineering, College of Engineering,\\Swansea University \\
+$^\ddagger$School of Computing and Mathematics, Keele University \\
+ b.a.wilson@swansea.ac.uk, j.elgy@keele.ac.uk, p.d.ledger@keele.ac.uk}
 
 \maketitle
 

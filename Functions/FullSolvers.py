@@ -10,7 +10,6 @@ Changed how N0 was calculated for FullSweep to be consistent with FullSweepMulti
 #Importing
 import os
 import sys
-import psutil
 import time
 import math
 import multiprocessing as multiprocessing

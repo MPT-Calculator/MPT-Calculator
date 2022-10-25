@@ -1,6 +1,6 @@
 Due to the code being written in python and using \texttt{NGSolve} the user is required to install both of these in order to use the \texttt{MPT-Calculator}.  Please follow the instructions available at \href{https://ngsolve.org/}{\texttt{https://ngsolve.org/}} in order to install the high order finite element and meshing library  \texttt{NGSolve}~\cite{NGSolve,zaglmayrphd,netgendet}  released under the LPLG license and ensure a compatible version of Python 3 is installed
 %(this varies for different versions of NGSolve and operating systems, although this is documented at \href{https://ngsolve.org/}{\texttt{https://ngsolve.org/}})
-which is available at \href{https://www.python.org}{\texttt{https://www.python.org}}. Note that the compatible versions of Python 3 and NGSolve are different on Linux and Mac OS and one should check the NGSolve webpage for up to date information. The code is compatible with \texttt{NGSolve} 6.2.1907 and after. The examples in section \ref{sect:examples} have been run using version 6.2.2004 and version 3.8.2 of \texttt{Python 3}~\cite{python} and meshes for this have also been provided for users runnings different version of NGSolve. The code has been tested on version 10.14.6 of \texttt{MAC OS} and 18.04 of \texttt{Ubuntu}.\\
+which is available at \href{https://www.python.org}{\texttt{https://www.python.org}}. Note that the compatible versions of Python 3 and NGSolve are different on Linux and Mac OS and one should check the NGSolve webpage for up to date information. The code is compatible with \texttt{NGSolve} 6.2.1907 and after. The examples in section \ref{sect:examples} have been run using version 6.2.2004 and version 3.8.2 of \texttt{Python 3}~\cite{python} and meshes for this have also been provided for users runnings different version of NGSolve. The code has been tested on version 10.14.6 of \texttt{MAC OS} and 22.04 of \texttt{Ubuntu}.\\
 \\
 \noindent
 Along with these installations, the \texttt{MPT-Calculator} relies on a number of python packages, which the user is required to install they are as follows \texttt{sys}, \texttt{numpy}, \texttt{os}, \texttt{time}, \texttt{multiprocessing\_on\_dill}, \texttt{cmath}, \texttt{subprocess}, \texttt{matplotlib}. On a MAC or Linux they can be installed from the command line using the command\\
@@ -13,4 +13,24 @@ where \texttt{ "package to be installed"} is replaced with the appropriate packa
 \texttt{export MKL\_NUM\_THREADS=1}\\
 \texttt{export MKL\_THREADING\_LAYER=sequential}\\
 \\
-This is due to the code calling multiple instances of NGSolve in multiprocessing mode.
+This is due to the code calling multiple instances of \texttt{NGSolve} in multiprocessing mode.
+
+\subsection{Jupyter Notebook Support}
+The current version of \texttt{NGSolve} and \texttt{Netgen} offers support for \texttt{Jupyter Notebooks} and offers support for web based visualisation. Currently, to install \texttt{Jupyter Notebooks} on MAC or Linux systems enter \\
+\\
+\texttt{pip3 install jupyter}
+\\
+\\into the terminal. On Windows systems enter\\
+\\
+\texttt{pip install jupyter}
+\\
+\\into the command prompt. To further enable the \texttt{NGSolve} visualisation tools, the user is required to also install \texttt{webgui\_jupyter\_widgets} and \texttt{widgetsnbextension}. Similarly to installing the software via \texttt{pip}, we enter
+\\
+\\
+\texttt{pip3 install webgui\_jupyter\_widgets}\\
+\texttt{jupyter nbextensions install --user --py widgetnbextension}\\
+\texttt{jupyter nbextension enable --user --py widgetnbextension}\\
+\texttt{jupyter nbextension install --user --py webgui\_jupyter\_widgets}\\
+\texttt{jupyter nbextension enable --user --py webgui\_jupyter\_widgets}
+\\
+\\into the command prompt or terminal. Further information can be found on the \texttt{NGSolve} website, \href{https://docu.ngsolve.org/latest/install/usejupyter.html}{here}.

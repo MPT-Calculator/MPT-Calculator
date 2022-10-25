@@ -12,7 +12,7 @@ This example illustrates that lists can be used for multiple objects.
 # Setting mur, sigma, and defining the top level object name:
 # For multiple objects then object_name, mur, and sigma should be given as parameter lists.
 # These lists are used in the generation of the associated .geo files.
-object_name = ['bar1', 'bar2']
+material_name = ['bar1', 'bar2']
 mur = [1, 2]
 sigma = [1e6, 2e6]
 
@@ -25,8 +25,8 @@ outer_box = Box(Pnt(-1000, -1000, -1000), Pnt(1000,1000,1000))
 
 # setting material and bc names:
 # For compatability, we want the non-conducting region to have the 'outer' boundary condition and be labeled as 'air'
-bar1.mat(object_name[0])
-bar2.mat(object_name[1])
+bar1.mat(material_name[0])
+bar2.mat(material_name[1])
 bar1.bc('default')
 bar2.bc('default')
 outer_box.mat('air')

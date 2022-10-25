@@ -9,9 +9,9 @@ Cylinder example for Netgen OCC geometry mesh generation.
 
 
 # Setting mur, sigma, and defining the top level object name:
-object_name = 'cylinder'
-mur = 1
-sigma = 1e6
+material_name = ['cylinder']
+mur = [1]
+sigma = [1e6]
 
 # setting radius and height
 r = 1

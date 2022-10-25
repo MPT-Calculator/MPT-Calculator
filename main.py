@@ -188,6 +188,9 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
     Array = np.logspace(Start,Finish,Points)
     if frequency_array != 'default':
         Array = frequency_array
+        if len(Array) == 1:
+            Single = True
+            Omega = float(Array)
     PlotPod, PODErrorBars, EddyCurrentTest, vtk_output, Refine = AdditionalOutputs()
     SavePOD = False
     if PODErrorBars!=True:
@@ -282,22 +285,22 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
 
 if __name__ == '__main__':
     comparison_eig = np.zeros((40,4), dtype=complex)
-    for p in [0,1,2,3]:
+    for p in [3]:
         print(f'solving for p={p}')
-        ReturnDict = main(geometry='OCC_step_cube_prism.py', use_OCC=True, use_POD=True, order=p)
-        comparison_eig[:,p] = ReturnDict['EigenValues'][:,0]
-
-
-    plt.figure()
-    for p in [0,1,2,3]:
-        plt.semilogx(ReturnDict['FrequencyArray'], comparison_eig[:,p].real, label=f'order {p}')
-    plt.legend()
-    plt.xlabel('$\omega$ [rad/s]')
-    plt.ylabel('$\lambda_1(\mathcal{R} + \mathcal{N}^0)$')
-
-    plt.figure()
-    for p in [0,1,2,3]:
-        plt.semilogx(ReturnDict['FrequencyArray'], comparison_eig[:,p].real, label=f'order {p}')
-    plt.legend()
-    plt.xlabel('$\omega$ [rad/s]')
-    plt.ylabel('$\lambda_1(\mathcal{I})$')
+        ReturnDict = main(geometry='OCC_dualbar.py', use_OCC=True, use_POD=True, order=p)
+    #     comparison_eig[:,p] = ReturnDict['EigenValues'][:,0]
+    #
+    #
+    # plt.figure()
+    # for p in [0,1,2,3]:
+    #     plt.semilogx(ReturnDict['FrequencyArray'], comparison_eig[:,p].real, label=f'order {p}')
+    # plt.legend()
+    # plt.xlabel('$\omega$ [rad/s]')
+    # plt.ylabel('$\lambda_1(\mathcal{R} + \mathcal{N}^0)$')
+    #
+    # plt.figure()
+    # for p in [0,1,2,3]:
+    #     plt.semilogx(ReturnDict['FrequencyArray'], comparison_eig[:,p].real, label=f'order {p}')
+    # plt.legend()
+    # plt.xlabel('$\omega$ [rad/s]')
+    # plt.ylabel('$\lambda_1(\mathcal{I})$')

@@ -1,12 +1,91 @@
-Let us now discuss the layout of the code and the files which are designed to be edited. The user is expected interact with 3 files \texttt{main.py}, \texttt{Settings.py} and \texttt{PlotterSettings.py}, these files along with a geometry file (\texttt{.geo} file) (see Section \ref{sect.geo}) allow the user to produce an array of different frequency sweeps for many different objects. In this section we discuss the layout of the folder system in place, how each of the input files can used and edited by the user to produce a frequency sweep along with how and where the results are saved. The structure of the code can be seen in Figure \ref{fig:FrequencySweepCode}
-\begin{figure}[H]
-\begin{center}
-\includegraphics[width=0.4\textwidth]{Figures/CodeLayout}
-\caption{Image displaying the structure of the main folder of the FrequencySweepCode.}\label{fig:FrequencySweepCode}
-\end{center}
-\end{figure}
-\noindent
-We next discuss how to use the input files of the code.\\
+Let us now discuss the layout of the code and the files which are designed to be edited. The user is expected interact with 3 files \texttt{main.py}, \texttt{Settings.py} and \texttt{PlotterSettings.py}, these files along with a geometry file (\texttt{.geo} file or \texttt{OCC} \texttt{.py} file) (see Section \ref{sect.geo}) allow the user to produce an array of different frequency sweeps for many different objects. In this section we discuss the layout of the folder system in place, how each of the input files can used and edited by the user to produce a frequency sweep along with how and where the results are saved. The structure of the code with respect to the project root directory can be seen in the folder tree below where examples have been included for \texttt{.geo} and \texttt{OCC} geometry descriptions and the results folder layout is illustrated by means of a sphere example. 
+%Figure \ref{fig:FrequencySweepCode}
+%\begin{figure}[H]
+%\begin{center}
+%\includegraphics[width=0.4\textwidth]{Figures/CodeLayout}
+%\caption{Image displaying the structure of the main folder of the FrequencySweepCode.}\label{fig:FrequencySweepCode}
+%\end{center}
+%\end{figure}
+%\noindent
+
+\clearpage
+\begin{Verbatim}[fontsize=\footnotesize]
+
+├── Documentation
+│   └── PythonCodeDocumentation.pdf
+├── Functions
+│   ├── Helper_Functions
+│   │   ├── count_prismatic_elements.py
+│   │   ├── exact_sphere.py
+│   │   └── step_to_vol_mesher.py
+│   ├── Checkvalid.py
+│   ├── FullSolvers.py
+│   ├── MeshCreation.py
+│   ├── ML_MPT_Predictor.py
+│   ├── MPTFunctions.py
+│   ├── MultiPermeability.py
+│   ├── PlotEditor.py
+│   ├── PlotEditorWithErrorBars.py
+│   ├── Plotters.py
+│   ├── PODFunctions.py
+│   ├── PODPlotEditor.py
+│   ├── PODPlotEditorWithErrorBars.py
+│   ├── PODSolvers.py
+│   ├── ResultsFunctions.py
+│   ├── SingleSolve.py 
+├── GeoFiles
+│   ├── Claw_wodden_handle.geo
+│   ├── Coin.geo
+│   ├── Cylinder.geo
+│   ├── DualBar.geo
+│   ├── dualBox.geo
+│   └── ...
+├── OCC_Geometry
+│   ├── OCC_bottle.py
+│   ├── OCC_cylinder.py
+│   └── ...
+├── Results
+│   └── sphere
+│       └── al_0.001_mu_1_sig_1e6
+│           └── 1e1-1e10_40_el_57698_ord_2
+│               ├── Data
+│               │   ├── Eigenvalues.csv
+│               │   ├── Frequencies.csv
+│               │   ├── N0.csv
+│               │   └── Tensors.csv
+│               ├── Functions
+│               │   └── Plotters.py
+│               ├── Graphs
+│               │   ├── ImaginaryEigenvalues.pdf
+│               │   ├── ImaginaryTensorCoeficients.pdf
+│               │   ├── RealEigenvalues.pdf
+│               │   └── RealTensorCoeficients.pdf
+│               ├── Input_files
+│               │   ├── main.py
+│               │   ├── Settings.py
+│               │   ├── sphere.geo
+│               │   └── sphere.zip
+│               ├── PlotEditor.py
+│               └── PlotterSettings.py
+├── Settings
+│   ├── PlotterSettings.py
+│   └── Settings.py
+├── VolFiles
+│   ├── Claw_wodden_handle.vol
+│   ├── Knife_Cheap_Chef.vol
+│   ├── OCC_cylinder.vol
+│   └── ...
+├── Results_2d
+├── Changelog_for_MPT-Calculator
+├── LICENSE
+├── main_2d.py
+├── README.md
+└── main.py
+\end{Verbatim}
+\clearpage
+
+
+
 \subsection{User input files}
 The files (along with their file paths) the user is expected to interact with are\\
 \\
@@ -14,192 +93,489 @@ The files (along with their file paths) the user is expected to interact with ar
 \texttt{Settings/Settings.py}\\
 \texttt{Settings/PlotterSettings.py}.\\
 \\
-Once the files have the desired inputs the simulation is run by entering the command\\
+Once the files have the desired inputs the simulation is run using the default parameters by entering the command\\
 \\
 \texttt{python3 main.py}\\
 \\
-possibly replacing \texttt{python3} with \texttt{python3.8} here and throughout depending on your setup and version installed to the command line from the main directory. The \texttt{MPT-Calculator} then runs the appropriate frequency sweep and saves the outputs in an output folder (see Section \ref{sectOutput}).
-We start this explanation with \texttt{main.py}.
+possibly replacing \texttt{python3} with \texttt{python3.8} here and throughout depending on your setup and version installed to the command line from the main directory. The \texttt{MPT-Calculator} then runs the default frequency sweep and saves the outputs in an output folder (see Section \ref{sectOutput}).
+The following sections cover the Python interface with \texttt{MPT-Calculator}. We start this explanation with \texttt{main.py}.
 
 \subsubsection{\texttt{main.py}}\label{sectmain.py}
-The file \texttt{main.py} is the file with which the user is expected to have most interaction, it is the file which calls functions to generate a mesh, perform frequency sweeps and finally post process the data produced in the frequency sweep. In \texttt{main.py}, the user is greeted with an input section which should look similar to the image in Figure \ref{fig:main.py}.
-\begin{figure}[H]
-\begin{center}
-\includegraphics[width=0.8\textwidth]{Figures/mainpy.pdf}
-\caption{Image displaying the user input section of the file \texttt{main.py}}\label{fig:main.py}
-\end{center}
-\end{figure}
+The file \texttt{main.py} is the file with which the user is expected to have most interaction, it contains the starting function for \texttt{MPT-Calculator} which calls functions to generate a mesh, perform frequency sweeps and finally post process the data produced in the frequency sweep. 
 \noindent
-In this section we shall briefly explain what each of these inputs refer to and how to provide an input for each. For the first input \texttt{Geometry} the user is required to define the \texttt{.geo} (geometry) file which is to be used in the sweep see Section \ref{sect.geo} for information on how to create geometry files) this input is a string and can be defined as follows \\
+Inside \texttt{main.py} the user will find the function
+
+\begin{lstlisting}[language=Python]
+main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', 
+         geometry='default', frequency_array='default', 
+         use_OCC=False, use_POD=False, use_parallel=True)
+\end{lstlisting}
+\noindent
+To run a simulation, the user is required to import and call \texttt{main}. For example
+\begin{lstlisting}[language=Python]
+from main import main
+main()
+\end{lstlisting} 
+
+
+%In \texttt{main.py}, the user is greeted with an input section which should look similar to the image in Figure \ref{fig:main.py}.
+%\begin{figure}[H]
+%\begin{center}
+%\includegraphics[width=0.8\textwidth]{Figures/mainpy.pdf}
+%\caption{Image displaying the user input section of the file \texttt{main.py}}\label{fig:main.py}
+%\end{center}
+%\end{figure}
+\noindent
+In this section we shall briefly explain what each of these optional input arguments refer to and how to provide an input for each. Note that there is no ordering requirement for passing keyword arguments to a function in Python nor does every argument need to be provided. As such calling
+\begin{lstlisting}[language=Python]
+main(order=2, geometry='sphere.geo')
+\end{lstlisting}
+\noindent
+is equivalent to 
+\begin{lstlisting}[language=Python]
+main(geometry='sphere.geo', order=2)
+\end{lstlisting}
+\noindent
+For the first argument, \texttt{h}, the user can provide a (string) flag for the \texttt{Netgen} mesher to control the density of the mesh. The available options are \texttt{'verycoarse'}, \texttt{'coarse'}, \texttt{'moderate'}, \texttt{'fine'}, and \texttt{'veryfine'} that take into account the geometry of the object under test. Alternatively, the user can provide a specific numerical value, e.g. 0.5, that will be used to produce a quasi-uniform mesh over the entire computational domain. Note that supplying a numerical value will often result in a fine discretisation outside of the object.
+
+\begin{lstlisting}[language=Python]
+h='coarse'
+\end{lstlisting}
+\noindent
+Another key option when it comes to defining a mesh is the order of the elements (how complex the functions describing the solution are) this requires an integer input which is greater that 0 (0 being the fastest to run but least accurate and higher orders being slower but more accurate) when running full simulations (not small tests) it is recommended that an order of 3 be used, this can be defined as follows\\
+\begin{lstlisting}[language=Python]
+order=3
+\end{lstlisting}
+\noindent
+Finally, for curved geometries, e.g. a sphere, \texttt{NGSolve} approximates the true geometry of the object via curved edge elements. \texttt{NGSolve} calculates the curvature of the edge elements via fitting an $n^{\mathrm{th}}$ order polynomial to the true geometry, with higher order providing a more accurate representation. The user has control of the order of polynomial via the \texttt{curve\_degree} argument, which can be set by\\
+\begin{lstlisting}[language=Python]
+curve_degree=5
+\end{lstlisting}
+\noindent
+For practical applications, \texttt{curve\_degree=5} is sufficient.
+
+\noindent
 \\
-\texttt{Geometry = "sphere.geo"}\\
+For control over the true geometry, we can control 3 arguments, \texttt{geometry}, \texttt{alpha}, and \texttt{use\_OCC}. For the first input, \texttt{geometry}, the user is enabled to define a \texttt{.geo} or \texttt{.py} (geometry) file which is to be used in the sweep (see Section \ref{sect.geo} for information on how to create geometry files) this input is a string and can be defined as follows
+\begin{lstlisting}[language=Python]
+geometry='sphere.geo'
+\end{lstlisting}
+\noindent
+or
+\begin{lstlisting}[language=Python]
+geometry='OCC_sphere.py'
+\end{lstlisting}
+\noindent
+If using an \texttt{OCC} description, then \texttt{use\_OCC} must be \texttt{True}. Finally, we can control the scaling of the unit sized objects in the \texttt{.geo} or \texttt{.py} file via the parameter $\alpha$ (meters), the input for this is a float and can be defined as follows
+\begin{lstlisting}[language=Python]
+alpha=0.001
+\end{lstlisting}
+This then defines how the object in the geometry file should be scaled. In this example a scaling of $\alpha=1\times 10^{-3}$ m is shown.
+
+\noindent
 \\
-A frequency sweep would then be calculated the object defined in file \texttt{sphere.geo}. The object defined in this file is then scaled by the parameter $\alpha$ (meters), the input for this is a float and can be defined as follows\\
-\\
-\texttt{alpha = 0.01}\\
-\\
-This then defines how the object in the \texttt{.geo} file should be scaled. The next two options in the file relate to the mesh which is to be used in the simulation of the object. The variable \texttt{MeshSize} defines how refined the mesh used in the simulation should be, the input for this variable is an integer between 1 and 5 (1 being very coarse and 5 being very fine) and can be defined as follows\\
-\\
-\texttt{MeshSize = 3}\\
-\\
-The other key option when it comes to defining a mesh is the order of the elements (how complex the functions describing the solution are) this requires an integer input which is between 0 and 3 (0 being the fastest to run the least accurate and 3 being the slowest by most accurate) when running full simulations (not small tests) it is recommended that an order of 3 be used, this can be defined as follows\\
-\\
-\texttt{Order = 3}\\
-\\
-The next 3 inputs relate to the frequencies in radians/sec which should be included in the frequency sweep they are as follows, \texttt{Start} and \texttt{Finish} are the minimum and maximum frequencies which should be included (float) and \texttt{Points} is the number of logarithmically spaced frequencies to be sampled at (integer), n.b. these are the powers base 10 of the frequencies i.e. we create a frequency sweep for $10^{\texttt{Start}}-10^{\texttt{Finish}}$ rad/s. For example if we defined the following\\
-\\
-\texttt{Start = 1}\\
-\texttt{Finish = 8}\\
-\texttt{Points = 8}\\
-\\
+The next 3 arguments allow the user to control the frequencies [rad/s] used in the calculation of the frequency sweep. First, to control the logarithmically spaced frequency samples, the user can provide the argument
+\begin{lstlisting}[language=Python]
+start_stop=(Start, Finish, Points)
+\end{lstlisting}
+as a tuple, which sets the smallest, largest, and number of samples used in the construction of the logarithmically spaced frequency sweep. n.b. these are the powers base 10 of the frequencies i.e. we create a frequency sweep for $10^{\texttt{Start}}-10^{\texttt{Finish}}$ rad/s. For example if we passed the following as an argument to the main function
+\begin{lstlisting}[language=Python]
+start_stop=(1, 8, 8)
+\end{lstlisting}
 We would run a frequency sweep for 8 logarithmically spaced points between $10^1$ and $10^8$ i.e. for the following frequencies
 $$\omega = 10^1,10^2,10^3,10^4,10^5,10^6,10^7,10^8\textrm{ rad/s}.$$
-Along with this there is also an option to run a simulation for a single frequency this may be done using the variable \texttt{Single} (boolean) and can be done as follows\\
-\\
-\texttt{Single $=$ True}\\
-\\
-This then runs a simulation at the the value defined for the variable \texttt{Omega} (float) n.b. this value is the frequency not the power of 10 of the frequency i.e. setting\\
-\\
-\texttt{Omega = 133.5}\\
-\\
-will run a simulation for $\omega=133.5$ rad/s not $\omega=10^{133.5}$ rad/s. If \texttt{Single = False} the frequency sweep will be run for the frequencies defined by \texttt{Start}, \texttt{Finish} and \texttt{Points}. Finally the user will find some options which affect how the frequency sweep will be produced. The first of these is whether or not to create a reduced order model (ROM) using the method of proper orthogonal decomposition (POD) the user may define whether to use this by editing the variable \texttt{POD} (boolean), if the user would like the frequency sweep to be produced using POD they set\\
-\\
-\texttt{POD = True}\\
-\\
-The POD works by producing a frequency sweep for a small number of frequencies (snapshots), it then uses the solutions to create an ROM which can then be used to produce a full frequency sweep containing many more points at a fraction of the computational cost. It is useful to note at this point that although POD works very well as the relative permeability $\mu_r$ of the object being simulated increases the POD becomes less accurate, see the spheroid example. This brings us to our final user input in the \texttt{main.py} file which is the variable \texttt{MultiProcessing} this option decides whether to produce the frequency sweep using multiple cores, by setting\\
-\\
-\texttt{MultiProcessing = True}\\
-\\
-The wall clock time will be reduced but the frequency sweep then requires more of the machines resources since it is running simulations on multiple cores. The default setting for the number of cores to be used is 2 but can be edited in the default settings section of \texttt{Settings.py}.
-\\
+
+\noindent
+Alternatively, the user can specify exact frequencies at which to evaluate the MPT. This is done via the \texttt{Frequency\_Array} argument. This is passed as a list of frequencies, in rad/s, on a linear scale. For example
+\begin{lstlisting}[language=Python]
+frequency_array=[10,15,300,53245,10**7]
+\end{lstlisting}
+will calculate the MPT at $10,15,300,53\,245$, and $10^7$ rad/s. A single frequency can be obtained by specifying at as the only item in the list.\\
+
+\noindent
+Finally the user will find some options which affect how the frequency sweep will be produced. The first of these is whether or not to create a reduced order model (ROM) using the method of proper orthogonal decomposition (POD) the user may define whether to use this by editing the variable \texttt{use\_POD} (boolean), if the user would like the frequency sweep to be produced using POD they set
+\begin{lstlisting}[language=Python]
+use_POD=True
+\end{lstlisting}
+\noindent
+The POD works by producing a frequency sweep for a small number of frequencies (snapshots), it then uses the solutions to create an ROM which can then be used to produce a full frequency sweep containing many more points at a fraction of the computational cost. It is useful to note at this point that although POD works very well as the relative permeability $\mu_r$ of the object being simulated increases the POD becomes less accurate, see the spheroid example. This brings us to our final user input in the \texttt{main} function which is the variable \texttt{use\_parallel} this option decides whether to produce the frequency sweep using multiple cores, by setting
+\begin{lstlisting}[language=Python]
+use_parallel=True
+\end{lstlisting}
+\noindent
+The wall clock time will be reduced but the frequency sweep then requires more of the machines resources since it is running simulations on multiple cores. The default setting for the number of cores to be used is 4 but can be edited in the default settings section of \texttt{Settings.py}.
+
+\subsubsection{Return Values}
+The \texttt{main} function additionally returns variables to the Python console. These outputs are stored as a Python dictionary where each dictionary key corresponds to a specific output. By default, these outputs are:
+
+\begin{itemize}
+
+\item \texttt{TensorArray} is a complex $N\times 9$ array containing each of the tensor coefficients for the $3\times 3$ rank 2 MPT for each frequency of interest. This is stored in a row-major format as (row 1, row 2, row 3). 
+\item \texttt{EigenValues} is a $N\times 3$ array containing the eigenvalues for each frequency. Eigenvalues for \texttt{MPT-Calculator} are stored in ascending order for each frequency of interest with $\lambda_i(\mathcal{R} + \mathcal{N}^0)$ and $\lambda_i(\mathcal{I})$ treated independently. 
+\item \texttt{N0} is the real $3\times 3$ $\mathcal{N}^0$ coefficients.
+\item \texttt{NElements} is the integer number of total elements in the mesh.
+\item \texttt{FrequencyArray} is the $N\times 1$ array containing the frequencies (rad/s) used for the sweep.
+\item \texttt{NDOF} is a tuple containing the number of degrees of freedom used for the $\boldsymbol{\theta}^{(0)}$ and $\boldsymbol{\theta}^{(1)}$ finite element spaces. This is stored as \texttt{(NDOF($\boldsymbol{\theta}^{(0)}$), NDOF($\boldsymbol{\theta}^{(1)}$))}.
+
+\end{itemize}
+
+\noindent
+As an example, running
+
+\begin{lstlisting}[language=Python]
+ReturnDict = main()
+ReturnDict['N0']
+\end{lstlisting}
+\noindent
+will return the real $3\times 3$ array of $\mathcal{N}^0$ tensor coefficients for the default settings of \texttt{MPT-Calculator}.\\
+
+\noindent
+In addition optional return arguments are added to the dictionary depending on the settings used.
+\texttt{EddyCurrentTest} will contain an estimated max frequency where the eddy current model holds if \texttt{EddyCurentTest} is set to True in \texttt{Settings.py}.\\
+
+\noindent
+If the \texttt{use\_POD} option is used then additional outputs corresponding to the POD snapshot solutions are also returned. \texttt{PODTensorArray}, \texttt{PODEigenValues}, and \texttt{PODFrequencyArray} contain the POD snapshot equivalents for \texttt{TensorArray}, \texttt{EigenValues}, and \texttt{FrequencyArray}. Finally, the $N\times 6$ array of POD error certificates is stored as \texttt{PODErrorBars} if \texttt{PODErrorBars=True} in \texttt{Settings.py}. Note that since the rank 2 \texttt{MPT} is symmetric we only store the diagonal and lower triangular coefficients. We store the error certificates, $e$, as $[e_{11}, e_{22}, e_{33}, e_{12}, e_{13}, e_{23}]$.
+
+%\\
+%For the first input \texttt{Geometry} the user is required to define the \texttt{.geo} (geometry) file which is to be used in the sweep see Section \ref{sect.geo} for information on how to create geometry files) this input is a string and can be defined as follows \\
+%\\
+%\texttt{Geometry = "sphere.geo"}\\
+%\\
+%A frequency sweep would then be calculated the object defined in file \texttt{sphere.geo}. The object defined in this file is then scaled by the parameter $\alpha$ (meters), the input for this is a float and can be defined as follows\\
+%\\
+%\texttt{alpha = 0.01}\\
+%\\
+%This then defines how the object in the \texttt{.geo} file should be scaled. The next two options in the file relate to the mesh which is to be used in the simulation of the object. The variable \texttt{MeshSize} defines how refined the mesh used in the simulation should be, the input for this variable is an integer between 1 and 5 (1 being very coarse and 5 being very fine) and can be defined as follows\\
+%\\
+%\texttt{MeshSize = 3}\\
+%\\
+%The other key option when it comes to defining a mesh is the order of the elements (how complex the functions describing the solution are) this requires an integer input which is between 0 and 3 (0 being the fastest to run the least accurate and 3 being the slowest by most accurate) when running full simulations (not small tests) it is recommended that an order of 3 be used, this can be defined as follows\\
+%\\
+%\texttt{Order = 3}\\
+%\\
+%The next 3 inputs relate to the frequencies in radians/sec which should be included in the frequency sweep they are as follows, \texttt{Start} and \texttt{Finish} are the minimum and maximum frequencies which should be included (float) and \texttt{Points} is the number of logarithmically spaced frequencies to be sampled at (integer), n.b. these are the powers base 10 of the frequencies i.e. we create a frequency sweep for $10^{\texttt{Start}}-10^{\texttt{Finish}}$ rad/s. For example if we defined the following\\
+%\\
+%\texttt{Start = 1}\\
+%\texttt{Finish = 8}\\
+%\texttt{Points = 8}\\
+%\\
+%We would run a frequency sweep for 8 logarithmically spaced points between $10^1$ and $10^8$ i.e. for the following frequencies
+%$$\omega = 10^1,10^2,10^3,10^4,10^5,10^6,10^7,10^8\textrm{ rad/s}.$$
+%Along with this there is also an option to run a simulation for a single frequency this may be done using the variable \texttt{Single} (boolean) and can be done as follows\\
+%\\
+%\texttt{Single $=$ True}\\
+%\\
+%This then runs a simulation at the the value defined for the variable \texttt{Omega} (float) n.b. this value is the frequency not the power of 10 of the frequency i.e. setting\\
+%\\
+%\texttt{Omega = 133.5}\\
+%\\
+%will run a simulation for $\omega=133.5$ rad/s not $\omega=10^{133.5}$ rad/s. If \texttt{Single = False} the frequency sweep will be run for the frequencies defined by \texttt{Start}, \texttt{Finish} and \texttt{Points}. Finally the user will find some options which affect how the frequency sweep will be produced. The first of these is whether or not to create a reduced order model (ROM) using the method of proper orthogonal decomposition (POD) the user may define whether to use this by editing the variable \texttt{POD} (boolean), if the user would like the frequency sweep to be produced using POD they set\\
+%\\
+%\texttt{POD = True}\\
+%\\
+%The POD works by producing a frequency sweep for a small number of frequencies (snapshots), it then uses the solutions to create an ROM which can then be used to produce a full frequency sweep containing many more points at a fraction of the computational cost. It is useful to note at this point that although POD works very well as the relative permeability $\mu_r$ of the object being simulated increases the POD becomes less accurate, see the spheroid example. This brings us to our final user input in the \texttt{main.py} file which is the variable \texttt{MultiProcessing} this option decides whether to produce the frequency sweep using multiple cores, by setting\\
+%\\
+%\texttt{MultiProcessing = True}\\
+%\\
+%The wall clock time will be reduced but the frequency sweep then requires more of the machines resources since it is running simulations on multiple cores. The default setting for the number of cores to be used is 2 but can be edited in the default settings section of \texttt{Settings.py}.
+%\\
 \subsubsection{\texttt{Settings/Settings.py}}\label{sectSettings.py}
 The second section which the users is able to interact with is the \texttt{Settings.py} file. This file contains settings related to how the frequency sweep is to be run, any addition outputs the user would like, how the data should be saved and how \texttt{NGSolve} solves each of the finite element problems. The file is subdivided into the following sections, \texttt{DefaultSettings}, \texttt{AdditionalOutputs}, \texttt{SaverSettings} and \texttt{SolverParameters}.\\
 \\
 \\
 \noindent
-We start by discussing the inputs in \texttt{DefaultSettings}, an image of the section can be seen in Figure \ref{fig:DefaultSettings.py}.
-\begin{figure}[H]
-\begin{center}
-\includegraphics[width=0.7\textwidth]{Figures/DefaultSettings}
-\caption{Image displaying the \texttt{DefaultSettings}}\label{fig:DefaultSettings.py}
-\end{center}
-\end{figure}
+We start by discussing the inputs in \texttt{DefaultSettings}, the definition of which is printed in the code snippet Listing \ref{lst:DefaultSettings}.
+%\begin{figure}[H]
+%\begin{center}
+%\includegraphics[width=0.7\textwidth]{Figures/DefaultSettings}
+%\caption{Image displaying the \texttt{DefaultSettings}}\label{fig:DefaultSettings.py}
+%\end{center}
+%\end{figure}
+\clearpage
+\begin{lstlisting}[language=Python, caption={DefaultSettings Definition}, label={lst:DefaultSettings}]
+def DefaultSettings():
+    #How many cores to be used (monitor memory consumption)
+    CPUs = 4
+    #(int)
+    
+    #Is it a big problem (more memory efficiency but slower)
+    BigProblem = False
+    #(boolean)
+    
+    #How many snapshots should be taken
+    PODPoints = 13
+    #(int)
+    
+    #Tolerance to be used in the TSVD
+    PODTol = 10**-6
+    #(float)
+    
+    #Use an old mesh
+    OldMesh = False
+    #(boolean) Note that this still requires the relevant .geo file to obtain
+    #information about the materials in the mesh
+    
+    return CPUs,BigProblem,PODPoints,PODTol,OldMesh
+\end{lstlisting}
+
+
 \noindent
-This section defines variables relating about how to carry out the simulation. The number of cores is set by editing the variable \texttt{CPUs} (integer) an example of this would be setting\\
-\\
-\texttt{CPUs = 4}\\
-\\
-which would produce a frequency sweep using 4 of the machines cores. It is useful to mention at this point that when using multiple cores the user is recommended to monitor memory usage especially when producing a frequency sweep for an object with a fine mesh on a machine with limited resources. For larger problems, which are more memory intensive, we have an option for the simulation to use less memory (this option is for POD sweeps only). This is more memory efficient, however, it is both slower and effects performance of both the POD output and POD error bars. This option is engaged by editing the variable \texttt{BigProblem} (boolean), setting\\
-\\
-\texttt{BigProblem = True}\\
-\\
-This works by reducing the accuracy and therefore size of the snapshot solutions, saving each complex coefficient using the data type \texttt{np.complex64} (32-bit floats for both the real and imaginary parts). Although the use of this varies for different machines, for reference, using a 2015 mac with 8GB of ram it is advisable to set \texttt{BigProblem = True} for problem larger than 50,000 elements with $p=3$ with 13 snapshots or greater. The next two variables relate to the use of POD the first is \texttt{PODPoints} (integer), this defines how many snapshots should be taken when using the POD method, and can be set as\\
-\\
-\texttt{PODPoints = 13}\\
-\\
-This then creates an ROM using 13 snapshots (if \texttt{POD = True} in \texttt{main.py}). The other setting in the the \texttt{DefaultSettings} section is the variable \texttt{PODTol} (float) this variable sets at which point to truncate the singular value decomposition setting\\
-\\
-\texttt{PODTol = 10**-4}\\
-\\
-sets the truncation to the point at which the singular values drop below the $10^{-4}$ (for more explanation see~\cite{wilsonledger2019}). Suggested values for \texttt{PODPoints} and \texttt{PODTol} are 13 and $10^{-4}$ respectively. Lastly the setting \texttt{OldMesh} can be used to produce a frequency sweep with a precomputed mesh, saved in a \texttt{.vol} file. Since different versions of NGSolve produce different meshes this option allows you to run new examples using meshes produced on older versions of NGSolce. This is done by specifying the \texttt{.geo} file which contains the material information about the relevant mesh e.g. \texttt{Geometry = myshape.geo}, as well as supplying the \texttt{.vol} file e.g. \texttt{myshape.vol} to the \texttt{VolFiles} folder (this requires the \texttt{.geo} and \texttt{.vol} files to have the same name). Then by setting\\
-\\
-\texttt{OldMesh = True}\\
-\\
+This section defines variables relating about how to carry out the simulation. The number of cores is set by editing the variable \texttt{CPUs} (integer) an example of this would be setting
+\begin{lstlisting}[language=Python]
+CPUs = 4
+\end{lstlisting}
+which would produce a frequency sweep using 4 of the machines cores. It is useful to mention at this point that when using multiple cores the user is recommended to monitor memory usage especially when producing a frequency sweep for an object with a fine mesh on a machine with limited resources. For larger problems, which are more memory intensive, we have an option for the simulation to use less memory (this option is for POD sweeps only). This is more memory efficient, however, it is both slower and effects performance of both the POD output and POD error bars. This option is engaged by editing the variable \texttt{BigProblem} (boolean), setting
+\begin{lstlisting}[language=Python]
+BigProblem=True
+\end{lstlisting}
+This works by reducing the accuracy and therefore size of the snapshot solutions, saving each complex coefficient using the data type \texttt{np.complex64} (32-bit floats for both the real and imaginary parts). Although the use of this varies for different machines, for reference, using a 2015 mac with 8GB of ram it is advisable to set \texttt{BigProblem = True} for problem larger than 50,000 elements with $p=3$ with 13 snapshots or greater. The next two variables relate to the use of POD the first is \texttt{PODPoints} (integer), this defines how many snapshots should be taken when using the POD method, and can be set as
+\begin{lstlisting}[language=Python]
+PODPoints = 13
+\end{lstlisting}
+This then creates an ROM using 13 snapshots (if \texttt{POD = True} in \texttt{main.py}). The other setting in the the \texttt{DefaultSettings} section is the variable \texttt{PODTol} (float) this variable sets at which point to truncate the singular value decomposition setting
+\begin{lstlisting}[language=Python]
+PODTol = 10**-4
+\end{lstlisting}
+sets the truncation to the point at which the singular values drop below the $10^{-4}$ (for more explanation see~\cite{wilsonledger2019}). Suggested values for \texttt{PODPoints} and \texttt{PODTol} are 13 and $10^{-4}$ respectively. Lastly the setting \texttt{OldMesh} can be used to produce a frequency sweep with a precomputed mesh, saved in a \texttt{.vol} file. Since different versions of NGSolve produce different meshes this option allows you to run new examples using meshes produced on older versions of NGSolve. This is done by specifying the \texttt{.geo} file which contains the material information about the relevant mesh e.g. \texttt{geometry='myshape.geo'}, as well as supplying the \texttt{.vol} file e.g. \texttt{myshape.vol} to the \texttt{VolFiles} folder (this requires the \texttt{.geo} and \texttt{.vol} files to have the same name). Then by setting
+\begin{lstlisting}[language=Python]
+OldMesh = True
+\end{lstlisting}
 the ``old mesh'' is used rather than producing a new mesh.\\
 \\
 \\
 \noindent
-Next we will discuss the section \texttt{AdditionalOutputs}, which defines the Additional outputs that the code returns, an image of the section can be seen in Figure \ref{fig:AdditionalOutputs.py}.
-\begin{figure}[H]
-\begin{center}
-\includegraphics[width=0.7\textwidth]{Figures/AdditionalOutputs}
-\caption{Image displaying the \texttt{AdditionalOutputs}}\label{fig:AdditionalOutputs.py}
-\end{center}
-\end{figure}
+Next we will discuss the section \texttt{AdditionalOutputs}, which defines the Additional outputs that the code returns. The definition of \texttt{AdditionalOutputs}, including the default variables is shown in Listing \ref{lst:AdditionalOutputs}. 
+%an image of the section can be seen in Figure \ref{fig:AdditionalOutputs.py}.
+
+\begin{lstlisting}[language=Python, caption={AdditionalOutputs definition}, label={lst:AdditionalOutputs}]
+def AdditionalOutputs():
+    #Plot the POD points
+    PlotPod = True
+    #(boolean) do you want to plot the snapshots (This requires additional
+    #calculations and will slow down sweep by around 2% for default settings)
+    
+    #Produce certificate bounds for POD outputs
+    PODErrorBars = True
+    #(boolean)
+    
+    #Test where the eddy-current model breaks for the object
+    EddyCurrentTest = False
+    #(boolean)
+    
+    #Produce a vtk outputfile for the eddy-currents (outputs a large file!)
+    vtk_output = False
+    #(boolean) do you want to produce a vtk file of the eddy currents in the
+    #object (single frequency only)
+    
+    #Refine the vtk output (extremely large file!)
+    Refine_vtk = False
+    #(boolean) do you want ngsolve to refine the solution before exporting
+    #to the vtk file (single frequency only)
+    #(not compatable with all NGSolve versions)
+    
+    return PlotPod, PODErrorBars, EddyCurrentTest, vtk_output, Refine_vtk
+\end{lstlisting}
+
+%\begin{figure}[H]
+%\begin{center}
+%\includegraphics[width=0.7\textwidth]{Figures/AdditionalOutputs}
+%\caption{Image displaying the \texttt{AdditionalOutputs}}\label{fig:AdditionalOutputs.py}
+%\end{center}
+%\end{figure}
 \noindent
-The first variable \texttt{PlotPod} (boolean) defines whether or not to calculate and plot points where the POD has taken snapshots. These points can be plotted by setting\\
-\\
-\texttt{PlotPod = True}\\
-\\
-Having these points plotted can be very useful as it gives a visual representation of the accuracy of the frequency sweep produced by POD compared with a full order frequency sweep. We also give the user a way of producing the error certificates by editing the the variable \texttt{PODErrorBars} (boolean) which is selected by setting\\
-\\
-\texttt{PODErrorBars = True}\\
-\\
-This then produces error certificates for the POD outputs. The next option \texttt{EddyCurrentTest} (boolean) is to calculate the frequency at which the eddy current model is estimated to break down for the selected object, which may be lower than the prescribed maximum frequency and, for complex objects, may be a considerable restriction. Note this is based on a computation using the object's geometry rather than the standard engineering rules of thumb of saying the object is small compared to the wavelength and the conductivity is high  $\epsilon \omega < \sigma_*$ \cite{schmidt2008estimating}. This is selected by setting\\
-\\
-\texttt{EddyCurrentTest = True}\\
-\\
-These three outputs can be produced and saved then chosen to be shown or hidden after the sweep is run. The next two option are for the single frequency solve, with the solution of the single frequency problem the user may export the solution from NGSolve so that it can later be used by programs such as Paraview. This is done by editing the variables \texttt{vtk\_output} (boolean) and \texttt{Refine\_vtk} (boolean), by setting\\
-\\
-\texttt{vtk\_output = True}\\
-\\
-a \texttt{.vtk} file will be produced in the \texttt{vtk\_output} section of the \texttt{Results} folder, which contains the eddy-currents in the object. The user may also refine the solution before exporting by setting\\
-\\
-\texttt{Refine\_vtk = True}\\
-\\
+The first variable \texttt{PlotPod} (boolean) defines whether or not to calculate and plot points where the POD has taken snapshots. These points can be plotted by setting
+\begin{lstlisting}[language=Python]
+PlotPod = True
+\end{lstlisting}
+Having these points plotted can be very useful as it gives a visual representation of the accuracy of the frequency sweep produced by POD compared with a full order frequency sweep. We also give the user a way of producing the error certificates by editing the the variable \texttt{PODErrorBars} (boolean) which is selected by setting
+\begin{lstlisting}[language=Python]
+PODErrorBars = True
+\end{lstlisting}
+This then produces error certificates for the POD outputs. The next option \texttt{EddyCurrentTest} (boolean) is to calculate the frequency at which the eddy current model is estimated to break down for the selected object, which may be lower than the prescribed maximum frequency and, for complex objects, may be a considerable restriction. Note this is based on a computation using the object's geometry rather than the standard engineering rules of thumb of saying the object is small compared to the wavelength and the conductivity is high  $\epsilon \omega < \sigma_*$ \cite{schmidt2008estimating}. This is selected by setting
+\begin{lstlisting}[language=Python]
+EddyCurrentTest=True
+\end{lstlisting}
+These three outputs can be produced and saved then chosen to be shown or hidden after the sweep is run. The next two option are for the single frequency solve, with the solution of the single frequency problem the user may export the solution from NGSolve so that it can later be used by programs such as Paraview. This is done by editing the variables \texttt{vtk\_output} (boolean) and \texttt{Refine\_vtk} (boolean), by setting
+\begin{lstlisting}[language=Python]
+vtk_output=True
+\end{lstlisting}
+a \texttt{.vtk} file will be produced in the \texttt{vtk\_output} section of the \texttt{Results} folder, which contains the eddy-currents in the object. The user may also refine the solution before exporting by setting
+\begin{lstlisting}[language=Python]
+Refine_vtk=True
+\end{lstlisting}
 It is useful to take note at this point of the size of the files produced by these options an example is of a 2605 element mesh which when exported with no refinement produced a \texttt{.vtk} file of size 956 KB and with refinement produces a \texttt{.vtk} file of size 81.9 MB.\\
 \\
 \\
 \noindent
-We next discuss the section \texttt{SaverSettings}, this section allows the user to define a file path within the folder Results to save the outputs of the frequency sweep. An image of the section can be seen in Figure \ref{fig:SaverSettings.py}.
-\begin{figure}[H]
-\begin{center}
-\includegraphics[width=0.7\textwidth]{Figures/SaverSettings}
-\caption{Image displaying the \texttt{SaverSettings}}\label{fig:SaverSettings.py}
-\end{center}
-\end{figure}
+We next discuss the section \texttt{SaverSettings}, this section allows the user to define a file path within the folder Results to save the outputs of the frequency sweep. A copy of the section can be seen in Listing \ref{lst:SaverSettings}.
+
+\begin{lstlisting}[language=Python, caption={SaverSettings Definition}, label={lst:SaverSettings}]
+def SaverSettings():
+    #Place to save the results to
+    FolderName = "Default"
+    #(string) This defines the folder (and potentially subfolders) the
+    #data will be saved in (if "Default" then a predetermined the data
+    #will be saved in a predetermined folder structure)
+    #Example input "MyShape/MyFrequencySweep"
+
+    return FolderName
+\end{lstlisting}
+
+%\begin{figure}[H]
+%\begin{center}
+%\includegraphics[width=0.7\textwidth]{Figures/SaverSettings}
+%\caption{Image displaying the \texttt{SaverSettings}}\label{fig:SaverSettings.py}
+%\end{center}
+%\end{figure}
 \noindent
-This is done by changing the variable \texttt{FolderName} (string) to the desired filepath within which save the outputs. An example of this would be\\
-\\
-\texttt{FolderName = MyShape/MyFrequencySweep}\\
-\\
+This is done by changing the variable \texttt{FolderName} (string) to the desired filepath within which save the outputs. An example of this would be
+\begin{lstlisting}[language=Python]
+FolderName = 'MyShape/MyFrequencySweep'
+\end{lstlisting}
 which would then store the output in \texttt{Results/MyShape/MyFrequencySweep}. Although this is an option, we recommend that \texttt{FolderName = "Default"}, which, when set, produces a series of subfolders containing information relating to material properties scaling and frequencies in the sweep. This makes it very hard for the user to overwrite (and lose) existing data from other frequency sweeps, which will be done if the user forgets to change \texttt{FolderName} for a new frequency sweep.\\
 \\
 \\
 \noindent
-The final section in \texttt{Settings.py} relates to how \texttt{NGSolve} solves each of the finite element problems. An image of this can be seen in Figure \ref{fig:SolverParameters.py}.
-\begin{figure}[H]
-\begin{center}
-\includegraphics[width=0.7\textwidth]{Figures/SolverParameters}
-\caption{Image displaying the \texttt{SolverParameters}}\label{fig:SolverParameters.py}
-\end{center}
-\end{figure}
+The final section in \texttt{Settings.py} relates to how \texttt{NGSolve} solves each of the finite element problems. The variables of this can be seen in the code Listing \ref{lst:SolverParameters}.
+\clearpage
+\begin{lstlisting}[language=Python, caption={SolverParameters Definition}, label={lst:SolverParameters}]
+def SolverParameters():
+    #Parameters associated with solving the problem can edit this
+    #preconditioner to be used
+    Solver = "bddc"
+    #(string) "bddc"/"local"
+    
+    #regularisation
+    epsi = 10**-10
+    #(float) regularisation to be used in the problem
+    
+    #Maximum iterations to be used in solving the problem
+    Maxsteps = 2500
+    #(int) maximum number of iterations to be used in solving the problem
+    #the bddc will converge in most cases in less than 200 iterations
+    #the local will take more
+    
+    #Relative tolerance
+    Tolerance = 10**-8
+    #(float) the amount the redsidual must decrease by relatively to solve
+    #the problem
+    
+    #print convergence of the problem
+    ngsglobals.msg_level = 0
+    #(int) Do you want information about the solving of the problems
+    #Suggested inputs
+    #0 for no information, 3 for information of convergence
+    #Other useful options 1,6
+    return Solver,epsi,Maxsteps,Tolerance
+\end{lstlisting}
+
+
+%\begin{figure}[H]
+%\begin{center}
+%\includegraphics[width=0.7\textwidth]{Figures/SolverParameters}
+%\caption{Image displaying the \texttt{SolverParameters}}\label{fig:SolverParameters.py}
+%\end{center}
+%\end{figure}
 \noindent
-The default options work well for the frequency sweeps that are presented in the examples section. The default settings are as follows\\
-\\
-\texttt{Solver = "bddc"}\\
-\\
-\texttt{epsi = 10**-10}\\
-\\
-\texttt{Maxsteps = 1500}\\
-\\
-\texttt{Tolerance = 10**-8}\\
-\\
-\texttt{ngsglobals.msg\_level = 0}\\
-\\
-These settings are optimised for meshes containing more than 20,000, $3^{\textrm{rd}}$ order elements, see the examples section for further details. The options for the settings is as follows: The variable \texttt{Solver} (string) can be set to either \texttt{"bddc"} or \texttt{"local"} this changes the preconditioner used by the iterative CG solver in \texttt{NGSolve}. For simulations using very coarse meshes or simulations with $0^{\textrm{th}}$ order elements the \texttt{"local"} preconditioner is faster but for larger simulations setting\\
-\\
-\texttt{Solver = "bddc"}\\
-\\
-is recommended. The variable \texttt{tolerance} (float) sets the required relative residual for the iterative CG solver and controls the accuracy of the linear solve. For coarse discretisations, this does not need to be too small. For example, for  full order sweeps, setting\\
-\\
-\texttt{Tolerance = 10**-6}\\
-\\
+The default options work well for the frequency sweeps that are presented in the examples section. The default settings are as follows
+\begin{lstlisting}[language=Python]
+Solver = 'bddc'
+epsi = 10**-10
+Maxsteps = 1500
+Tolerance = 10**-8
+ngsglobals.msg_level = 0
+\end{lstlisting}
+%\texttt{Solver = "bddc"}\\
+%\\
+%\texttt{epsi = 10**-10}\\
+%\\
+%\texttt{Maxsteps = 1500}\\
+%\\
+%\texttt{Tolerance = 10**-8}\\
+%\\
+%\texttt{ngsglobals.msg\_level = 0}\\
+%\\
+These settings are optimised for meshes containing more than 20,000, $3^{\textrm{rd}}$ order elements, see the examples section for further details. The options for the settings is as follows: The variable \texttt{Solver} (string) can be set to either \texttt{"bddc"} or \texttt{"local"} this changes the preconditioner used by the iterative CG solver in \texttt{NGSolve}. For simulations using very coarse meshes or simulations with $0^{\textrm{th}}$ order elements the \texttt{"local"} preconditioner is faster but for larger simulations setting
+\begin{lstlisting}[language=Python]
+Solver = "bddc"
+\end{lstlisting}
+is recommended. The variable \texttt{tolerance} (float) sets the required relative residual for the iterative CG solver and controls the accuracy of the linear solve. For coarse discretisations, this does not need to be too small. For example, for  full order sweeps, setting
+\begin{lstlisting}[language=Python]
+Tolerance = 10**-6
+\end{lstlisting}
 often leads to satisfactory results, however, upon testing, we found that for the POD the solution needs to be calculated more accurately to capture the underlying behaviour of the solution. The variables \texttt{epsi} (float) (regularisation) and \texttt{Maxsteps} (integer) (the maximum number of iterations performed) are less important since provided that \texttt{epsi} is 1 order of magnitude smaller than \texttt{tolerance} a solution will be reached within the maximum number of iterations. Finally, the variable \texttt{ngsglobals.msg\_level} (integer) relates to the information provided by \texttt{NGSolve} about solving the problems. We recommend that this be set to either \texttt{0} (for no information) or \texttt{3} (for information relating to the assembly and solving of the finite element problems). The next section explains how to use the \texttt{PlotterSettings.py} file.\\
 \\
 \subsubsection{\texttt{Settings/PlotterSettings.py}}\label{sectPlotterSettings.py}
-To display the results of the frequency sweep a simple plotting function has been created\footnote{This is a basic visualisation tool, which allows the user to view results of the sweep. For a graph tailored to the users specification, use the data stored in the \texttt{.csv} files saved in the \texttt{Data} folder to produce their own plot.}, the settings of this function can be edited by changing the inputs of the \texttt{PlotterSettings.py} file. An image of the \texttt{PlotterSettings.py} file can be seen in Figure \ref{fig:PlotterSettings.py}. 
-\begin{figure}[H]
-\begin{center}
-\includegraphics[width=0.8\textwidth]{Figures/PlotterSettingspy}
-\caption{Image displaying the file \texttt{PlotterSettings.py}}\label{fig:PlotterSettings.py}
-\end{center}
-\end{figure}
+To display the results of the frequency sweep a simple plotting function has been created\footnote{This is a basic visualisation tool, which allows the user to view results of the sweep. For a graph tailored to the users specification, use the data stored in the \texttt{.csv} files saved in the \texttt{Data} folder to produce their own plot.}, the settings of this function can be edited by changing the inputs of the \texttt{PlotterSettings.py} file. The \texttt{PlotterSettings} function within the \texttt{PlotterSettings.py} file can be seen in Listing \ref{lst:PlotterSettings}. 
+
+\begin{lstlisting}[language=Python, caption={PlotterSettings Definition}, label{lst:PlotterSettings}]
+def PlotterSettings():
+    
+    #Line settings
+    EigsToPlot = [1,2,3]
+    #(list) Which Eigenvalues should be plotted smallest to largest (this is
+    #used for both the main lines and snapshots)
+    TensorsToPlot = [1,4,6,2,3,5]
+    #(list) Which Tensor coefficients to plot leading diagonals are [1,4,6]
+    #and tensor layout can be seen below (this is used for both the main
+    #lines and the snapshots) 
+    #
+    #             (1,2,3)
+    # Tensor ref =(_,4,5)
+    #             (_,_,6)
+    
+    #Line styles
+    MainLineStyle = "-"
+    #(string) Linestyle of the eigenvalue/Tensor plots (string, see
+    #matplotlib for availible linestyles)
+    MainMarkerSize = 4
+    #(float) markersize of eigenvalue/Tensor plots (if applicable linestyle
+    #is chosen)
+    
+    #Snapshot styles
+    SnapshotLineStyle = "x"
+    #(string) Linestyle of snapshots (if plotted)
+    SnapshotMarkerSize = 8
+    #(float) markersize of snapshots (if plotted)
+    
+    #ErrorBars
+    ErrorBarLineStyle = "--"
+    #(string) Linestyle of the error bars (string, see matplotlib for
+    #availible linestyles)
+    ErrorBarMarkerSize = 4
+    #(float) markersize of the error bars (if applicable linestyle is chosen)
+    
+    #Eddy-current model breakdown
+    EddyCurrentLine = True
+    #(boolean) display where the eddy-current model breaks down (if value
+    #has been calculated)
+    
+    #Title
+    Title = False
+    #(boolean)
+    
+    #Display graph?
+    Show = False
+    #(boolean) if false then graph is only saved
+    
+    
+    return Title, Show, EigsToPlot, TensorsToPlot, MainLineStyle,\
+     MainMarkerSize, SnapshotLineStyle, SnapshotMarkerSize,\
+     ErrorBarLineStyle, ErrorBarMarkerSize, EddyCurrentLine
+
+\end{lstlisting}
+
+%\begin{figure}[H]
+%\begin{center}
+%\includegraphics[width=0.8\textwidth]{Figures/PlotterSettingspy}
+%\caption{Image displaying the file \texttt{PlotterSettings.py}}\label{fig:PlotterSettings.py}
+%\end{center}
+%\end{figure}
 \noindent
-The first two inputs of the file \texttt{EigsToPlot} (list) and \texttt{TensorsToPlot} (list) relate to which lines are to be plotted on the graphs. With these options the user may change both the lines and the order in which the lines are to be plotted. The variable \texttt{EigsToPlot} defines which eigenvalues, sorted smallest to largest, are plotted. For example, setting\\
-\\
-\texttt{EigsToPlot = [3,2,1]}\\
-\\
+The first two inputs of the file \texttt{EigsToPlot} (list) and \texttt{TensorsToPlot} (list) relate to which lines are to be plotted on the graphs. With these options the user may change both the lines and the order in which the lines are to be plotted. The variable \texttt{EigsToPlot} defines which eigenvalues, sorted smallest to largest, are plotted. For example, setting
+\begin{lstlisting}[language=Python]
+EigsToPlot = [3,2,1]
+\end{lstlisting}
 will plot all of the eigenvalues largest to smallest. The variable \texttt{TensorsToPlot} allows the user to choose which  coefficients of $\mathcal{M}$ are to be plotted. Taking account of the symmetry of the tensor,  the user has a choice of 6 independent coefficients to plot as referenced by the numbers in the following matrix
 \begin{align}
 \textrm{reference matrix}=\left[\begin{array}{ccc}
@@ -208,36 +584,45 @@ will plot all of the eigenvalues largest to smallest. The variable \texttt{Tenso
 3 & 5 & 6
 \end{array}\right].
 \end{align}
-For example, we may plot just diagonal coefficients of the matrix by setting\\
-\\
-\texttt{TensorsToPlot = [1,4,6]}\\
-\\
-For simplicity, a legend is created automatically for each of the lines in the plot, without additional inputs required from the user. The next 6 variables relate the style of lines being plotted. The variables \texttt{MainLineStyle} (string), \texttt{SnapshotLineStyle} (string) and \texttt{ErrorBarLineStyle} (string) define the line styles of the full frequency sweep and the line styles of the snapshots and certificate bounds (if \texttt{PlotPod = True} and/ or \texttt{PODErrorBars = True}), respectively. The plots are created using the matplotlib module of python and, thus, the available line styles are those supported by matplotlib \cite{matplotlib}. The other variables relating to line style are \texttt{MainMarkerSize} (float), \texttt{SnapshotMarkerSize} (float) and \texttt{ErrorBarMarkerSize} (float), which define the size of the markers used in the plot for the full sweep, snapshots and certificate bounds, respectively. The recommended settings of these vary on the markers chosen, but the default settings for the line styles and markers are\\
-\\
-\texttt{MainLineStyle = "-"}
-\\
-\texttt{MainMarkerSize = 4}
-\\
-\texttt{SnapshotLineStyle = "x"}
-\\
-\texttt{SnapshotMarkerSize = 8}
-\\
-\texttt{ErrorBarLineStyle = "--"}
-\\
-\texttt{ErrorBarMarkerSize = 4}\\
-\\
-The next variable, \texttt{EddyCurrentLine} (boolean), defines whether or not to plot the point at which the eddy-current model breaks down. This can be enabled by setting\\
-\\
-\texttt{EddyCurrentLine = True}\\
-\\
-The next variable, \texttt{Title} (boolean), defines whether or not the plot includes a title and, again, the title is automatically created for each of the different plots with no user input required. The default setting is\\
-\\
-\texttt{Title = True}\\
-\\
-The final variable is \texttt{Show} (boolean), which defines whether or not to display the produced graphs once the frequency sweep is complete\footnote{The graphs are automatically saved this option is whether to display them as well.}. The default setting is\\
-\\
-\texttt{Show = True}\\
-\\
+For example, we may plot just diagonal coefficients of the matrix by setting
+\begin{lstlisting}[language=Python]
+TensorsToPlot = [1,4,6]
+\end{lstlisting}
+For simplicity, a legend is created automatically for each of the lines in the plot, without additional inputs required from the user. The next 6 variables relate the style of lines being plotted. The variables \texttt{MainLineStyle} (string), \texttt{SnapshotLineStyle} (string) and \texttt{ErrorBarLineStyle} (string) define the line styles of the full frequency sweep and the line styles of the snapshots and certificate bounds (if \texttt{PlotPod = True} and/ or \texttt{PODErrorBars = True}), respectively. The plots are created using the matplotlib module of python and, thus, the available line styles are those supported by matplotlib \cite{matplotlib}. The other variables relating to line style are \texttt{MainMarkerSize} (float), \texttt{SnapshotMarkerSize} (float) and \texttt{ErrorBarMarkerSize} (float), which define the size of the markers used in the plot for the full sweep, snapshots and certificate bounds, respectively. The recommended settings of these vary on the markers chosen, but the default settings for the line styles and markers are
+\begin{lstlisting}[language=Python]
+MainLineStyle = '-'
+MainMarkerSize = 4
+SnapshotLineStyle = 'x'
+SnapshotMarkerSize = 8
+ErrorBarLineStyle = '--'
+ErrorBarMarkerSize = 4
+\end{lstlisting}
+
+%\\
+%\texttt{MainLineStyle = "-"}
+%\\
+%\texttt{MainMarkerSize = 4}
+%\\
+%\texttt{SnapshotLineStyle = "x"}
+%\\
+%\texttt{SnapshotMarkerSize = 8}
+%\\
+%\texttt{ErrorBarLineStyle = "--"}
+%\\
+%\texttt{ErrorBarMarkerSize = 4}\\
+%\\
+The next variable, \texttt{EddyCurrentLine} (boolean), defines whether or not to plot the point at which the eddy-current model breaks down. This can be enabled by setting
+\begin{lstlisting}[language=Python]
+EddyCurrentLine = True
+\end{lstlisting}
+The next variable, \texttt{Title} (boolean), defines whether or not the plot includes a title and, again, the title is automatically created for each of the different plots with no user input required. The default setting is
+\begin{lstlisting}[language=Python]
+Title = True
+\end{lstlisting}
+The final variable is \texttt{Show} (boolean), which defines whether or not to display the produced graphs once the frequency sweep is complete\footnote{The graphs are automatically saved this option is whether to display them as well.}. The default setting is
+\begin{lstlisting}[language=Python]
+Show = True
+\end{lstlisting}
 With this we conclude the section on how to interact with each of the input files. We next discuss how and where the output of the code is saved.\\
 
 \subsection{Output files}\label{sectOutput}
@@ -245,35 +630,84 @@ In this section, we discuss how the outputs for each of the different versions o
 
 
 \subsubsection{Single frequency output}
-In the case of a simulation with only one frequency, there is no need for a graphical representation, due to this the output folder has the structure shown in Figure \ref{fig:SingleOutput}.
-\begin{figure}[H]
-\begin{center}
-\includegraphics[width=0.3\textwidth]{Figures/SingleOutput}
-\caption{Image displaying the structure of the output folder for the case of a single frequency simulation.}\label{fig:SingleOutput}
-\end{center}
-\end{figure}
+In the case of a simulation with only one frequency, there is no need for a graphical representation, due to this the output folder has the structure shown below %in Figure \ref{fig:SingleOutput}.
+
+\begin{Verbatim}
+OutputFolder
+    ├── Data
+    │   ├── Eddy_current-breakdown.txt
+    │   ├── Eigenvalues.csv
+    │   ├── MPT.csv
+    │   └── N0.csv
+    └── Input_files
+        ├── Settings.py
+        ├── main.py
+        ├── geometry.geo
+        └── geometry.zip
+\end{Verbatim}
+%
+%\begin{figure}[H]
+%\begin{center}
+%\includegraphics[width=0.3\textwidth]{Figures/SingleOutput}
+%\caption{Image displaying the structure of the output folder for the case of a single frequency simulation.}\label{fig:SingleOutput}
+%\end{center}
+%\end{figure}
 \noindent
 Notice the inclusion of the folder \texttt{Input\_files}, this folder contains a copy of the inputs files used to run the simulation. This allows the user to reproduce their results, if they so wish. We note the inclusion of the \texttt{sphere.zip} file which is a compressed version of the mesh used for the simulation (\texttt{sphere.vol} file).The folder \texttt{Data}, contains the results for the computed $\mathcal{M}$, $\mathcal{N}^0$, stored in \texttt{MPT.csv} and \texttt{N0.csv}, respectively,  and their eigenvalues $\lambda_i(\mathcal{N}^0+\mathcal{R})$ and $\lambda_i(\mathcal{I})$,  stored in the file \texttt{Eigenvalues.csv} as the sum $\lambda_i(\mathcal{N}^0+\mathcal{R})+\im\lambda_i(\mathcal{I})$ to reduce the number of output files. If the option \texttt{EddyCurrentTest = True} then we also have the \texttt{Eddy-current\_breakdown.txt} file, which states the frequency in rad/s at which the eddy current model breaks down.\\
 \\
-If the variable \texttt{vtk\_output = True}, we have the added output in the \texttt{vtk\_output} folder of the results folder which can be seen in Figure \ref{fig:VTKOutput}.
-\begin{figure}[H]
-\begin{center}
-\includegraphics[width=0.22\textwidth]{Figures/vtkoutput}
-\caption{Image displaying the structure of the output folder for the case of a single frequency simulation.}\label{fig:VTKOutput}
-\end{center}
-\end{figure}
+If the variable \texttt{vtk\_output = True}, we have the added output in the \texttt{vtk\_output} folder of the results folder which can be seen in below for the example of a sphere evaluated at the single frequency of $\omega = 133$ rad/s.
+
+\begin{Verbatim}
+vtk_output
+    └── sphere
+        └── om_1.33e2
+            ├── sphere.geo
+            └── sphere.vtk
+
+\end{Verbatim}
+%
+%\begin{figure}[H]
+%\begin{center}
+%\includegraphics[width=0.22\textwidth]{Figures/vtkoutput}
+%\caption{Image displaying the structure of the output folder for the case of a single frequency simulation.}\label{fig:VTKOutput}
+%\end{center}
+%\end{figure}
 \noindent
 Here we store the \texttt{.vtk} file along with the associated \texttt{.geo} file which contains information about the materials used to construct the object. Let us next discuss the case of a full frequency sweep without using POD.\\
 
 \subsubsection{Full order frequency sweep output}
-In the case of the full order frequency sweep, the folder structure for the output folder can be seen in Figure \ref{fig:FullOrderOutput}.
+In the case of the full order frequency sweep, the folder structure for the output folder can be seen in the tree below.
+\clearpage
+\begin{Verbatim}
+OutputFolder
+    ├── Data
+    │   ├── Eddy_current-breakdown.txt
+    │   ├── Eigenvalues.csv
+    │   ├── Frequencies.csv
+    │   ├── N0.csv
+    │   └── Tensors.csv
+    ├── Functions
+    │   └── Plotters.py
+    ├── Graphs
+    │   ├── ImaginaryEigenvalues.pdf
+    │   ├── ImaginaryTensorCoefficients.pdf
+    │   ├── RealEigenvalues.pdf
+    │   └── RealTensorCoefficients.pdf
+    ├── Input_files
+    │   ├── Settings.py
+    │   ├── main.py
+    │   ├── geometry.geo
+    │   └── geometry.zip
+    ├── PlotEditor.py
+    └── PlotterSettings.py
+\end{Verbatim}
 
-\begin{figure}[H]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{Figures/FullOutput}
-\caption{Image displaying the structure of the output folder for the full order frequency sweep.}\label{fig:FullOrderOutput}
-\end{center}
-\end{figure}
+%\begin{figure}[H]
+%\begin{center}
+%\includegraphics[width=0.35\textwidth]{Figures/FullOutput}
+%\caption{Image displaying the structure of the output folder for the full order frequency sweep.}\label{fig:FullOrderOutput}
+%\end{center}
+%\end{figure}
 \noindent
 The \texttt{Functions} folder contains the file \texttt{Plotters.py}, which contains the functions used for producing the plots. The folder \texttt{Graphs} contains the graphs displaying the results of the frequency sweep. The file \texttt{Frequencies.csv} contains a list of the frequencies for which the tensors have been calculated and  \texttt{Eigenvalues.csv} contains the sum  $\lambda_i(\mathcal{N}^0+\mathcal{R})+\im\lambda_i(\mathcal{I})$. The file \texttt{Tensors.csv} stores the MPTs coefficient as row vectors and stacks them so that each row corresponds to the same corresponding frequency in the row of the \texttt{Frequencies.csv} file and the eigenvalues in the row of the \texttt{Eigenvalues.csv} file. Finally, the files \texttt{PlotEditor.py} and \texttt{PlotterSettings.py}  allow the user to replot and edit the graphs by editing the inputs in \texttt{PlotterSettings.py} in the same manner as in \ref{sectPlotterSettings.py} and then running the file \texttt{PlotEditor.py}  by entering the command\\
 
@@ -282,16 +716,49 @@ The \texttt{Functions} folder contains the file \texttt{Plotters.py}, which cont
 in the command line from the output folder. Next we discuss the case of a frequency sweep produced using POD.\\
 \subsubsection{POD frequency sweep output}
 In the case of a frequency sweep produced using POD there are two possible options for the structure of the output folder. If \texttt{PlotPod = True}, \texttt{PODErrorBars = True} and \texttt{EddyCurrentTest = True}, the folder will have the structure shown in Figure \ref{fig:PlotPodOutput}.
-\begin{figure}[H]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{Figures/PodOutput}
-\caption{Image displaying the structure of the output folder for the frequency sweep using POD with the option of plotting the snapshot tensors.}\label{fig:PlotPodOutput}
-\end{center}
-\end{figure}
+
+\clearpage
+\begin{Verbatim}
+OutputFolder
+    ├── Data
+    │   ├── Eddy_current-breakdown.txt
+    │   ├── Eigenvalues.csv
+    │   ├── Frequencies.csv
+    │   ├── N0.csv
+    │   ├── PODEigenvalues.csv
+    │   ├── PODFrequencies.csv
+    │   ├── PODTensors.csv
+    │   └── Tensors.csv
+    ├── Functions
+    │   └── Plotters.py
+    ├── Graphs
+    │   ├── ImaginaryEigenvalues.pdf
+    │   ├── ImaginaryTensorCoefficients.pdf
+    │   ├── RealEigenvalues.pdf
+    │   └── RealTensorCoefficients.pdf
+    ├── Input_files
+    │   ├── Settings.py
+    │   ├── main.py
+    │   ├── geometry.geo
+    │   └── geometry.zip
+    ├── PODPlotEditor.py
+    ├── PODPlotEditorWithErrorBars.py
+    ├── PlotEditor.py
+    ├── PlotEditorWithErrorBars.py
+    └── PlotterSettings.py
+\end{Verbatim}
+
+
+%\begin{figure}[H]
+%\begin{center}
+%\includegraphics[width=0.35\textwidth]{Figures/PodOutput}
+%\caption{Image displaying the structure of the output folder for the frequency sweep using POD with the option of plotting the snapshot tensors.}\label{fig:PlotPodOutput}
+%\end{center}
+%\end{figure}
 \noindent
 The key differences to the full order solve are the inclusion of the data files \texttt{PODFrequencies.csv}, \texttt{PODEigenv\\alues.csv}, \texttt{PODTensors.csv} and \texttt{ErrorBars.csv}. These files contain the frequencies for the snapshots, the eigenvalues of the tensors calculated at the snapshots, the tensors calculated at the snapshots and the certificate bounds of the outputs, respectively. The other difference between this and the full order sweep is the inclusion of the extra plot editor files \texttt{PODPlotEditor.py}, \texttt{PODPlotEditorWithErrorBars.py} and \texttt{PlotEditorWithErrorBars.py}, which enables plots of both the snapshots and full frequency sweep to be reproduced.\\
 \\
-In the case where \texttt{PlotPod = False},  the structure is as shown in Figure \ref{fig:PlotPodOutput}  except that the files \texttt{PODEigenvalues.csv}, \texttt{PODTensors.csv} and \texttt{PODPlotEditor.py} are not included in the folder. Similarly when \texttt{PODErrorBars = False}, we find the exclusion of the files \texttt{ErrorBars.csv}, \texttt{PODPlotEditorWithError\\Bars.py} and \texttt{PlotEditorWithErrorBars.py} from the output folder. Finally when \texttt{PlotPod  = False} and \texttt{PlotEditorWithErrorBars.py = False} we have the exclusion of \texttt{PODEigenvalues.csv}, \texttt{PODTensors.csv} and \texttt{ErrorBars.csv} along with \texttt{PODPlotEditor.py}, \texttt{PODPlotEditorWithErrorBars.py} and \texttt{PlotEditorWi\\thErrorBars.py}.\\
+In the case where \texttt{PlotPod = False},  the structure is as shown in folder tree shown above except that the files \texttt{PODEigenvalues.csv}, \texttt{PODTensors.csv} and \texttt{PODPlotEditor.py} are not included in the folder. Similarly when \texttt{PODErrorBars = False}, we find the exclusion of the files \texttt{ErrorBars.csv}, \texttt{PODPlotEditorWithError\\Bars.py} and \texttt{PlotEditorWithErrorBars.py} from the output folder. Finally when \texttt{PlotPod  = False} and \texttt{PlotEditorWithErrorBars.py = False} we have the exclusion of \texttt{PODEigenvalues.csv}, \texttt{PODTensors.csv} and \texttt{ErrorBars.csv} along with \texttt{PODPlotEditor.py}, \texttt{PODPlotEditorWithErrorBars.py} and \texttt{PlotEditorWi\\thErrorBars.py}.\\
 \\
 The user may replot the graphs by entering the commands\\
 
