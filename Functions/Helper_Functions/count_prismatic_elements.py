@@ -5,7 +5,7 @@ def count_prismatic_elements(filename):
     Small function to count the number of prismatic elements in a mesh.
     This is done by evaluating the number of faces for each element in the vol file.
     :param filename: path for the .vol file.
-    :return: number of prismatic elements
+    :return: number of prismatic elements and number of tetrahedral elements.
     """
     with open(filename, 'r') as f:
         stop = False

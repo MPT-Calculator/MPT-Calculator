@@ -13,8 +13,8 @@ This example illustrates that lists can be used for multiple objects.
 # For multiple objects then object_name, mur, and sigma should be given as parameter lists.
 # These lists are used in the generation of the associated .geo files.
 material_name = ['bar1', 'bar2']
-mur = [1, 2]
-sigma = [1e6, 2e6]
+mur = [1, 1]
+sigma = [1e6, 1e8]
 
 # Generating OCC primitive boxes:
 bar1 = Box(Pnt(-1,0,0), Pnt(0,1,1))
@@ -33,9 +33,9 @@ outer_box.mat('air')
 outer_box.bc('outer')
 
 # Setting maxh for each object:
-bar1.maxh = 0.5
-bar2.maxh = 0.5
-outer_box.maxh = 1000
+bar1.maxh = 0.12
+bar2.maxh = 0.12
+outer_box.maxh = 100
 
 # Joining the three meshes:
 # Glue joins two OCC objects together without interior elements.

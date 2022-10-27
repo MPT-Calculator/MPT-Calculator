@@ -12,6 +12,8 @@ def exact_sphere(alpha, epsilon, mur, sigma, omega, framework='hyperbolic'):
     :param sigma - Conductivity S/m:
     :param mur - Relative Permeability:
     :param alpha - Sphere radius m:
+    :param framework='hyperbolic' method of calculation ('bessel', 'negative', 'symbolic', 'hyperbolic') used when 
+    calculating eigenvalue. Use symbolic to avoid infs arising from large k (slightly slower).
     :return eig - Single unique eigenvalue of the mpt tensor for a sphere of radius alpha:
     """
 

@@ -100,7 +100,6 @@ def step_mesher(filename, output_filename='outputstep.vol', add_boundary_layer=F
 
 
 if __name__ == '__main__':
-    # filename = r'/home/james/Desktop/EinScan_24thAug/Key_11/Remeshed_matt_key_11.step'
     filename = r'/home/james/Desktop/EinScan_17thAug/Key6_low_detail_remeshed.step'
     output_filename = '../VolFiles/remeshed_matt_key_6_brass_fine.vol'
     geo = step_mesher(filename, output_filename=output_filename, add_boundary_layer=False)

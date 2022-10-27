@@ -28,7 +28,7 @@ from Checkvalid import *
 # ngsglobals.msg_level = 0
 
 
-def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry='default', frequency_array='default', use_OCC=False,
+def main(h='coarse', order=3, curve_degree=5, start_stop=(), alpha='', geometry='default', frequency_array='default', use_OCC=False,
          use_POD=False, use_parallel=True):
     """
     Main function to run 1D MPT calculator. Some common options have been added as function arguments to make iteration
@@ -247,16 +247,39 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
                 TensorArray, EigenValues, N0, elements, ndofs = FullSweep(Geometry,Order,alpha,inorout,mur,sig,Array,BigProblem)
 
 
+    # Constructing invariants:
+    # Here we construct the tensor invariants and store them as a Nx3 complex array. Invariants are ordered as
+    # [I1(R+N0) + iI1(I), I2(R+N0) + iI2(I), I3(R+N0) + iI3(I)] for each frequency.
+    # I1 = tr(A)
+    # I2 = (tr(A)^2 -  tr(A^2))/2
+    # I3 = det(A)
+    if Single is True:
+        invariants = np.zeros(3,dtype=complex)
+        invariants[0] = np.sum(EigenValues)
+        invariants[1] = (EigenValues[0].real * EigenValues[1].real) + (EigenValues[0].real * EigenValues[2].real) + (EigenValues[1].real * EigenValues[2].real)
+        invariants[1] += 1j * ((EigenValues[0].imag * EigenValues[1].imag) + (EigenValues[0].imag * EigenValues[2].imag) + (EigenValues[1].imag * EigenValues[2].imag))
+        invariants[2] = np.prod(EigenValues.real) + 1j * (np.prod(EigenValues.imag))
+    else:
+        invariants = np.zeros((len(Array), 3), dtype=complex)
+        for f in range(len(Array)):
+            invariants[f, 0] = np.sum(EigenValues[f,:])
+            invariants[f, 1] = (EigenValues[f,0].real * EigenValues[f,1].real) + (EigenValues[f,0].real * EigenValues[f,2].real) + (EigenValues[f,1].real * EigenValues[f,2].real)
+            invariants[f, 1] += 1j*((EigenValues[f,0].imag * EigenValues[f,1].imag) + (EigenValues[f,0].imag * EigenValues[f,2].imag) + (EigenValues[f,1].imag * EigenValues[f,2].imag))
+            invariants[f, 2] = np.prod(EigenValues[f,:].real) + 1j*(np.prod(EigenValues[f,:].imag))
+
+
+
+
     #Plotting and saving
     if Single==True:
-        SingleSave(Geometry, Omega, MPT, EigenValues, N0, elements, alpha, Order, MeshSize, mur, sig, EddyCurrentTest)
+        SingleSave(Geometry, Omega, MPT, EigenValues, N0, elements, alpha, Order, MeshSize, mur, sig, EddyCurrentTest, invariants)
     elif PlotPod==True:
         if Pod==True:
-            PODSave(Geometry, Array, TensorArray, EigenValues, N0, PODTensors, PODEigenValues, PODArray, PODTol, elements, alpha, Order, MeshSize, mur, sig, ErrorTensors,EddyCurrentTest)
+            PODSave(Geometry, Array, TensorArray, EigenValues, N0, PODTensors, PODEigenValues, PODArray, PODTol, elements, alpha, Order, MeshSize, mur, sig, ErrorTensors,EddyCurrentTest, invariants)
         else:
-            FullSave(Geometry, Array, TensorArray, EigenValues, N0, Pod, PODArray, PODTol, elements, alpha, Order, MeshSize, mur, sig, ErrorTensors,EddyCurrentTest)
+            FullSave(Geometry, Array, TensorArray, EigenValues, N0, Pod, PODArray, PODTol, elements, alpha, Order, MeshSize, mur, sig, ErrorTensors,EddyCurrentTest, invariants)
     else:
-        FullSave(Geometry, Array, TensorArray, EigenValues, N0, Pod, PODArray, PODTol, elements, alpha, Order, MeshSize, mur, sig, ErrorTensors,EddyCurrentTest)
+        FullSave(Geometry, Array, TensorArray, EigenValues, N0, Pod, PODArray, PODTol, elements, alpha, Order, MeshSize, mur, sig, ErrorTensors,EddyCurrentTest, invariants)
 
 
 
@@ -279,28 +302,11 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
         if PODErrorBars is True:
             ReturnDict['PODErrorBars'] = ErrorTensors
 
+    ReturnDict['Invariants'] = invariants
+
 
     return ReturnDict #TensorArray, EigenValues, N0, elements, Array, ndofs, EddyCurrentTest
 
 
 if __name__ == '__main__':
-    comparison_eig = np.zeros((40,4), dtype=complex)
-    for p in [3]:
-        print(f'solving for p={p}')
-        ReturnDict = main(geometry='OCC_dualbar.py', use_OCC=True, use_POD=True, order=p)
-    #     comparison_eig[:,p] = ReturnDict['EigenValues'][:,0]
-    #
-    #
-    # plt.figure()
-    # for p in [0,1,2,3]:
-    #     plt.semilogx(ReturnDict['FrequencyArray'], comparison_eig[:,p].real, label=f'order {p}')
-    # plt.legend()
-    # plt.xlabel('$\omega$ [rad/s]')
-    # plt.ylabel('$\lambda_1(\mathcal{R} + \mathcal{N}^0)$')
-    #
-    # plt.figure()
-    # for p in [0,1,2,3]:
-    #     plt.semilogx(ReturnDict['FrequencyArray'], comparison_eig[:,p].real, label=f'order {p}')
-    # plt.legend()
-    # plt.xlabel('$\omega$ [rad/s]')
-    # plt.ylabel('$\lambda_1(\mathcal{I})$')
+    ReturnDict = main(geometry='Tetra.geo', start_stop=(2,8,81), order=3, alpha=0.01, use_POD=True, h='moderate')

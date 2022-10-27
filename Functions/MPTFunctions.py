@@ -106,7 +106,7 @@ def Theta1(fes,fes2,Theta0Sol,xi,Order,alpha,nu,sigma,mu,inout,Tolerance,Maxstep
 
 
 def Theta1_Sweep(Array,mesh,fes,fes2,Theta0Sols,xivec,alpha,sigma,mu,inout,Tolerance,Maxsteps,epsi,Solver,N0,TotalNOF,Vectors,Tensors,Multi,BP):
-
+    print(' solving theta1')
     #Setup variables
     Mu0 = 4*np.pi*10**(-7)
     nu_no_omega = Mu0*(alpha**2)
@@ -167,9 +167,12 @@ def Theta1_Sweep(Array,mesh,fes,fes2,Theta0Sols,xivec,alpha,sigma,mu,inout,Toler
         if Multi == False:
             print(' solving theta1 %d/%d    ' % (k+1,NOF), end='\r')
         else:
-            pass
-            # Multi.value += 1
-            # print(' solving theta1 %d/%d    ' % (Multi.value,TotalNOF), end='\r')
+            try:
+                Multi.value += 1
+                print(' solving theta1 %d/%d    ' % (Multi.value,TotalNOF), end='\r')
+            except:
+                print(' solving theta1', end='\r')
+
         #Create the bilinear form
         a = BilinearForm(fes2, symmetric=True, condense=True)
         a += SymbolicBFI((mu**(-1)) * InnerProduct(curl(u),curl(v)))
@@ -297,9 +300,12 @@ def Theta1_Lower_Sweep(Array,mesh,fes,fes2,Sols,u1Truncated,u2Truncated,u3Trunca
     for k,omega in enumerate(Array):
 
         #This part is for obtaining the solutions in the lower dimensional space
-        counter.value+=1
-        print(' solving reduced order system %d/%d    ' % (counter.value,TotalNOF), end='\r')
-        
+        try:
+            counter.value+=1
+            print(' solving reduced order system %d/%d    ' % (counter.value,TotalNOF), end='\r')
+        except:
+            print(' solving reduced order system', end='\r')
+
         #This part projects the problem to the higher dimensional space
         W1=np.dot(u1Truncated,Sols[:,k,0]).flatten()
         W2=np.dot(u2Truncated,Sols[:,k,1]).flatten()

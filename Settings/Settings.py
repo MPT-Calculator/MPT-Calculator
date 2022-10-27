@@ -17,7 +17,7 @@ def DefaultSettings():
     #(boolean)
     
     #How many snapshots should be taken
-    PODPoints = 13
+    PODPoints = 23
     #(int)
     
     #Tolerance to be used in the TSVD
@@ -38,11 +38,11 @@ def AdditionalOutputs():
     #calculations and will slow down sweep by around 2% for default settings)
     
     #Produce certificate bounds for POD outputs
-    PODErrorBars = False
+    PODErrorBars = True
     #(boolean)
     
     #Test where the eddy-current model breaks for the object
-    EddyCurrentTest = False
+    EddyCurrentTest = True
     #(boolean)
     
     #Produce a vtk outputfile for the eddy-currents (outputs a large file!)
@@ -81,17 +81,17 @@ def SolverParameters():
     #(string) "bddc"/"local"
     
     #regularisation
-    epsi = 10**-9
+    epsi = 10**-12
     #(float) regularisation to be used in the problem
     
     #Maximum iterations to be used in solving the problem
-    Maxsteps = 2500
+    Maxsteps = 1500
     #(int) maximum number of iterations to be used in solving the problem
     #the bddc will converge in most cases in less than 200 iterations
     #the local will take more
     
     #Relative tolerance
-    Tolerance = 10**-9
+    Tolerance = 10**-10
     #(float) the amount the redsidual must decrease by relatively to solve
     #the problem
     

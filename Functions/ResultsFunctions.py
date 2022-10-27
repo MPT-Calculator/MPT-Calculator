@@ -70,7 +70,7 @@ def DictionaryList(Dictionary,Float):
 
 
 
-def SingleSave(Geometry, Omega, MPT, EigenValues, N0, elements, alpha, Order, MeshSize, mur, sig, EddyCurrentTest):
+def SingleSave(Geometry, Omega, MPT, EigenValues, N0, elements, alpha, Order, MeshSize, mur, sig, EddyCurrentTest, invariants):
     
     #Find how the user wants the data to be saved
     FolderStructure = SaverSettings()
@@ -93,6 +93,7 @@ def SingleSave(Geometry, Omega, MPT, EigenValues, N0, elements, alpha, Order, Me
     np.savetxt("Results/"+sweepname+"/Data/MPT.csv",MPT, delimiter=",")
     np.savetxt("Results/"+sweepname+"/Data/Eigenvalues.csv",EigenValues, delimiter=",")
     np.savetxt("Results/"+sweepname+"/Data/N0.csv",N0, delimiter=",")
+    np.savetxt("Results/"+sweepname+"/Data/Invariants.csv", invariants, delimiter=",")
     if isinstance(EddyCurrentTest, float):
         f = open('Results/'+sweepname+'/Data/Eddy-current_breakdown.txt','w+')
         f.write('omega = '+str(round(EddyCurrentTest)))
@@ -102,7 +103,7 @@ def SingleSave(Geometry, Omega, MPT, EigenValues, N0, elements, alpha, Order, Me
 
 
 
-def PODSave(Geometry, Array, TensorArray, EigenValues, N0, PODTensors, PODEigenValues, PODArray, PODTol, elements, alpha, Order, MeshSize, mur, sig, ErrorTensors, EddyCurrentTest):
+def PODSave(Geometry, Array, TensorArray, EigenValues, N0, PODTensors, PODEigenValues, PODArray, PODTol, elements, alpha, Order, MeshSize, mur, sig, ErrorTensors, EddyCurrentTest, invariants):
     
     #Find how the user wants the data to be saved
     FolderStructure = SaverSettings()
@@ -136,6 +137,8 @@ def PODSave(Geometry, Array, TensorArray, EigenValues, N0, PODTensors, PODEigenV
     np.savetxt("Results/"+sweepname+"/Data/N0.csv",N0, delimiter=",")
     np.savetxt("Results/"+sweepname+"/Data/Tensors.csv",TensorArray, delimiter=",")
     np.savetxt("Results/"+sweepname+"/Data/PODTensors.csv",PODTensors, delimiter=",")
+    np.savetxt("Results/"+sweepname+"/Data/Invariants.csv", invariants, delimiter=",")
+
     if isinstance(EddyCurrentTest, float):
         f = open('Results/'+sweepname+'/Data/Eddy-current_breakdown.txt','w+')
         f.write('omega = '+str(round(EddyCurrentTest)))
@@ -186,7 +189,7 @@ def PODSave(Geometry, Array, TensorArray, EigenValues, N0, PODTensors, PODEigenV
     return
 
 
-def FullSave(Geometry, Array, TensorArray, EigenValues, N0, Pod, PODArray, PODTol, elements, alpha, Order, MeshSize, mur, sig, ErrorTensors, EddyCurrentTest):
+def FullSave(Geometry, Array, TensorArray, EigenValues, N0, Pod, PODArray, PODTol, elements, alpha, Order, MeshSize, mur, sig, ErrorTensors, EddyCurrentTest, invariants):
     
     #Find how the user wants the data to be saved
     FolderStructure = SaverSettings()
@@ -220,6 +223,8 @@ def FullSave(Geometry, Array, TensorArray, EigenValues, N0, Pod, PODArray, PODTo
     np.savetxt("Results/"+sweepname+"/Data/Eigenvalues.csv",EigenValues, delimiter=",")
     np.savetxt("Results/"+sweepname+"/Data/N0.csv",N0, delimiter=",")
     np.savetxt("Results/"+sweepname+"/Data/Tensors.csv",TensorArray, delimiter=",")
+    np.savetxt("Results/"+sweepname+"/Data/Invariants.csv", invariants, delimiter=",")
+
     if Pod==True:
         np.savetxt("Results/"+sweepname+"/Data/PODFrequencies.csv",PODArray, delimiter=",")
     if isinstance(EddyCurrentTest, float):
@@ -352,7 +357,7 @@ def FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol, 
         copyfile("Functions/PlotEditor.py","Results/"+sweepname+"/PlotEditor.py")
     copyfile("GeoFiles/"+Geometry,"Results/"+sweepname+"/Input_files/"+Geometry)
     copyfile("Settings/Settings.py","Results/"+sweepname+"/Input_files/Settings.py")
-    copyfile("main.py","Results/"+sweepname+"/Input_files/runner.py")
+    copyfile("main.py","Results/"+sweepname+"/Input_files/main.py")
     
     #Create a compressed version of the .vol file
     os.chdir('VolFiles')

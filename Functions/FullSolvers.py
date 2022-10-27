@@ -216,6 +216,8 @@ def FullSweepMulti(Object,Order,alpha,inorout,mur,sig,Array,CPUs,BigProblem):
 #Theta1
 #This section solves the Theta1 problem and saves the solution vectors
 
+    print(' solving theta1')
+
     #Setup the finite element space
     dom_nrs_metal = [0 if mat == "air" else 1 for mat in mesh.GetMaterials()]
     fes2 = HCurl(mesh, order=Order, dirichlet="outer", complex=True, gradientdomains=dom_nrs_metal)

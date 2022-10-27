@@ -3,7 +3,7 @@ Changelog for MPT-Calculator:
 - main.py:
 	- Refactored main.py to be a function with common arguments (order, alpha, geometry ect) being added as variable input arguments. The motivation behind this was to make flow control easier, e.g. looping through different orders.
 	- Added occ geometry generation and saving. Currently set up that .py files must be in OCC_Geometry Folder.
-	- Added return for TensorArray, EigenValues, N0, elements, Array, ndofs, and EddyCurrentTest. This is to make using these parameters easier for an end user who may wish to use them elsewhere.
+	- Added return for TensorArray, EigenValues, N0, elements, Array, ndofs, EddyCurrentTest, invariants, and the POD equivalents. This is to make using these parameters easier for an end user who may wish to use them elsewhere.
 	- Added documentation to function.
 
 - MeshCreation.py:
@@ -11,6 +11,8 @@ Changelog for MPT-Calculator:
 
 - ResultsFunctions.py:
 	- Added option to FolderMaker for saving .py file when using OCC.
+	- Added saving for OCC python files.
+	- Added saving for tensor invariants.
 
 - SingleSolve.py:
 	- Fixed bug in calculation of N0.
@@ -20,11 +22,13 @@ Changelog for MPT-Calculator:
 	- Added force manual close of parallel pool.
 	- Changed pool initialisation from fork to spawn in PODSweepMulti. This was to attempt to fix a bug where the program would stall in multiprocessing on linux.
 	- To enable changing pool initialisation, I've use multiprocessing.
+	- added try-exeption clause to multiprocessing print statement for progress bar. This was to avoid a BrokenPipe error.
 
 - FullSolvers.py:
     - Fixed bug in calculation of N0.
     - Changed pool initialisation from fork to spawn in FullSweepMulti. This was to attempt to fix a bug where the program would stall in multiprocessing on linux.
 	- To enable changing pool initialisation, I've use multiprocessing.
+	- added try-exeption clause to multiprocessing print statement for progress bar. This was to avoid a BrokenPipe error.
 
 - main_2d.py:
     - Added functionality for 2D ROM and associated functions. Subject to change.
@@ -32,4 +36,5 @@ Changelog for MPT-Calculator:
 - OCC_Geometry:
     - Added OCC_Geometry folder and simple worked examples.
 
-
+- Tutorials:
+	- Added a series of Jupyter notebook tutorials covering the use of MPT-Calculator.
