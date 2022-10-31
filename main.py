@@ -9,13 +9,16 @@
 
 # Importing
 import sys
+from time import time
 import numpy as np
 import subprocess
 import os
+
 from matplotlib import pyplot as plt
 
 sys.path.insert(0, "Functions")
 sys.path.insert(0, "Settings")
+from Functions.Helper_Functions.exact_sphere import exact_sphere
 from MeshCreation import *
 from Settings import *
 from SingleSolve import SingleFrequency
@@ -190,7 +193,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
         Array = frequency_array
         if len(Array) == 1:
             Single = True
-            Omega = float(Array)
+            Omega = float(Array[0])
     PlotPod, PODErrorBars, EddyCurrentTest, vtk_output, Refine = AdditionalOutputs()
     SavePOD = False
     if PODErrorBars!=True:
@@ -309,4 +312,6 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
 
 
 if __name__ == '__main__':
-    ReturnDict = main(geometry='Tetra.geo', start_stop=(2,8,81), order=3, alpha=0.01, use_POD=True, h='moderate')
+
+    ReturnDict = main()
+

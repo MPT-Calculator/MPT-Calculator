@@ -37,8 +37,8 @@ def SingleFrequency(Object,Order,alpha,inorout,mur,sig,Omega,CPUs,VTK,Refine, cu
 
     #Set up the coefficients
     #Scalars
-    # Mu0 = 4*np.pi*10**(-7)
-    Mu0 = 4*np.longdouble('3.141592653589793238462643383279502884')*(10**-7)
+    Mu0 = 4*np.pi*10**(-7)
+    # Mu0 = 4*np.longdouble('3.141592653589793238462643383279502884')*(10**-7)
     #Coefficient functions
     mu_coef = [ mur[mat] for mat in mesh.GetMaterials() ]
     mu = CoefficientFunction(mu_coef)
@@ -48,9 +48,9 @@ def SingleFrequency(Object,Order,alpha,inorout,mur,sig,Omega,CPUs,VTK,Refine, cu
     sigma = CoefficientFunction(sigma_coef)
 
     #Set up how the tensors will be stored
-    N0 = np.zeros([3,3], dtype=np.longdouble)
-    R = np.zeros([3,3], dtype=np.longdouble)
-    I = np.zeros([3,3], dtype=np.longdouble)
+    N0 = np.zeros([3,3])
+    R = np.zeros([3,3])
+    I = np.zeros([3,3])
 
 
 #########################################################################
