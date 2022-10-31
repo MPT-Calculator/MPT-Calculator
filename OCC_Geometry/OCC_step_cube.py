@@ -4,7 +4,7 @@ material_name = ['cube']
 sigma = [1e6]
 mur = [1]
 
-geo = OCCGeometry(r'tutorials/Examples/Example_10mm_cube.step')
+geo = OCCGeometry(r'Tutorials/Examples/Example_10mm_cube.step')
 cube = geo.shape.Move((-geo.shape.center.x, -geo.shape.center.y, -geo.shape.center.z))
 
 #cube = Box(Pnt(-5,-5,-5), Pnt(5,5,5))
