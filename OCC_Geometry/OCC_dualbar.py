@@ -15,6 +15,7 @@ This example illustrates that lists can be used for multiple objects.
 material_name = ['bar1', 'bar2']
 mur = [1, 1]
 sigma = [1e6, 1e8]
+alpha = 0.001
 
 # Generating OCC primitive boxes:
 bar1 = Box(Pnt(-1,0,0), Pnt(0,1,1))

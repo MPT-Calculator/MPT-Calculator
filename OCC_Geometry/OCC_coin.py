@@ -3,9 +3,16 @@ from ngsolve import *
 from netgen.webgui import Draw as DrawGeo
 import numpy as np
 
+
+"""
+James Elgy - 2023
+OCC file for constructing a british £1 coin. The coin is modelled as a regular dodecagonal prism, which a seperate central cylinder
+"""
+
 sigma = [5.26E+06, 1.63E+07, 1E6]
 mur = [1.15, 1, 100]
 material_name = ['Nickel_Silver','Brass','Nickel_plating']
+alpha = 0.001
 
 r = 23.43/2
 r_inner = 7.4
@@ -23,9 +30,6 @@ cx = frame.center[0]
 cy = frame.center[1]
 inner_cyln = Cylinder(Pnt(cx,cy,0),Z, r=r_inner, h=t)
 frame_outer = frame - inner_cyln
-
-# inner_cyln.name = object_name[1]
-# frame_outer.name = object_name[0]
 
 inner_cyln.mat(material_name[1])
 frame_outer.mat(material_name[0])
@@ -47,11 +51,11 @@ joined_object = Glue([coin, box])
 geo = OCCGeometry(joined_object)
 nmesh = geo.GenerateMesh()
 
+# Adding thin nickel coating of 50 microns.
 nmesh.BoundaryLayer(boundary=".*", thickness=[5e-5], material=material_name[2],
                            domains=material_name[1], outside=False)
 
 from ngsolve import *
 Mesh = Mesh(nmesh)
-print(Mesh.GetMaterials())
 
 nmesh.Save(r'VolFiles/OCC_coin.vol')

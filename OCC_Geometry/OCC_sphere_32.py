@@ -4,16 +4,16 @@ from ngsolve import *
 """
 James Elgy - 2022:
 sphere example for Netgen OCC geometry mesh generation.
+This example does not have boundary layer elements and can be used for comparisons with OCC_sphere_prism_32
 """
 
 
 
 # Setting mur, sigma, and defining the top level object name:
 material_name = ['steel']
-mur = [1]
+mur = [32]
 sigma = [1e6]
-alpha = 1e-2
-
+alpha = 0.001
 # setting radius
 r = 1
 
@@ -41,7 +41,7 @@ joined_object = Glue([sphere, box])
 # Generating Mesh:
 geo = OCCGeometry(joined_object)
 nmesh = geo.GenerateMesh()
-nmesh.Save(r'VolFiles/OCC_sphere.vol')
+nmesh.Save(r'VolFiles/OCC_sphere_32.vol')
 
 
 
