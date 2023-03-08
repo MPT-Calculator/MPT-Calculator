@@ -2,7 +2,7 @@
 #This code was written by Ben Wilson with the supervison of Paul Ledger
 #at the ZCCE, Swansea University
 #Powered by NETGEN/NGSolve
-
+import inspect
 #Additional edits made by James Elgy and Paul Ledger, Keele University, 2022.
 
 ########################################################################
@@ -13,26 +13,43 @@ from time import time
 import numpy as np
 import subprocess
 import os
+from warnings import warn
 
 from matplotlib import pyplot as plt
 
 sys.path.insert(0, "Functions")
 sys.path.insert(0, "Settings")
 from Functions.Helper_Functions.exact_sphere import exact_sphere
-from MeshCreation import *
+# from MeshCreation import *
+from Functions.MeshMaking.Meshmaker import *
+from Functions.MeshMaking.VolMatUpdater import *
+from Functions.MeshMaking.Generate_From_Python import *
 from Settings import *
-from SingleSolve import SingleFrequency
-from FullSolvers import *
-from PODSolvers import *
-from ResultsFunctions import *
+from Functions.FullSweep.SingleFrequency import *
+from Functions.FullSweep.FullSweep import *
+from Functions.FullSweep.FullSweepMulti import *
+from Functions.POD.PODSweep import *
+from Functions.POD.PODSweepMulti import *
+from Functions.POD.PODSweepIterative import *
+from Functions.Saving.FullSave import *
+from Functions.Saving.SingleSave import *
+from Functions.Saving.PODSave import *
+from Functions.Saving.FolderMaker import *
+# from FullSolvers import *
+# from PODSolvers import *
+# from ResultsFunctions import *
 from Checkvalid import *
+from Functions.Helper_Functions.count_prismatic_elements import count_prismatic_elements
+from matplotlib.ticker import MaxNLocator
+import pickle
+
 
 # from ngsolve import ngsglobals
 # ngsglobals.msg_level = 0
 
 
 def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry='default', frequency_array='default', use_OCC=False,
-         use_POD=False, use_parallel=True):
+         use_POD=False, use_parallel=True, use_iterative_POD=False, cpus='default', N_POD_points='default'):
     """
     Main function to run 1D MPT calculator. Some common options have been added as function arguments to make iteration
     easier.
@@ -82,7 +99,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
             # "OCC_sphere.py"
             OCC_file = 'OCC_sphere.py'
 
-        Generate_From_Python(OCC_file)
+        alpha = Generate_From_Python(OCC_file, alpha)
         Geometry = OCC_file[:-3] + '.geo'
     else:
         #(string) Name of the .geo file to be used in the frequency sweep i.e.
@@ -162,8 +179,14 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
     #Main script
 
     #Load the default settings
-    CPUs,BigProblem,PODPoints,PODTol,OldMesh = DefaultSettings()
+    CPUs,BigProblem,PODPoints,PODTol,OldMesh,OldPOD, NumSolverThreads = DefaultSettings()
 
+    if N_POD_points != 'default':
+        PODPoints = N_POD_points
+
+
+    if cpus != 'default':
+        CPUs = cpus
     # Here, we overwrite the OldMesh option, since using the OCC geometry will generate a mesh already.
     if use_OCC is True:
         OldMesh = True
@@ -184,6 +207,24 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
             #Force update to the .vol file
             OldMesh = False
 
+
+
+
+    # Here, we figure out if the mesh contains prismatic elements or not. This is then used when assigning bonus
+    # integration orders (0 if prisms, 2 else) when constructing the bilinear and linear forms used in the fast
+    # computation of the tensor coefficients using POD.
+    # See: https://ngsolve.org/forum/ngspy-forum/1692-question-about-using-curved-surface-elements-with-a-complex-hcurl-discretisation#4572
+    N_prisms, N_tets = count_prismatic_elements('./VolFiles/' +Geometry[:-4]+".vol")
+    if N_prisms > 0:
+        prism_flag = True
+    else:
+        prism_flag = False
+
+    print(f'Mesh Contains Prisms? {prism_flag}')
+    print(f'N Prisms: {N_prisms}, N Tets: {N_tets}')
+
+
+
     #Update the .vol file and create the material dictionaries
     Materials,mur,sig,inorout = VolMatUpdater(Geometry,OldMesh)
 
@@ -194,7 +235,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
         if len(Array) == 1:
             Single = True
             Omega = float(Array[0])
-    PlotPod, PODErrorBars, EddyCurrentTest, vtk_output, Refine = AdditionalOutputs()
+    PlotPod, PODErrorBars, EddyCurrentTest, vtk_output, Refine, Save_U = AdditionalOutputs()
     SavePOD = False
     if PODErrorBars!=True:
         ErrorTensors=False
@@ -205,6 +246,30 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
     #Create the folders which will be used to save everything
     sweepname = FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol, alpha, Order, MeshSize, mur, sig, ErrorTensors, vtk_output, use_OCC)
 
+    # Saving script that calls main() and generating dictionary for returning
+    ReturnDict = {}
+    ReturnDict['HostScriptFileName'] = inspect.stack()[1].filename
+
+#    if ReturnDict['HostScriptFileName'][-3:] == '.py':
+    try:
+        copyfile(ReturnDict['HostScriptFileName'], 'Results/' + sweepname + '/Input_files/HostScript.py')
+    except FileNotFoundError:
+        warn('It looks like the main function was invoked from a jupyter notebook. \nCurrently saving a .ipynb file is done by copying the most recent file in the .ipynb_checkpoints folder. \nUnless you saved the file before running the code, this may not be the correct file.', stacklevel=1)
+        path = get_ipython().starting_dir + '/.ipynb_checkpoints/'
+        max_mtime = 0
+        for dirname, subdirs, files in os.walk(path):
+            for fname in files:
+                full_path = os.path.join(dirname, fname)
+                mtime = os.stat(full_path).st_mtime
+                if mtime > max_mtime:
+                    max_mtime = mtime
+                    max_dir = dirname
+                    max_file = fname
+
+        copyfile(path + max_file, 'Results/' + sweepname + '/Input_files/HostScript.ipynb')
+
+#    else:
+    #    copyfile(ReturnDict['HostScriptFileName'], 'Results/' + sweepname + '/Input_files/HostScript.ipynb')
 
     #Run the sweep
 
@@ -215,39 +280,149 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
     if Single==True:
         if MultiProcessing!=True:
             CPUs = 1
-        MPT, EigenValues, N0, elements, ndofs = SingleFrequency(Geometry,Order,alpha,inorout,mur,sig,Omega,CPUs,vtk_output,Refine, curve=curve_degree)
-        TensorArray = MPT
+        MPT, EigenValues, N0, elements, ndofs = SingleFrequency(Geometry,Order,alpha,inorout,mur,sig,Omega,CPUs,vtk_output,Refine, curve=curve_degree, num_solver_threads=NumSolverThreads)
+        TensorArray = MPT.ravel()
     else:
         if Pod==True:
             if MultiProcessing==True:
                 if PlotPod==True:
-                    if PODErrorBars==True:
-                        TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ErrorTensors, ndofs = PODSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,CPUs,sweepname,SavePOD,PODErrorBars,BigProblem)
+                    if PODErrorBars==True and use_iterative_POD is False:
+                        TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ErrorTensors, ndofs = PODSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,CPUs,sweepname,SavePOD,PODErrorBars,BigProblem, curve=curve_degree, recoverymode=OldPOD, prism_flag=prism_flag, save_U=Save_U, NumSolverThreads=NumSolverThreads)
+                    elif use_iterative_POD is True:
+
+                        sweepname_temp = sweepname
+                        # Array_Orig = Array
+                        TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ErrorTensors, ndofs, PODArray, PODArray_orig, TensorArray_orig, EigenValues_orig, ErrorTensors_orig, PODEigenValues_orig, PODTensors_orig, N_Snaps, Error_Array, Array, Array_Orig = PODSweepIterative(
+                            Geometry, Order, alpha, inorout, mur, sig, Array, PODArray,PlotPod, sweepname,
+                            SavePOD, PODErrorBars, BigProblem, curve=curve_degree, prism_flag=prism_flag, use_parallel=True, cpus=CPUs, save_U=Save_U)
+
+                        sweepname = FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol,
+                                                alpha, Order, MeshSize, mur, sig, True, vtk_output, use_OCC,
+                                                using_interative_POD=True)
+                        # Copying files from temporary storage in sweepname_temp to ideal storage in sweepname
+                        for item in ['Errors', 'Tensors', 'PODTensors', 'PODEigenValues', 'PODArray', 'FrequencyArray']:
+                            for iterations in range(1,len(Error_Array)):
+                                os.replace('Results/' + sweepname_temp + f'/Data/{item}_iter{iterations}.npy', 'Results/' + sweepname + f'/Data/{item}_iter{iterations}.npy')
+
+                        for item in ['Imag_Tensor_Coeffs', 'Real_Tensor_Coeffs', 'SVD_Decay']:
+                            for iterations in range(1,len(Error_Array)):
+                                os.replace('Results/' + sweepname_temp + f'/Graphs/{item}_iter{iterations}.pdf', 'Results/' + sweepname + f'/Graphs/{item}_iter{iterations}.pdf')
+
                     else:
-                        TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ndofs = PODSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,CPUs,sweepname,SavePOD,PODErrorBars,BigProblem)
+                        TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ndofs = PODSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,CPUs,sweepname,SavePOD,PODErrorBars,BigProblem, curve=curve_degree, recoverymode=OldPOD, prism_flag=prism_flag, NumSolverThreads=NumSolverThreads, save_U=Save_U)
                 else:
-                    if PODErrorBars==True:
-                        TensorArray, EigenValues, N0, elements, ErrorTensors, ndofs = PODSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,CPUs,sweepname,SavePOD,PODErrorBars,BigProblem)
+                    if PODErrorBars==True and use_iterative_POD is False:
+                        TensorArray, EigenValues, N0, elements, ErrorTensors, ndofs = PODSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,CPUs,sweepname,SavePOD,PODErrorBars,BigProblem, curve=curve_degree, prism_flag=prism_flag, NumSolverThreads=NumSolverThreads, recoverymode=OldPOD, save_U=Save_U)
+                    elif use_iterative_POD is True:
+                        sweepname_temp = sweepname
+                        # Array_Orig = Array
+                        TensorArray, EigenValues, N0, elements, ErrorTensors, ndofs, PODArray, PODArray_orig, TensorArray_orig, EigenValues_orig, ErrorTensors_orig, PODEigenValues_orig, PODTensors_orig, N_Snaps, Error_Array, Array, Array_Orig = PODSweepIterative(
+                            Geometry, Order, alpha, inorout, mur, sig, Array, PODArray, PlotPod, sweepname,
+                            SavePOD, PODErrorBars, BigProblem, curve=curve_degree, prism_flag=prism_flag, use_parallel=True, cpus=CPUs, save_U=Save_U)
+                        sweepname = FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol,
+                                                alpha, Order, MeshSize, mur, sig, True, vtk_output, use_OCC,
+                                                using_iterative_POD=True)
+
+                        for item in ['Errors', 'Tensors', 'PODTensors', 'PODEigenValues', 'PODArray', 'FrequencyArray']:
+                            for iterations in range(1,len(Error_Array)):
+                                os.replace('Results/' + sweepname_temp + f'/Data/{item}_iter{iterations}.npy',
+                                           'Results/' + sweepname_temp + f'/Data/{item}_iter{iterations}.npy')
+
+                        for item in ['Imag_Tensor_Coeffs', 'Real_Tensor_Coeffs', 'SVD_Decay']:
+                            for iterations in range(1,len(Error_Array)):
+                                os.replace('Results/' + sweepname_temp + f'/Graphs/{item}_iter{iterations}.pdf',
+                                           'Results/' + sweepname_temp + f'/Graphs/{item}_iter{iterations}.pdf')
+
                     else:
-                        TensorArray, EigenValues, N0, elements, ndofs = PODSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,CPUs,sweepname,SavePOD,PODErrorBars,BigProblem)
+                        TensorArray, EigenValues, N0, elements, ndofs = PODSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,CPUs,sweepname,SavePOD,PODErrorBars,BigProblem, curve=curve_degree, prism_flag=prism_flag, NumSolverThreads=NumSolverThreads, recoverymode=OldPOD, save_U=Save_U)
             else:
-                if PlotPod==True:
-                    if PODErrorBars==True:
-                        TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ErrorTensors, ndofs = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,BigProblem)
+                if OldPOD is False:
+                    if PlotPod==True:
+
+                        if use_iterative_POD is True:
+                            sweepname_temp = sweepname
+                            # Array_Orig = Array
+                            TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ErrorTensors, ndofs, PODArray, PODArray_orig, TensorArray_orig, EigenValues_orig, ErrorTensors_orig, PODEigenValues_orig, PODTensors_orig, N_Snaps, Error_Array, Array, Array_Orig = PODSweepIterative(
+                                Geometry, Order, alpha, inorout, mur, sig, Array, PODArray, PlotPod, sweepname,
+                                SavePOD, PODErrorBars, BigProblem, curve=curve_degree, prism_flag=prism_flag, use_parallel=True, cpus=CPUs, save_U=Save_U)
+
+                            sweepname = FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol,
+                                                    alpha, Order, MeshSize, mur, sig, True, vtk_output, use_OCC,
+                                                    using_interative_POD=True)
+
+                            for item in ['Errors', 'Tensors', 'PODTensors', 'PODEigenValues', 'PODArray', 'FrequencyArray']:
+                                for iterations in range(1,len(Error_Array)):
+                                    os.replace('Results/' + sweepname_temp + f'/Data/{item}_iter{iterations}.npy', 'Results/' + sweepname + f'/Data/{item}_iter{iterations}.npy')
+
+                            for item in ['Imag_Tensor_Coeffs', 'Real_Tensor_Coeffs', 'SVD_Decay']:
+                                for iterations in range(1,len(Error_Array)):
+                                    os.replace('Results/' + sweepname_temp + f'/Graphs/{item}_iter{iterations}.pdf', 'Results/' + sweepname + f'/Graphs/{item}_iter{iterations}.pdf')
+
+
+                        else:
+
+                            if PODErrorBars==True:
+                                TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ErrorTensors, ndofs = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,BigProblem, NumSolverThreads, curve=curve_degree, prism_flag=prism_flag, save_U=Save_U)
+                            else:
+                                TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ndofs = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,BigProblem, NumSolverThreads, curve=curve_degree, prism_flag=prism_flag, save_U=Save_U)
                     else:
-                        TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ndofs = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,BigProblem)
+                        if use_iterative_POD is True:
+                            sweepname_temp = sweepname
+                            Array_Orig = Array
+                            TensorArray, EigenValues, N0, elements, ErrorTensors, ndofs, PODArray, PODArray_orig, TensorArray_orig, EigenValues_orig, ErrorTensors_orig, PODEigenValues_orig, PODTensors_orig, N_Snaps, Error_Array, Array, Array_Orig = PODSweepIterative(
+                                Geometry, Order, alpha, inorout, mur, sig, Array, PODArray, PlotPod, sweepname,
+                                SavePOD, PODErrorBars, BigProblem, curve=curve_degree, prism_flag=prism_flag, cpus=CPUs, save_U=Save_U)
+
+                            sweepname = FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol,
+                                                    alpha, Order, MeshSize, mur, sig, True, vtk_output, use_OCC,
+                                                    using_iterative_POD=True)
+
+                            for item in ['Errors', 'Tensors', 'PODTensors', 'PODEigenValues', 'PODArray', 'FrequencyArray']:
+                                for iterations in range(1,len(Error_Array)):
+                                    os.replace('Results/' + sweepname_temp + f'/Data/{item}_iter{iterations}.npy', 'Results/' + sweepname + f'/Data/{item}_iter{iterations}.npy')
+
+                            for item in ['Imag_Tensor_Coeffs', 'Real_Tensor_Coeffs', 'SVD_Decay']:
+                                for iterations in range(1,len(Error_Array)):
+                                    os.replace('Results/' + sweepname_temp + f'/Graphs/{item}_iter{iterations}.pdf', 'Results/' + sweepname + f'/Graphs/{item}_iter{iterations}.pdf')
+
+                        else:
+
+                            if PODErrorBars==True:
+                                TensorArray, EigenValues, N0, elements, ErrorTensors, ndofs = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,BigProblem, NumSolverThreads, curve=curve_degree, prism_flag=prism_flag, save_U=Save_U)
+                            else:
+                                TensorArray, EigenValues, N0, elements, ndofs = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,BigProblem, NumSolverThreads, curve=curve_degree, prism_flag=prism_flag, save_U=Save_U)
+
                 else:
-                    if PODErrorBars==True:
-                        TensorArray, EigenValues, N0, elements, ErrorTensors, ndofs = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,BigProblem)
+                    if PlotPod == True:
+                        if PODErrorBars == True:
+                            TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ErrorTensors, ndofs = PODSweep(
+                                Geometry, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, PlotPod, sweepname,
+                                SavePOD, PODErrorBars, BigProblem, NumSolverThreads, recoverymode=OldPOD, curve=curve_degree, prism_flag=prism_flag, save_U=Save_U)
+                        else:
+                            TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ndofs = PODSweep(
+                                Geometry, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, PlotPod, sweepname,
+                                SavePOD, PODErrorBars, BigProblem, NumSolverThreads, recoverymode=OldPOD, curve=curve_degree, prism_flag=prism_flag, save_U=Save_U)
                     else:
-                        TensorArray, EigenValues, N0, elements, ndofs = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,BigProblem)
+                        if PODErrorBars == True:
+                            TensorArray, EigenValues, N0, elements, ErrorTensors, ndofs = PODSweep(Geometry, Order,
+                                                                                                   alpha, inorout, mur,
+                                                                                                   sig, Array, PODArray,
+                                                                                                   PODTol, PlotPod,
+                                                                                                   sweepname, SavePOD,
+                                                                                                   PODErrorBars,
+                                                                                                   BigProblem, NumSolverThreads, recoverymode=OldPOD, curve=curve_degree, prism_flag=prism_flag, save_U=Save_U)
+                        else:
+                            TensorArray, EigenValues, N0, elements, ndofs = PODSweep(Geometry, Order, alpha, inorout,
+                                                                                     mur, sig, Array, PODArray, PODTol,
+                                                                                     PlotPod, sweepname, SavePOD,
+                                                                                     PODErrorBars, BigProblem, NumSolverThreads, recoverymode=OldPOD, curve=curve_degree, prism_flag=prism_flag, save_U=Save_U)
 
 
         else:
             if MultiProcessing==True:
-                TensorArray, EigenValues, N0, elements, ndofs = FullSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,CPUs,BigProblem)
+                TensorArray, EigenValues, N0, elements, ndofs = FullSweepMulti(Geometry,Order,alpha,inorout,mur,sig,Array,CPUs,BigProblem, NumSolverThreads, curve=curve_degree)
             else:
-                TensorArray, EigenValues, N0, elements, ndofs = FullSweep(Geometry,Order,alpha,inorout,mur,sig,Array,BigProblem)
+                TensorArray, EigenValues, N0, elements, ndofs = FullSweep(Geometry,Order,alpha,inorout,mur,sig,Array,BigProblem, NumSolverThreads, curve=curve_degree)
 
 
     # Constructing invariants:
@@ -278,7 +453,12 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
         SingleSave(Geometry, Omega, MPT, EigenValues, N0, elements, alpha, Order, MeshSize, mur, sig, EddyCurrentTest, invariants)
     elif PlotPod==True:
         if Pod==True:
-            PODSave(Geometry, Array, TensorArray, EigenValues, N0, PODTensors, PODEigenValues, PODArray, PODTol, elements, alpha, Order, MeshSize, mur, sig, ErrorTensors,EddyCurrentTest, invariants)
+            if use_iterative_POD is True:
+                PODSave(Geometry, Array, TensorArray, EigenValues, N0, PODTensors, PODEigenValues, PODArray, PODTol, elements, alpha, Order, MeshSize, mur, sig, ErrorTensors,EddyCurrentTest, invariants, using_iterative_POD=True)
+                # PODSave(Geometry, Array_Orig, TensorArray_orig, EigenValues_orig, N0, PODTensors_orig, PODEigenValues_orig, PODArray_orig, PODTol, elements, alpha, Order, MeshSize, mur, sig, ErrorTensors_orig,EddyCurrentTest, invariants, using_iterative_POD=False)
+            else:
+                PODSave(Geometry, Array, TensorArray, EigenValues, N0, PODTensors, PODEigenValues, PODArray, PODTol, elements, alpha, Order, MeshSize, mur, sig, ErrorTensors,EddyCurrentTest, invariants)
+
         else:
             FullSave(Geometry, Array, TensorArray, EigenValues, N0, Pod, PODArray, PODTol, elements, alpha, Order, MeshSize, mur, sig, ErrorTensors,EddyCurrentTest, invariants)
     else:
@@ -287,7 +467,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
 
 
     # Constructing Return Dictionary
-    ReturnDict = {}
+    # ReturnDict = {}
     ReturnDict['TensorArray'] = TensorArray
     ReturnDict['EigenValues'] = EigenValues
     ReturnDict['N0'] = N0
@@ -305,13 +485,47 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
         if PODErrorBars is True:
             ReturnDict['PODErrorBars'] = ErrorTensors
 
+        if use_iterative_POD is True:
+            ReturnDict['TensorArray_Orig'] = TensorArray_orig
+            ReturnDict['PODArray_Orig'] = PODArray_orig
+            ReturnDict['PODTensors_Orig'] = PODTensors_orig
+            ReturnDict['PODEigenValues_Orig'] = PODEigenValues_orig
+            ReturnDict['EigenValues_Orig'] = EigenValues_orig
+            ReturnDict['PODErrorBars_Orig'] = ErrorTensors_orig
+            ReturnDict['NSnapshots'] = N_Snaps
+            ReturnDict['IterativeMaxError'] = Error_Array
+
     ReturnDict['Invariants'] = invariants
+    ReturnDict['SweepName'] = sweepname
+
+    return ReturnDict
 
 
-    return ReturnDict #TensorArray, EigenValues, N0, elements, Array, ndofs, EddyCurrentTest
+
+def save_all_figures(path, format='png', suffix='', prefix=''):
+    """
+    Function to save all open figures to disk.
+    Files are named as:
+    {suffix}{figure_n}{prefix}.{format}
+    :param path: path to the desired saving directory.
+    :param format: desired file format. pdf, png, jpg
+    :param suffix: additional component of the output filename
+    :param prefix: additional component of the output filename
+    :return:
+    """
+
+    if not os.path.isdir(path):
+        os.mkdir(path)
+    extension = '.' + format
+    if format != 'tex':
+        for i in plt.get_fignums():
+            plt.figure(i)
+            filename = prefix + f'figure_{i}' + suffix
+            plt.savefig(os.path.join(path, filename) + extension)
+    else:
+        raise TypeError('Unrecognised file format')
+
 
 
 if __name__ == '__main__':
-
-    ReturnDict = main()
-
+    main(geometry='OCC_step_cube.py', order=1, use_parallel=True, use_OCC=True, use_POD=True)

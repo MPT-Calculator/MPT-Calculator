@@ -1,5 +1,31 @@
 Changelog for MPT-Calculator:
 
+Feb 2023:
+- Refactored Functions folder, such that each function now has its own file. This was to make debugging easier.
+- set 2(p+1) integration order to Integration functions.
+
+- main.py:
+	- Added saving of parent script, i.e. the one that called main to Results folder. This makes it easier to recreate results. Saves both .py and .ipynb files, although notebooks are saved by copying the most recent file in the ipynb checkpoints folder (this is because there is no requirement to save a notebook before running it.)
+
+- Generate_From_Python.py:
+	- Now allows users to specify alpha in the OCC file. Will update alpha from whatever was specified in main. This was to help with consistency with choosing boundary layer thicknesses.
+
+- FolderMaker.py:
+	- Now copies functions to the results folder in the same refactored folder format.
+
+- Theta1_Sweep.py:
+	Now supports multithreaded solving of linear system. This has lead to a significant speed improvement at no extra memory usage. Option to choose number of threads in Settings.py.
+
+- PODSweep.py and PODSweepMulti.py:
+	- Now supports faster postprocessing of the theta0 and theta1 solution vectors. New method relies on small vector-matrix-vector products and is substantially faster than repeat integration.
+
+- PODSweepIterative.py:
+	- New method for adaptively choosing new snapshot frequencies in POD. Method chooses new snapshot frequencies based on the maximum error certificates and updates the POD with the new solutions.
+	- Options added in Settings.py.
+	- Saving of results to results folder with prefix "Iterative_POD".
+
+
+Nov 2022:
 - main.py:
 	- Refactored main.py to be a function with common arguments (order, alpha, geometry ect) being added as variable input arguments. The motivation behind this was to make flow control easier, e.g. looping through different orders.
 	- Added occ geometry generation and saving. Currently set up that .py files must be in OCC_Geometry Folder.

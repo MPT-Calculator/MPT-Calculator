@@ -30,7 +30,7 @@ NNR = False
 # Object Settings
 
 # Vol file mesh name. e.g. 'sphere.vol'
-Mesh_Name = 'OCC_sphere.vol'
+Mesh_Name = 'OCC_thin_disc_magnetic_20.vol'
 
 # Alpha scaling term as float in m.
 Alpha = 0.001
@@ -39,7 +39,7 @@ Alpha = 0.001
 # sphere with a radius of 0.01m ( or 1cm)
 
 # The order of the elements in the mesh
-Order = 2
+Order = 4
 # (int) this defines the order of each of the elements in the mesh
 
 # List of conductivites for each object in the mesh.
@@ -55,24 +55,24 @@ Conductivity = [1e6]
 Start = 1
 
 # Maximum frequency (Powers of 10 i.e Start = 8 => 10**8)
-Finish = 5
+Finish = 7
 
 # (int) Number of logarithmically spaced points in the frequency sweep
-Points = 10
+Points = 40
 
 # Equivalent mur settings. These are stored linearly. i.e. a Mur_Finish of 13 would give an upper bound of mur=13.
 Mur_Start = 1
-Mur_Finish = 10
-Mur_Points = 10
+Mur_Finish = 100
+Mur_Points = 20
 
 # ROM Settings:
 
 # Number of frequency snapshots used in the ROM.
-N_Snapshots = 5
+N_Snapshots = 13
 # (int) number of frequencies to use when generating the ROM. Typically 16 is suffieicnet.
 
 # Number of mur values to use in the ROM
-Mur_N_Snapshots = 5
+Mur_N_Snapshots = 8
 # (int) number of mur snapshots to use for the 2D ROM.
 
 # Truncation tolerances for the SVD. Smaller provides more accuracy for greater computational expence.
@@ -116,7 +116,7 @@ MPS.frequency_array = np.logspace(Start, Finish, N_Snapshots)
 MPS.mur_max = Mur_Finish
 MPS.mur_min = Mur_Start
 MPS.mur_points = Mur_N_Snapshots
-MPS.permeability_array_ROM = np.linspace(Mur_Start, Mur_Finish, Mur_Points)
+MPS.permeability_array_ROM = np.asarray([1]) #np.linspace(Mur_Start, Mur_Finish, Mur_Points)
 MPS.frequency_array_ROM = np.logspace(Start, Finish, Points)
 MPS.generate_new_snapshot_mur_positions()
 
@@ -131,6 +131,8 @@ MPS.calc_I_snapshots()
 if PODP is True:
     foldername = MPS.save_results(prefix='PODP')
     PODP = MPS.PODP_ROM(calc_error_bars=PODErrorBars)
+    foldername = MPS.save_results(prefix='PODP')
+
     MPS.calc_I_ROM()
     MPS.calc_R_ROM()
     MPS.calc_N0_ROM()
