@@ -13,7 +13,7 @@ def DefaultSettings():
     #(int)
     
     #Is it a big problem (more memory efficiency but slower)
-    BigProblem = False
+    BigProblem = True
     #(boolean)
     
     #How many snapshots should be taken
@@ -28,8 +28,18 @@ def DefaultSettings():
     OldMesh = False
     #(boolean) Note that this still requires the relavent .geo file to obtain
     #information about the materials in the mesh
-    
-    return CPUs,BigProblem,PODPoints,PODTol,OldMesh
+
+    #Use an old POD model saved to disk. This allows the user to specify a new set of frequencies without recomputing
+    #the POD snapshots.
+    OldPOD = False
+    #(boolean)
+
+    # Number of parallel threads to be used when constructing linear and bilinear forms, and performing the iterative
+    # solve of theta1. Set to 'default' to use all available threads.
+    NumSolverThreads = 'default'
+    # (int)
+
+    return CPUs,BigProblem,PODPoints,PODTol,OldMesh, OldPOD, NumSolverThreads
 
 def AdditionalOutputs():
     #Plot the POD points
@@ -55,8 +65,13 @@ def AdditionalOutputs():
     #(boolean) do you want ngsolve to refine the solution before exporting
     #to the vtk file (single frequency only)
     #(not compatable with all NGSolve versions)
+
+    # Save out the left singular vector in POD modes (Very large files!)
+    Save_U = False
+    # (boolean) option to save out the left singular vector used by the POD. This would allow the user to restart the
+    # POD operation, by setting OLDPOD=True, without needing to recalculate the full order snapshot solutions.
     
-    return PlotPod, PODErrorBars, EddyCurrentTest, vtk_output, Refine_vtk
+    return PlotPod, PODErrorBars, EddyCurrentTest, vtk_output, Refine_vtk, Save_U
     
 
 
@@ -81,7 +96,7 @@ def SolverParameters():
     #(string) "bddc"/"local"
     
     #regularisation
-    epsi = 10**-12
+    epsi = 10**-10
     #(float) regularisation to be used in the problem
     
     #Maximum iterations to be used in solving the problem
@@ -91,9 +106,19 @@ def SolverParameters():
     #the local will take more
     
     #Relative tolerance
-    Tolerance = 10**-10
+    Tolerance = 10**-8
     #(float) the amount the redsidual must decrease by relatively to solve
     #the problem
+
+    #Additional Integrarion Order
+    AdditionalIntFactor = 0
+    #(int) Additional integration order (AdditionalIntFactor) to be used with SymbolicBFI and SymbolicLFI.
+    # This is introduced to account for under integration in the bilinear forms and linear forms used in the faster
+    # matrix multiplication used for the POD method and get agreement between integration and matrix multiplication
+    # methods. Setting this to 0 will remove the effect. Only used for calculating tensor coeffs in POD mode.
+
+    #Method for calculating tensor coefficieints in POD mode.
+    use_integral = False
     
     #print convergence of the problem
     ngsglobals.msg_level = 0
@@ -101,4 +126,32 @@ def SolverParameters():
     #Suggested inputs
     #0 for no information, 3 for information of convergence
     #Other useful options 1,6
-    return Solver,epsi,Maxsteps,Tolerance
+    return Solver,epsi,Maxsteps,Tolerance, AdditionalIntFactor, use_integral
+
+
+def IterativePODParameters():
+    """
+    James Elgy - 2022:
+    Settings for the Iterative POD method used by PODSolvers.IterativePOD().
+    Returns
+    -------
+    NAdditionalSnapshotsPerIter (int) number of additional snapshots to compute per iteration.
+    MaxIter (int) total number of iterations to consider.
+    Tol (float) tolerance of maxerror/object_volume for terminating the iterative process.
+    PlotUpdatedPOD (bool) option to plot error certificates and tensor coefficients at each iteration.
+    """
+
+    # (int) Number of additional snapshots to add per iteration.
+    NAdditionalSnapshotsPerIter = 2
+
+    # (int) Maximum number of iterations that will run in the iterative process.
+    MaxIter = 10
+
+    # (float) Stopping tolerance (max(error)/object_volume) for the iterative process.
+    Tol = 1e-1
+
+    # (bool) Option to also plot out the tensor coefficients and error certificates for each iteration.
+    PlotUpdatedPOD = True
+
+    return NAdditionalSnapshotsPerIter, MaxIter, Tol, PlotUpdatedPOD
+
