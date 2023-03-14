@@ -89,6 +89,14 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
         OVERWRITE_ALPHA = False
 
     #User Inputs
+         
+    #Scaling to be used in the sweep in meters
+    if OVERWRITE_ALPHA == False:
+        alpha = 1e-3
+    #(float) scaling to be applied to the .geo file i.e. if you have defined
+    #a sphere of unit radius in a .geo file   alpha = 0.01   would simulate a
+    #sphere with a radius of 0.01m ( or 1cm)
+         
 
     #Geometry
     if use_OCC is True:
@@ -109,16 +117,6 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
         else:
             Geometry = 'sphere.geo'
     print(Geometry)
-
-
-
-
-    #Scaling to be used in the sweep in meters
-    if OVERWRITE_ALPHA == False:
-        alpha = 1e-3
-    #(float) scaling to be applied to the .geo file i.e. if you have defined
-    #a sphere of unit radius in a .geo file   alpha = 0.01   would simulate a
-    #sphere with a radius of 0.01m ( or 1cm)
 
 
     #About the mesh
