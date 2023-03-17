@@ -9,22 +9,34 @@ import scipy.linalg as slin
 import multiprocessing as multiprocessing
 import netgen.meshing as ngmeshing
 import sys
+import math
 from ngsolve import *
 
 sys.path.insert(0,"Functions")
 sys.path.insert(0,"Settings")
 from Settings import SolverParameters
 
+# Helper function that returns 1 for if index=n and 0 otherwise
+# for a mesh made of a general number of material tags
+def myinout(index,n,ntags):
+    prod=1.
+    den=1.
+    for k in range(0,ntags+1):
+        if k != n:
+            prod = prod*(index-k)
+            den = den*(n-k)
+    return prod/den
 
-def Checkvalid(Object,Order,alpha,inorout,mur,sig):
+
+def Checkvalid(Object,Order,alpha,inorout,mur,sig,cond,ntags,tags):
     Object = Object[:-4]+".vol"
     #Set order Ordercheck to be of low order to speed up computation.
-    Ordercheck = 1 
+    Ordercheck = 1
     #Accuracy is increased by increaing noutput, but at greater cost
     noutput=20
 
     #Set up the Solver Parameters
-    Solver,epsi,Maxsteps,Tolerance = SolverParameters()
+    Solver,epsi,Maxsteps,Tolerance, AdditionalIntFactor, use_integral = SolverParameters()
 
     #Loading the object file
     ngmesh = ngmeshing.Mesh(dim=3)
@@ -41,6 +53,9 @@ def Checkvalid(Object,Order,alpha,inorout,mur,sig):
     inout = CoefficientFunction(inout_coef)
     sigma_coef = [sig[mat] for mat in mesh.GetMaterials() ]
     sigma = CoefficientFunction(sigma_coef)
+    cond_coef = [cond[mat] for mat in mesh.GetMaterials() ]
+    conductor = CoefficientFunction(cond_coef)
+
 
     #Scalars
     Mu0 = 4*np.pi*10**(-7)
@@ -114,7 +129,7 @@ def Checkvalid(Object,Order,alpha,inorout,mur,sig):
     # create numpy arrays by passing solutions back to NG Solve
     Soli=GridFunction(femfull)
     Solj=GridFunction(femfull)
-    
+
     for i in range(noutput):
         Soli.Set(exp(-((x-list[i,0])**2 + (y-list[i,1])**2 + (z-list[i,2])**2)/sval**2),definedon=mesh.Boundaries("default"))
         Soli.vec.FV().NumPy()[:]=Output[:,i]
@@ -122,13 +137,13 @@ def Checkvalid(Object,Order,alpha,inorout,mur,sig):
         for j in range(i,noutput):
             Solj.Set(exp(-((x-list[j,0])**2 + (y-list[j,1])**2 + (z-list[j,2])**2)/sval**2),definedon=mesh.Boundaries("default"))
             Solj.vec.FV().NumPy()[:]=Output[:,j]
-            
+
             Mc[i,j] = Integrate(inout * (InnerProduct(grad(Soli),grad(Solj))/alpha**2+ InnerProduct(Soli,Solj)),mesh)
             Mc[j,i] = Mc[i,j]
             M0[i,j] = Integrate((1-inout) * (InnerProduct(grad(Soli),grad(Solj))/alpha**2+ InnerProduct(Soli,Solj)),mesh)
             M0[j,i] = M0[i,j]
     print(" matrices computed       ")
-    
+
 	# solve the eigenvalue problem
     print(" solving eigenvalue problem", end='\r')
     out=slin.eig(Mc+M0,Mc,left=False, right=False)
@@ -149,6 +164,20 @@ def Checkvalid(Object,Order,alpha,inorout,mur,sig):
     cond2 = 1/epsilon*sigmamin/C2
     cond = min(cond1,cond2)
 
-    print(" maximum recomeneded frequency is ",str(round(cond/100)))
-    
-    return cond/100
+    print("Predicted conductor volume is",volume*alpha**3)
+    totalvolume=0.
+    for n in range(ntags):
+        # loop over the conductor elements
+        print("considering conductor element",n,ntags,tags[n])
+        volumepart = Integrate(myinout(conductor,n,ntags), mesh)
+        print("This has scaled volume",volumepart*alpha**3)
+        if tags[n] != "air":
+            totalvolume = totalvolume + volumepart
+    print("Calculated conductor volume as sum",totalvolume*alpha**3)
+
+    if math.isnan(cond) == False:
+        print(" maximum recomeneded frequency is ",str(round(cond/100.)))
+    else:
+        cond = 100.* 1e8
+
+    return cond/100.

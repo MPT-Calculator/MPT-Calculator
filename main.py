@@ -89,14 +89,14 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
         OVERWRITE_ALPHA = False
 
     #User Inputs
-         
+
     #Scaling to be used in the sweep in meters
     if OVERWRITE_ALPHA == False:
         alpha = 1e-3
     #(float) scaling to be applied to the .geo file i.e. if you have defined
     #a sphere of unit radius in a .geo file   alpha = 0.01   would simulate a
     #sphere with a radius of 0.01m ( or 1cm)
-         
+
 
     #Geometry
     if use_OCC is True:
@@ -196,7 +196,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
     else:
         #Check whether to add the material information to the .vol file
         try:
-            Materials,mur,sig,inorout = VolMatUpdater(Geometry,OldMesh)
+            Materials,mur,sig,inorout,cond,ntags,tags = VolMatUpdater(Geometry,OldMesh)
             ngmesh = ngmeshing.Mesh(dim=3)
             ngmesh.Load("VolFiles/"+Geometry[:-4]+".vol")
             mesh = Mesh("VolFiles/"+Geometry[:-4]+".vol")
@@ -224,7 +224,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
 
 
     #Update the .vol file and create the material dictionaries
-    Materials,mur,sig,inorout = VolMatUpdater(Geometry,OldMesh)
+    Materials,mur,sig,inorout,cond,ntags,tags = VolMatUpdater(Geometry,OldMesh)
 
     #create the array of points to be used in the sweep
     Array = np.logspace(Start,Finish,Points)
@@ -273,7 +273,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
 
     #Check the validity of the eddy-current model for the object
     if EddyCurrentTest == True:
-        EddyCurrentTest = Checkvalid(Geometry,Order,alpha,inorout,mur,sig)
+        EddyCurrentTest = Checkvalid(Geometry,Order,alpha,inorout,mur,sig,cond,ntags,tags)
 
     if Single==True:
         if MultiProcessing!=True:

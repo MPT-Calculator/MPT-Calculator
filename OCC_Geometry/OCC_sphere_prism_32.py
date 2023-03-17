@@ -20,9 +20,9 @@ pip3 install ngsolve==6.2.2204
 
 # Setting mur, sigma, alpha, and defining the top level object name:
 material_name = ['mat1']
-mur = [32]
+mur = [1]
 sigma = [1e6]
-alpha = 0.001
+alpha = 0.01
 
 # Boundary Layer Settings: max frequency under consideration, the total number of prismatic layers and the material of each layer.
 # Setting Boundary layer Options:
@@ -76,5 +76,3 @@ nmesh.Save(r'VolFiles/OCC_sphere_prism_32.vol')
 from ngsolve import *
 mesh = Mesh(nmesh)
 print(f'Materials = {mesh.GetMaterials()}')
-
-
