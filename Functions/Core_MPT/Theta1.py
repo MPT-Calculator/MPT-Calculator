@@ -7,16 +7,9 @@ import gc
 # Function definition to solve the Theta1 problem
 # Output -The solution to the theta1 problem as a (NGSolve) gridfunction
 def Theta1(fes, fes2, Theta0Sol, xi, Order, alpha, nu, sigma, mu, inout, Tolerance, Maxsteps, epsi, Omega, simnumber,
-           outof, Solver, num_solver_threads):
-    # # print the counter
-    # try:  # This is used for the simulations run in parallel
-    #     simnumber.value += 1
-    #     print(' solving theta1 %d/%d    ' % (floor((simnumber.value) / 3), outof), end='\r', flush=True)
-    # except:
-    #     try:  # This is for the simulations run consecutively and the single frequency case
-    #         print(' solving theta1 %d/%d    ' % (simnumber, outof), end='\r')
-    #     except:  # This is for the single frequency case with 3 CPUs
-    #         print(' solving the theta1 problem  ', end='\r', flush=True)
+           outof, Solver, num_solver_threads, Additional_Int_Order):
+
+
 
     if num_solver_threads != 'default':
         SetNumThreads(num_solver_threads)
@@ -33,12 +26,12 @@ def Theta1(fes, fes2, Theta0Sol, xi, Order, alpha, nu, sigma, mu, inout, Toleran
 
     # Create the bilinear form (this is for the complex conjugate of theta^1)
     f = LinearForm(fes2)
-    f += SymbolicLFI(inout * (-1j) * nu * sigma * InnerProduct(Theta0, v))
-    f += SymbolicLFI(inout * (-1j) * nu * sigma * InnerProduct(xi, v))
+    f += SymbolicLFI(inout * (-1j) * nu * sigma * InnerProduct(Theta0, v), bonus_intorder=Additional_Int_Order)
+    f += SymbolicLFI(inout * (-1j) * nu * sigma * InnerProduct(xi, v), bonus_intorder=Additional_Int_Order)
     a = BilinearForm(fes2, symmetric=True, condense=True)
-    a += SymbolicBFI((mu ** (-1)) * InnerProduct(curl(u), curl(v)))
-    a += SymbolicBFI((1j) * inout * nu * sigma * InnerProduct(u, v))
-    a += SymbolicBFI((1j) * (1 - inout) * epsi * InnerProduct(u, v))
+    a += SymbolicBFI((mu ** (-1)) * InnerProduct(curl(u), curl(v)), bonus_intorder=Additional_Int_Order)
+    a += SymbolicBFI((1j) * inout * nu * sigma * InnerProduct(u, v), bonus_intorder=Additional_Int_Order)
+    a += SymbolicBFI((1j) * (1 - inout) * epsi * InnerProduct(u, v), bonus_intorder=Additional_Int_Order)
     if Solver == "bddc":
         c = Preconditioner(a, "bddc")  # Apply the bddc preconditioner
     with TaskManager():

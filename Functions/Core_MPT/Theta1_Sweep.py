@@ -12,7 +12,7 @@ import tqdm
 
 
 def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu ,inout ,Tolerance ,Maxsteps ,epsi ,Solver
-                 ,N0 ,TotalNOF ,Vectors ,Tensors ,Multi ,BP, Order, num_solver_threads):
+                 ,N0 ,TotalNOF ,Vectors ,Tensors ,Multi ,BP, Order, num_solver_threads, Integration_Order, Additional_Int_Order):
     # print(' solving theta1')
     # Setup variables
     Mu0 = 4* np.pi * 10 ** (-7)
@@ -58,20 +58,20 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu ,in
         # Setup righthand sides
         Theta0i.vec.FV().NumPy()[:] = Theta0Sols[:, 0]
         f1 = LinearForm(fes2)
-        f1 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(Theta0i, v))
-        f1 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(xivec[0], v))
+        f1 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(Theta0i, v), bonus_intorder=Additional_Int_Order)
+        f1 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(xivec[0], v), bonus_intorder=Additional_Int_Order)
         f1.Assemble()
 
         Theta0i.vec.FV().NumPy()[:] = Theta0Sols[:, 1]
         f2 = LinearForm(fes2)
-        f2 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(Theta0i, v))
-        f2 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(xivec[1], v))
+        f2 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(Theta0i, v), bonus_intorder=Additional_Int_Order)
+        f2 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(xivec[1], v), bonus_intorder=Additional_Int_Order)
         f2.Assemble()
 
         Theta0i.vec.FV().NumPy()[:] = Theta0Sols[:, 2]
         f3 = LinearForm(fes2)
-        f3 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(Theta0i, v))
-        f3 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(xivec[2], v))
+        f3 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(Theta0i, v), bonus_intorder=Additional_Int_Order)
+        f3 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(xivec[2], v), bonus_intorder=Additional_Int_Order)
         f3.Assemble()
 
         # Set up a vector for the residual and solving
@@ -87,9 +87,9 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu ,in
 
         #Create the bilinear form
         a = BilinearForm(fes2, symmetric=True, condense=True)
-        a += SymbolicBFI((mu ** (-1)) * InnerProduct(curl(u), curl(v)))
-        a += SymbolicBFI((1j) * inout * nu_no_omega * Omega * sigma * InnerProduct(u, v))
-        a += SymbolicBFI((1j) * (1 - inout) * epsi * InnerProduct(u, v))
+        a += SymbolicBFI((mu ** (-1)) * InnerProduct(curl(u), curl(v)), bonus_intorder=Additional_Int_Order)
+        a += SymbolicBFI((1j) * inout * nu_no_omega * Omega * sigma * InnerProduct(u, v), bonus_intorder=Additional_Int_Order)
+        a += SymbolicBFI((1j) * (1 - inout) * epsi * InnerProduct(u, v), bonus_intorder=Additional_Int_Order)
 
         if Solver == "bddc":
             c = Preconditioner(a, "bddc")  # Apply the bddc preconditioner
@@ -174,10 +174,10 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu ,in
                     # Real and Imaginary parts
                     with TaskManager():
                         R[i, j] = -(((alpha ** 3) / 4) * Integrate((mu ** (-1)) * (curl(Theta1j) * Conj(curl(Theta1i))),
-                                                                   mesh, order=2 * (Order + 1))).real
+                                                                   mesh, order=Integration_Order)).real
                         I[i, j] = ((alpha ** 3) / 4) * Integrate(inout * nu_no_omega * Omega * sigma * (
                                     (Theta1j + Theta0j + xij) * (Conj(Theta1i) + Theta0i + xii)), mesh,
-                                                                 order=2 * (Order + 1)).real
+                                                                 order=Integration_Order).real
 
             # Mirror tensor
             R += np.transpose(R - np.diag(np.diag(R)))
