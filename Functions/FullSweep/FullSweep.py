@@ -23,7 +23,7 @@ from Settings import SolverParameters
 
 
 # Function definition for a full order frequency sweep
-def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSolverThreads, curve=5, ):
+def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, curve=5, ):
     Object = Object[:-4] + ".vol"
     # Set up the Solver Parameters
     Solver, epsi, Maxsteps, Tolerance, _, _ = SolverParameters()
@@ -75,21 +75,21 @@ def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSol
 
     # Run in three directions and save in an array for later
     for i in tqdm.tqdm(range(3), desc='Solving Theta0'):
-        Theta0Sol[:, i] = Theta0(fes, Order, alpha, mu, inout, evec[i], Tolerance, Maxsteps, epsi, i + 1, Solver)
+        Theta0Sol[:, i] = Theta0(fes, Order, alpha, mu, inout, evec[i], Tolerance, Maxsteps, epsi, i + 1, Solver, Additional_Int_Order)
     print(' solved theta0 problems    ')
 
     # Calculate the N0 tensor
-    VolConstant = Integrate(1 - mu ** (-1), mesh)
+    VolConstant = Integrate(1 - mu ** (-1), mesh, order=Integration_Order)
     for i in range(3):
         Theta0i.vec.FV().NumPy()[:] = Theta0Sol[:, i]
         for j in range(3):
             Theta0j.vec.FV().NumPy()[:] = Theta0Sol[:, j]
             if i == j:
                 N0[i, j] = (alpha ** 3) * (VolConstant + (1 / 4) * (
-                    Integrate(mu ** (-1) * (InnerProduct(curl(Theta0i), curl(Theta0j))), mesh, order=2 * (Order + 1))))
+                    Integrate(mu ** (-1) * (InnerProduct(curl(Theta0i), curl(Theta0j))), mesh, order=Integration_Order)))
             else:
                 N0[i, j] = (alpha ** 3 / 4) * (
-                    Integrate(mu ** (-1) * (InnerProduct(curl(Theta0i), curl(Theta0j))), mesh, order=2 * (Order + 1)))
+                    Integrate(mu ** (-1) * (InnerProduct(curl(Theta0i), curl(Theta0j))), mesh, order=Integration_Order))
 
         # Copy the tensor
         # N0+=np.transpose(N0-np.eye(3)@N0)
@@ -111,7 +111,7 @@ def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSol
     # Solve the problem
     TensorArray, EigenValues = Theta1_Sweep(Array, mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu, inout,
                                             Tolerance, Maxsteps, epsi, Solver, N0, NumberofFrequencies, False, True,
-                                            False, False, Order, NumSolverThreads)
+                                            False, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order)
 
     print(' solved theta1 problems     ')
     print(' frequency sweep complete')

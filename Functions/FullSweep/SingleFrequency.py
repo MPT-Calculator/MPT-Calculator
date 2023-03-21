@@ -27,17 +27,11 @@ import gc
 from Functions.Helper_Functions.count_prismatic_elements import count_prismatic_elements
 
 
-def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine, curve=5,
-                    theta_solutions_only=False, num_solver_threads='default'):
+def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine, Integration_Order, Additional_Int_Order,
+                    curve=5, theta_solutions_only=False, num_solver_threads='default'):
     Object = Object[:-4] + ".vol"
     # Set up the Solver Parameters
-    Solver, epsi, Maxsteps, Tolerance, AdditionalInt, _ = SolverParameters()
-
-    N_prisms, N_tets = count_prismatic_elements('./VolFiles/' + Object)
-    if N_prisms > 0:
-        prism_flag = True
-    else:
-        prism_flag = False
+    Solver, epsi, Maxsteps, Tolerance, _, _ = SolverParameters()
 
     # Loading the object file
     ngmesh = ngmeshing.Mesh(dim=3)
@@ -95,9 +89,9 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
     Runlist = []
     for i in range(3):
         if CPUs < 3:
-            NewInput = (fes, Order, alpha, mu, inout, evec[i], Tolerance, Maxsteps, epsi, i + 1, Solver, 'Theta0')
+            NewInput = (fes, Order, alpha, mu, inout, evec[i], Tolerance, Maxsteps, epsi, i + 1, Solver, Additional_Int_Order, 'Theta0')
         else:
-            NewInput = (fes, Order, alpha, mu, inout, evec[i], Tolerance, Maxsteps, epsi, "No Count", Solver, 'Theta0')
+            NewInput = (fes, Order, alpha, mu, inout, evec[i], Tolerance, Maxsteps, epsi, "No Count", Solver, Additional_Int_Order, 'Theta0')
         Runlist.append(NewInput)
     # Run on the multiple cores
     with multiprocessing.Pool(CPUs) as pool:
@@ -110,19 +104,19 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
         Theta0Sol[:, i] = Direction
 
     # Calculate the N0 tensor
-    VolConstant = Integrate(1 - mu ** (-1), mesh)
+    VolConstant = Integrate(1 - mu ** (-1), mesh, order=Integration_Order)
     for i in range(3):
         Theta0i.vec.FV().NumPy()[:] = Theta0Sol[:, i]
         for j in range(3):
             Theta0j.vec.FV().NumPy()[:] = Theta0Sol[:, j]
             if i == j:
                 N0[i, j] = (alpha ** 3) * (VolConstant + (1 / 4) * (
-                    Integrate(mu ** (-1) * (InnerProduct(curl(Theta0i), curl(Theta0j))), mesh, order=2 * Order)))
+                    Integrate(mu ** (-1) * (InnerProduct(curl(Theta0i), curl(Theta0j))), mesh, order=Integration_Order)))
             else:
                 N0[i, j] = (alpha ** 3 / 4) * (
-                    Integrate(mu ** (-1) * (InnerProduct(curl(Theta0i), curl(Theta0j))), mesh, order=2 * Order))
+                    Integrate(mu ** (-1) * (InnerProduct(curl(Theta0i), curl(Theta0j))), mesh, order=Integration_Order))
 
-    # FOR TESTING: Removing gradient terms introduced by making fes the same size as fes2:
+    # Removing gradient terms introduced by making fes the same size as fes2:
     # Poission Projection to account for gradient terms:
     u, v = fes.TnT()
     m = BilinearForm(fes)
@@ -168,11 +162,11 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
         if CPUs < 3:
             NewInput = (
             fes, fes2, Theta0Sol[:, i], xivec[i], Order, alpha, nu, sigma, mu, inout, Tolerance, Maxsteps, epsi, Omega,
-            i + 1, 3, Solver, num_solver_threads, 'Theta1')
+            i + 1, 3, Solver, num_solver_threads, Additional_Int_Order, 'Theta1')
         else:
             NewInput = (
             fes, fes2, Theta0Sol[:, i], xivec[i], Order, alpha, nu, sigma, mu, inout, Tolerance, Maxsteps, epsi, Omega,
-            "No Print", 3, Solver, num_solver_threads, 'Theta1')
+            "No Print", 3, Solver, num_solver_threads, Additional_Int_Order, 'Theta1')
         Runlist.append(NewInput)
 
     # Run on the multiple cores
@@ -244,28 +238,28 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
     Runlist = []
     nu = Omega * Mu0 * (alpha ** 2)
     R, I = MPTCalculator(mesh, fes, fes2, Theta1Sol[:, 0], Theta1Sol[:, 1], Theta1Sol[:, 2], Theta0Sol, xivec, alpha,
-                         mu, sigma, inout, nu, "No Print", 1, Order)
+                         mu, sigma, inout, nu, "No Print", 1, Order, Integration_Order)
     print(' calculated the tensor             ')
 
-    ### Running Integration Test for single freq:
-    i = 0
-    j = 0
-    Theta1i = GridFunction(fes2)
-    Theta1i.Set((0, 0, 0))
-    Theta1i.vec.FV().NumPy()[:] = Theta1Sol[:, i]
-    Theta1j = GridFunction(fes2)
-    Theta1j.Set((0, 0, 0))
-    Theta1j.vec.FV().NumPy()[:] = Theta1Sol[:, j]
-
-    Theta0i = GridFunction(fes2)
-    Theta0i.Set((0, 0, 0))
-    Theta0i.vec.FV().NumPy()[:] = Theta0Sol[:, i]
-    Theta0j = GridFunction(fes2)
-    Theta0j.Set((0, 0, 0))
-    Theta0j.vec.FV().NumPy()[:] = Theta0Sol[:, j]
-
-    np.save('Theta0Sols.npy', Theta0Sol)
-    np.save('Theta1Sols.npy', Theta1Sol)
+    # ### Running Integration Test for single freq:
+    # i = 0
+    # j = 0
+    # Theta1i = GridFunction(fes2)
+    # Theta1i.Set((0, 0, 0))
+    # Theta1i.vec.FV().NumPy()[:] = Theta1Sol[:, i]
+    # Theta1j = GridFunction(fes2)
+    # Theta1j.Set((0, 0, 0))
+    # Theta1j.vec.FV().NumPy()[:] = Theta1Sol[:, j]
+    #
+    # Theta0i = GridFunction(fes2)
+    # Theta0i.Set((0, 0, 0))
+    # Theta0i.vec.FV().NumPy()[:] = Theta0Sol[:, i]
+    # Theta0j = GridFunction(fes2)
+    # Theta0j.Set((0, 0, 0))
+    # Theta0j.vec.FV().NumPy()[:] = Theta0Sol[:, j]
+    #
+    # np.save('Theta0Sols.npy', Theta0Sol)
+    # np.save('Theta1Sols.npy', Theta1Sol)
 
     # integration_test.MassTest(inout, nu, sigma, Theta1i, Theta1j, mesh, fes2)
     # integration_test.MassTest(inout, nu, sigma, Theta1Sol[:,i],Theta1Sol[:,j], mesh, fes2, inorout, sigma_coef, prism_flag=prism_flag)
@@ -277,7 +271,7 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
     ImaginaryEigenvalues = np.sort(np.linalg.eigvals(I))
     EigenValues = RealEigenvalues + 1j * ImaginaryEigenvalues
 
-    del Theta1i, Theta1j, Theta0i, Theta0j, fes, fes2, Theta0Sol, Theta1Sol
+    # del Theta1i, Theta1j, Theta0i, Theta0j, fes, fes2, Theta0Sol, Theta1Sol
     gc.collect()
 
     return MPT, EigenValues, N0, numelements, (ndof, ndof2)
