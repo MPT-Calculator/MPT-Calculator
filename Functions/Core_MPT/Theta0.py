@@ -6,7 +6,7 @@ import gc
 
 # Function definition to solve the Theta0 problem
 # Output -The solution to the theta0 problem as a (NGSolve) gridfunction
-def Theta0(fes, Order, alpha, mu, inout, e, Tolerance, Maxsteps, epsi, simnumber, Solver, use_longdouble=True):
+def Theta0(fes, Order, alpha, mu, inout, e, Tolerance, Maxsteps, epsi, simnumber, Solver, Additional_Int_Order, use_longdouble=True):
     # print the progress
     # try:
     #     print(' solving theta0 %d/3' % (simnumber), end='\r', flush=True)
@@ -22,10 +22,10 @@ def Theta0(fes, Order, alpha, mu, inout, e, Tolerance, Maxsteps, epsi, simnumber
 
     # Create the bilinear form (this is for theta^0 tilda)
     f = LinearForm(fes)
-    f += SymbolicLFI(inout * (2 * (1 - mu ** (-1))) * InnerProduct(e, curl(v)))
+    f += SymbolicLFI(inout * (2 * (1 - mu ** (-1))) * InnerProduct(e, curl(v)), bonus_intorder=Additional_Int_Order)
     a = BilinearForm(fes, symmetric=True, condense=True)
-    a += SymbolicBFI((mu ** (-1)) * (curl(u) * curl(v)))
-    a += SymbolicBFI(epsi * (u * v))
+    a += SymbolicBFI((mu ** (-1)) * (curl(u) * curl(v)), bonus_intorder=Additional_Int_Order)
+    a += SymbolicBFI(epsi * (u * v), bonus_intorder=Additional_Int_Order)
     if Solver == "bddc":
         c = Preconditioner(a, "bddc")  # Apply the bddc preconditioner
     a.Assemble()

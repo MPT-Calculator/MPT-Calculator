@@ -1,5 +1,11 @@
 Changelog for MPT-Calculator:
 
+March 2023:
+- Added general intgration order (Integration_Order) to the main() function. This then propagates through the different MPT-Calculator functions. E.g. PODSweep.
+- Updated missing bonus_intorder to full solve and integration mode linear and bilinear forms.
+- Added to CheckValid.py to also compute the object volume.
+
+
 Feb 2023:
 - Refactored Functions folder, such that each function now has its own file. This was to make debugging easier.
 - set 2(p+1) integration order to Integration functions.

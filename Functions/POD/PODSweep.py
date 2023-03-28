@@ -41,15 +41,12 @@ import time
 
 
 def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, PlotPod, sweepname, SavePOD,
-             PODErrorBars, BigProblem, NumSolverThreads, curve=5, recoverymode=False, prism_flag=False, save_U=False):
+             PODErrorBars, BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, curve=5, recoverymode=False, save_U=False):
 
     Object = Object[:-4] + ".vol"
     # Set up the Solver Parameters
-    Solver, epsi, Maxsteps, Tolerance, AdditionalInt, use_integral = SolverParameters()
+    Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()
     # AdditionalInt *= Order
-
-    if prism_flag is False:
-        AdditionalInt += 2
 
     # Loading the object file
     ngmesh = ngmeshing.Mesh(dim=3)
@@ -108,7 +105,7 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
     if recoverymode is False:
         # Run in three directions and save in an array for later
         for i in tqdm.tqdm(range(3), desc='Solving Theta0'):
-            Theta0Sol[:, i] = Theta0(fes, Order, alpha, mu, inout, evec[i], Tolerance, Maxsteps, epsi, i + 1, Solver)
+            Theta0Sol[:, i] = Theta0(fes, Order, alpha, mu, inout, evec[i], Tolerance, Maxsteps, epsi, i + 1, Solver, Additional_Int_Order)
         print(' solved theta0 problems   ')
     else:
         try:
@@ -119,27 +116,27 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
             # Run in three directions and save in an array for later
             for i in range(3):
                 Theta0Sol[:, i] = Theta0(fes, Order, alpha, mu, inout, evec[i], Tolerance, Maxsteps, epsi, i + 1,
-                                         Solver)
+                                         Solver, Additional_Int_Order)
             print(' solved theta0 problems   ')
     np.save('Results/' + sweepname + '/Data/Theta0', Theta0Sol)
 
     # Calculate the N0 tensor
-    VolConstant = Integrate(1 - mu ** (-1), mesh)
+    VolConstant = Integrate(1 - mu ** (-1), mesh, order=Integration_Order)
     for i in range(3):
         Theta0i.vec.FV().NumPy()[:] = Theta0Sol[:, i]
         for j in range(3):
             Theta0j.vec.FV().NumPy()[:] = Theta0Sol[:, j]
             if i == j:
                 N0[i, j] = (alpha ** 3) * (VolConstant + (1 / 4) * (
-                    Integrate(mu ** (-1) * (InnerProduct(curl(Theta0i), curl(Theta0j))), mesh, order=2 * Order)))
+                    Integrate(mu ** (-1) * (InnerProduct(curl(Theta0i), curl(Theta0j))), mesh, order=Integration_Order)))
             else:
                 N0[i, j] = (alpha ** 3 / 4) * (
-                    Integrate(mu ** (-1) * (InnerProduct(curl(Theta0i), curl(Theta0j))), mesh, order=2 * Order))
+                    Integrate(mu ** (-1) * (InnerProduct(curl(Theta0i), curl(Theta0j))), mesh, order=Integration_Order))
 
     # Poission Projection to acount for gradient terms:
     u, v = fes.TnT()
     m = BilinearForm(fes)
-    m += u * v * dx
+    m += SymbolicBFI(u * v, bonus_intorder=Additional_Int_Order)
     m.Assemble()
 
     # build gradient matrix as sparse matrix (and corresponding scalar FESpace)
@@ -184,11 +181,11 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
             PODTensors, PODEigenValues, Theta1Sols[:, :, :] = Theta1_Sweep(PODArray, mesh, fes, fes2, Theta0Sol, xivec,
                                                                            alpha, sigma, mu, inout, Tolerance, Maxsteps,
                                                                            epsi, Solver, N0, NumberofFrequencies, True,
-                                                                           True, False, BigProblem, Order, NumSolverThreads)
+                                                                           True, False, BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order)
         else:
             Theta1Sols[:, :, :] = Theta1_Sweep(PODArray, mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu, inout,
                                                Tolerance, Maxsteps, epsi, Solver, N0, NumberofFrequencies, True, False,
-                                               False, BigProblem, Order, NumSolverThreads)
+                                               False, BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order)
         print(' solved theta1 problems     ')
         #########################################################################
         # POD
@@ -268,35 +265,35 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
         a0 = BilinearForm(fes2, symmetric=True)
     else:
         a0 = BilinearForm(fes2, symmetric=True)
-    a0 += SymbolicBFI((mu ** (-1)) * InnerProduct(curl(u), curl(v)))
-    a0 += SymbolicBFI((1j) * (1 - inout) * epsi * InnerProduct(u, v))
+    a0 += SymbolicBFI((mu ** (-1)) * InnerProduct(curl(u), curl(v)), bonus_intorder=Additional_Int_Order)
+    a0 += SymbolicBFI((1j) * (1 - inout) * epsi * InnerProduct(u, v), bonus_intorder=Additional_Int_Order)
     if BigProblem == True:
         a1 = BilinearForm(fes2, symmetric=True)
     else:
         a1 = BilinearForm(fes2, symmetric=True)
-    a1 += SymbolicBFI((1j) * inout * nu_no_omega * sigma * InnerProduct(u, v))
+    a1 += SymbolicBFI((1j) * inout * nu_no_omega * sigma * InnerProduct(u, v), bonus_intorder=Additional_Int_Order)
 
     a0.Assemble()
     a1.Assemble()
 
     Theta_0.vec.FV().NumPy()[:] = Theta0Sol[:, 0]
     r1 = LinearForm(fes2)
-    r1 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(Theta_0, v))
-    r1 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(xivec[0], v))
+    r1 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(Theta_0, v), bonus_intorder=Additional_Int_Order)
+    r1 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(xivec[0], v), bonus_intorder=Additional_Int_Order)
     r1.Assemble()
     read_vec = r1.vec.CreateVector()
     write_vec = r1.vec.CreateVector()
 
     Theta_0.vec.FV().NumPy()[:] = Theta0Sol[:, 1]
     r2 = LinearForm(fes2)
-    r2 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(Theta_0, v))
-    r2 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(xivec[1], v))
+    r2 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(Theta_0, v), bonus_intorder=Additional_Int_Order)
+    r2 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(xivec[1], v), bonus_intorder=Additional_Int_Order)
     r2.Assemble()
 
     Theta_0.vec.FV().NumPy()[:] = Theta0Sol[:, 2]
     r3 = LinearForm(fes2)
-    r3 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(Theta_0, v))
-    r3 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(xivec[2], v))
+    r3 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(Theta_0, v), bonus_intorder=Additional_Int_Order)
+    r3 += SymbolicLFI(inout * (-1j) * nu_no_omega * sigma * InnerProduct(xivec[2], v), bonus_intorder=Additional_Int_Order)
     r3.Assemble()
 
     # Preallocation
@@ -403,7 +400,7 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
         u, v = fes0.TnT()
 
         m = BilinearForm(fes0)
-        m += SymbolicBFI(InnerProduct(u, v))
+        m += SymbolicBFI(InnerProduct(u, v), bonus_intorder=Additional_Int_Order)
         f = LinearForm(fes0)
         m.Assemble()
         c = Preconditioner(m, "local")
@@ -447,15 +444,16 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
         Omega = Array[0]
         u, v = fes3.TnT()
         amax = BilinearForm(fes3)
-        amax += (mu ** (-1)) * curl(u) * curl(v) * dx
-        amax += (1 - inout) * epsi * u * v * dx
-        amax += inout * sigma * (alpha ** 2) * Mu0 * Omega * u * v * dx
+        amax += SymbolicBFI((mu ** (-1)) * curl(u) * curl(v), bonus_intorder=Additional_Int_Order)
+        amax += SymbolicBFI((1 - inout) * epsi * u * v, bonus_intorder=Additional_Int_Order)
+        amax += SymbolicBFI(inout * sigma * (alpha ** 2) * Mu0 * Omega * u * v, bonus_intorder=Additional_Int_Order)
 
         m = BilinearForm(fes3)
-        m += u * v * dx
+        m += SymbolicBFI(u * v, bonus_intorder=Additional_Int_Order)
 
         apre = BilinearForm(fes3)
-        apre += curl(u) * curl(v) * dx + u * v * dx
+        apre += SymbolicBFI(curl(u) * curl(v), bonus_intorder=Additional_Int_Order)
+        apre += SymbolicBFI(u * v, bonus_intorder=Additional_Int_Order)
         pre = Preconditioner(amax, "bddc")
 
         with TaskManager():
@@ -500,12 +498,12 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
     if use_integral is False:
         u, v = fes2.TnT()
         K = BilinearForm(fes2, symmetric=True)
-        K += SymbolicBFI(inout * mu ** (-1) * curl(u) * Conj(curl(v)), bonus_intorder=AdditionalInt)
-        K += SymbolicBFI((1 - inout) * curl(u) * Conj(curl(v)), bonus_intorder=AdditionalInt)
+        K += SymbolicBFI(inout * mu ** (-1) * curl(u) * Conj(curl(v)), bonus_intorder=Additional_Int_Order)
+        K += SymbolicBFI((1 - inout) * curl(u) * Conj(curl(v)), bonus_intorder=Additional_Int_Order)
         K.Assemble()
 
         A = BilinearForm(fes2, symmetric=True)
-        A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=AdditionalInt)
+        A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=Additional_Int_Order)
         A.Assemble()
         rows, cols, vals = A.mat.COO()
         A_mat = sp.csr_matrix((vals, (rows, cols)))
@@ -516,12 +514,12 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
         for i in range(3):
 
             E_lf = LinearForm(fes2)
-            E_lf += SymbolicLFI(sigma * inout * xivec[i] * v, bonus_intorder=AdditionalInt)
+            E_lf += SymbolicLFI(sigma * inout * xivec[i] * v, bonus_intorder=Additional_Int_Order)
             E_lf.Assemble()
             E[i, :] = E_lf.vec.FV().NumPy()[:]
 
             for j in range(3):
-                G[i, j] = Integrate(sigma * inout * xivec[i] * xivec[j], mesh, order=2 * (Order + 1))
+                G[i, j] = Integrate(sigma * inout * xivec[i] * xivec[j], mesh, order=Integration_Order)
 
             H = E.transpose()
 
@@ -602,10 +600,10 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
 
                     # Real and Imaginary parts
                     R[i, j] = -(((alpha ** 3) / 4) * Integrate((mu ** (-1)) * (curl(Theta_1j) * Conj(curl(Theta_1i))),
-                                                               mesh, order=2 * Order)).real
+                                                               mesh, order=Integration_Order)).real
                     I[i, j] = ((alpha ** 3) / 4) * Integrate(
                         inout * nu * sigma * ((Theta_1j + Theta_0j + xij) * (Conj(Theta_1i) + Theta_0 + xii)), mesh,
-                        order=2 * Order).real
+                        order=Integration_Order).real
 
         else:
             for i in range(3):
@@ -670,45 +668,13 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
                         T = T32
                         c5 = c5_32
                     # # Looping through non-zero entries in sparse K matrix.
-                    # A = 0
-                    # Z = np.zeros(fes2.ndof, dtype=complex)
-                    # for row_ele, col_ele, val_ele in zip(rows, cols, vals):
-                    #     # Post multiplication Z = K u
-                    #     Z[row_ele] += val_ele * np.conj(t1j[col_ele])
-                    # for row_ele in rows:
-                    #     # Pre multiplication A = u^T Z
-                    #     A += (t1i[row_ele] * (Z[row_ele]))
 
                     A = np.conj(gi[None, :]) @ Q @ (gj)[:, None]
                     R[i, j] = (A * (-alpha ** 3) / 4).real
 
-                    # c1 = (t0i)[None, :] @ (A_mat * omega) @ (t0j)[:, None]
-                    # c2 = (t1i)[None, :] @ (A_mat * omega) @ (t0j)[:, None]
-                    # c2 = wi[None,:] @ A_mat_t0
-                    # # c3 = (t0i)[None, :] @ (A_mat * omega) @ np.conj(t1j)[:, None]
-                    # c3 =  (t0i)[None,:] @ A_mat @ np.conj(wj)[:,None]
-                    # # c4 = (t1i)[None, :] @ (A_mat * omega) @ np.conj(t1j)[:, None]
-                    # c4 = (wi)[None,:] @ A_mat @ np.conj(wj)[:,None]
-                    # # c5 = (E[i, :] * omega) @ t0j[:, None]
-                    # # c5 = (E[i, :]) @ t0j[:, None]
-                    # # c6 = (E[i, :] * omega) @ np.conj(t1j)[:, None]
-                    # c6 = (E[i, :]) @ np.conj(wj)[:, None]
-                    # # c7 = G[i, j] * omega
-                    # c7 = G[i,j]
-                    # # c8 = (t0i[None, :] @ ((H[:, j] * omega)))
-                    # c8 = (t0i[None, :] @ ((H[:, j])))
-                    # # c9 = (t1i[None, :] @ ((H[:, j] * omega)))
-                    # c9 = (wi[None, :] @ ((H[:, j])))
-
-                    # total = omega * (c1 + c2 + c3 + c4 + c5 + c6 + c7 + c8 + c9) #c1 + c2 + c3 + c4 + c5 + c6 + c7 + c8 + c9
-                    # I[i,j] = complex(total).real
                     c_sum = np.real(np.conj(wj[None, :]) @ A_mat @ wi) + 2 * np.real(
                         wi[None, :] @ A_mat_t0) + 2 * np.real(E[i, :] @ (t0j + np.conj(wj)))
                     I[i, j] = np.real((alpha ** 3 / 4) * omega * Mu0 * alpha ** 2 * (c1 + G[i, j] + c_sum))[0]
-        # if omega > 10**7:
-        #     print(I[i,j])
-        #     # Theta_0.vec.FV().NumPy()[:] = Theta0Sol[:, i]
-        #     integration_test.Test(inout, nu, sigma, wj, t0j, xivec[j], mesh, xivec[i], wi, t0i, xivec, i, j, fes2)
 
         R += np.transpose(R - np.diag(np.diag(R))).real
         I += np.transpose(I - np.diag(np.diag(I))).real

@@ -6,7 +6,7 @@ import tqdm
 
 
 def Theta1_Lower_Sweep(Array, mesh, fes, fes2, Sols, u1Truncated, u2Truncated, u3Truncated, Theta0Sols, xivec, alpha,
-                       sigma, mu, inout, N0, TotalNOF, counter, PODErrorBars, alphaLB, G_Store, Order, AdditionalInt,
+                       sigma, mu, inout, N0, TotalNOF, counter, PODErrorBars, alphaLB, G_Store, Order, Integration_Order, Additional_Int_Order,
                        use_integral):
     # Setup variables
     Mu0 = 4 * np.pi * 10 ** (-7)
@@ -40,12 +40,12 @@ def Theta1_Lower_Sweep(Array, mesh, fes, fes2, Sols, u1Truncated, u2Truncated, u
     if use_integral is False:
         u, v = fes2.TnT()
         K = BilinearForm(fes2, symmetric=True)
-        K += SymbolicBFI(inout * mu ** (-1) * curl(u) * curl(v), bonus_intorder=AdditionalInt)
-        K += SymbolicBFI((1 - inout) * curl(u) * curl(v), bonus_intorder=AdditionalInt)
+        K += SymbolicBFI(inout * mu ** (-1) * curl(u) * curl(v), bonus_intorder=Additional_Int_Order)
+        K += SymbolicBFI((1 - inout) * curl(u) * curl(v), bonus_intorder=Additional_Int_Order)
         K.Assemble()
 
         A = BilinearForm(fes2, symmetric=True)
-        A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=AdditionalInt)
+        A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=Additional_Int_Order)
         A.Assemble()
         rows, cols, vals = A.mat.COO()
         A_mat = sp.csr_matrix((vals, (rows, cols)))
@@ -56,12 +56,12 @@ def Theta1_Lower_Sweep(Array, mesh, fes, fes2, Sols, u1Truncated, u2Truncated, u
         for i in range(3):
 
             E_lf = LinearForm(fes2)
-            E_lf += SymbolicLFI(sigma * inout * xivec[i] * v, bonus_intorder=AdditionalInt)
+            E_lf += SymbolicLFI(sigma * inout * xivec[i] * v, bonus_intorder=Additional_Int_Order)
             E_lf.Assemble()
             E[i, :] = E_lf.vec.FV().NumPy()[:]
 
             for j in range(3):
-                G[i, j] = Integrate(sigma * inout * xivec[i] * xivec[j], mesh, order=2 * (Order + 1))
+                G[i, j] = Integrate(sigma * inout * xivec[i] * xivec[j], mesh, order=Integration_Order)
 
             H = E.transpose()
 
@@ -146,10 +146,10 @@ def Theta1_Lower_Sweep(Array, mesh, fes, fes2, Sols, u1Truncated, u2Truncated, u
 
                     # Real and Imaginary parts
                     R[i, j] = -(((alpha ** 3) / 4) * Integrate((mu ** (-1)) * (curl(Theta_1j) * Conj(curl(Theta_1i))),
-                                                               mesh, order=2 * (Order + 1))).real
+                                                               mesh, order=Integration_Order)).real
                     I[i, j] = ((alpha ** 3) / 4) * Integrate(
                         inout * nu * sigma * ((Theta_1j + Theta_0j + xij) * (Conj(Theta_1i) + Theta_0i + xii)), mesh,
-                        order=2 * (Order + 1)).real
+                        order=Integration_Order).real
 
         # Use matrix method.
         else:
@@ -215,42 +215,16 @@ def Theta1_Lower_Sweep(Array, mesh, fes, fes2, Sols, u1Truncated, u2Truncated, u
                             c1 = c1_32
                             A_mat_t0 = A_mat_t0_2
                             c5 = c5_32
-                        # # Looping through non-zero entries in sparse K matrix.
-                        # A = 0
-                        # Z = np.zeros(fes2.ndof, dtype=complex)
-                        # for row_ele, col_ele, val_ele in zip(rows, cols, vals):
-                        #     # Post multiplication Z = K u
-                        #     Z[row_ele] += val_ele * np.conj(t1j[col_ele])
-                        # for row_ele in rows:
-                        #     # Pre multiplication A = u^T Z
-                        #     A += (t1i[row_ele] * (Z[row_ele]))
 
                         A = np.conj(gi[None, :]) @ Q @ (gj)[:, None]
                         R[i, j] = (A * (-alpha ** 3) / 4).real
 
-                        # # c1 = (t0i)[None, :] @ (A_mat * omega) @ (t0j)[:, None]
-                        # # c2 = (t1i)[None, :] @ (A_mat * omega) @ (t0j)[:, None]
                         c2 = wi[None, :] @ A_mat_t0
-                        # # c3 = (t0i)[None, :] @ (A_mat * omega) @ np.conj(t1j)[:, None]
                         c3 = (t0i)[None, :] @ A_mat @ np.conj(wj)[:, None]
-                        # # c4 = (t1i)[None, :] @ (A_mat * omega) @ np.conj(t1j)[:, None]
                         c4 = (wi)[None, :] @ A_mat @ np.conj(wj)[:, None]
-                        # # c5 = (E[i, :] * omega) @ t0j[:, None]
-                        # c5 = (E[i, :]) @ t0j[:, None]
-                        # # c6 = (E[i, :] * omega) @ np.conj(t1j)[:, None]
                         c6 = (E[i, :]) @ np.conj(wj)[:, None]
-                        # # c7 = G[i, j] * omega
-                        # c7 = G[i, j]
-                        # # c8 = (t0i[None, :] @ ((H[:, j] * omega)))
                         c8 = t0i[None, :] @ H[:, j]
-                        # # c9 = (t1i[None, :] @ ((H[:, j] * omega)))
                         c9 = wi[None, :] @ H[:, j]
-                        #
-                        # total = omega * (
-                        #             c1 + c2 + c3 + c4 + c5 + c6 + c7 + c8 + c9)  # c1 + c2 + c3 + c4 + c5 + c6 + c7 + c8 + c9
-                        # I[i, j] = ((alpha ** 3) / 4) * complex(total).real
-
-                        # c_sum = np.real(np.conj(gj) @ T @ gi) + 2 * np.real(wi @ A_mat_t0) + 2 * np.real(E[i, :] @ (t0j + np.conj(wj)))
 
                         c_sum = np.real(c2 + c3 + c4 + c5 + c6 + c8 + c9)
 

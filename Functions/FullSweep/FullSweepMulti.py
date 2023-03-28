@@ -24,10 +24,10 @@ from Settings import SolverParameters
 
 
 # Function definition for a full order frequency sweep in parallel
-def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProblem, NumSolverThreads, curve=5):
+def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProblem, NumSolverThreads,Integration_Order, Additional_Int_Order, curve=5):
     Object = Object[:-4 ] +".vol"
     # Set up the Solver Parameters
-    Solver ,epsi ,Maxsteps ,Tolerance, AdditionalInt, _ = SolverParameters()
+    Solver ,epsi ,Maxsteps ,Tolerance, _, _ = SolverParameters()
 
     # Loading the object file
     ngmesh = ngmeshing.Mesh(dim=3)
@@ -81,9 +81,9 @@ def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProb
     Runlist = []
     for i in range(3):
         if Theta0CPUs < 3:
-            NewInput = (fes, Order, alpha, mu, inout, evec[i], Tolerance, Maxsteps, epsi, i + 1, Solver, 'Theta0')
+            NewInput = (fes, Order, alpha, mu, inout, evec[i], Tolerance, Maxsteps, epsi, i + 1, Solver,Additional_Int_Order, 'Theta0')
         else:
-            NewInput = (fes, Order, alpha, mu, inout, evec[i], Tolerance, Maxsteps, epsi, "No Print", Solver, 'Theta0')
+            NewInput = (fes, Order, alpha, mu, inout, evec[i], Tolerance, Maxsteps, epsi, "No Print", Solver, Additional_Int_Order, 'Theta0')
         Runlist.append(NewInput)
     # Run on the multiple cores
     with multiprocessing.get_context("spawn").Pool(Theta0CPUs) as pool:
@@ -96,17 +96,17 @@ def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProb
         Theta0Sol[:, i] = Direction
 
     # Calculate the N0 tensor
-    VolConstant = Integrate(1 - mu ** (-1), mesh)
+    VolConstant = Integrate(1 - mu ** (-1), mesh, order=Integration_Order)
     for i in range(3):
         Theta0i.vec.FV().NumPy()[:] = Theta0Sol[:, i]
         for j in range(3):
             Theta0j.vec.FV().NumPy()[:] = Theta0Sol[:, j]
             if i == j:
                 N0[i, j] = (alpha ** 3) * (VolConstant + (1 / 4) * (
-                    Integrate(mu ** (-1) * (InnerProduct(curl(Theta0i), curl(Theta0j))), mesh, order=2 * (Order + 1))))
+                    Integrate(mu ** (-1) * (InnerProduct(curl(Theta0i), curl(Theta0j))), mesh, order=Integration_Order)))
             else:
                 N0[i, j] = (alpha ** 3 / 4) * (
-                    Integrate(mu ** (-1) * (InnerProduct(curl(Theta0i), curl(Theta0j))), mesh, order=2 * (Order + 1)))
+                    Integrate(mu ** (-1) * (InnerProduct(curl(Theta0i), curl(Theta0j))), mesh, order=Integration_Order))
 
     #########################################################################
     # Theta1
@@ -150,7 +150,7 @@ def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProb
     counter = manager.Value('i', 0)
     for i in range(len(Array)):
         Runlist.append((np.asarray([Array[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu, inout, Tolerance,
-                        Maxsteps, epsi, Solver, N0, NumberofFrequencies, False, True, counter, False, Order, NumSolverThreads, 'Theta1_Sweep'))
+                        Maxsteps, epsi, Solver, N0, NumberofFrequencies, False, True, counter, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, 'Theta1_Sweep'))
 
 
     tqdm.tqdm.set_lock(multiprocessing.RLock())

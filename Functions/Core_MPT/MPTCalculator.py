@@ -7,7 +7,7 @@ import gc
 # Outputs -R as a numpy array
 #        -I as a numpy array (This contains real values not imaginary ones)
 def MPTCalculator(mesh, fes, fes2, Theta1E1Sol, Theta1E2Sol, Theta1E3Sol, Theta0Sol, xivec, alpha, mu, sigma, inout, nu,
-                  tennumber, outof, Order):
+                  tennumber, outof, Order, Integration_Order):
     # Print the progress of the sweep
     try:  # This is used for the simulations run in parallel
         tennumber.value += 1
@@ -45,10 +45,10 @@ def MPTCalculator(mesh, fes, fes2, Theta1E1Sol, Theta1E2Sol, Theta1E3Sol, Theta0
 
             # Real and Imaginary parts
             R[i, j] = -(((alpha ** 3) / 4) * Integrate((mu ** (-1)) * (curl(Theta1j) * Conj(curl(Theta1i))), mesh,
-                                                       order=2 * (Order + 1))).real
+                                                       order=Integration_Order)).real
             I[i, j] = ((alpha ** 3) / 4) * Integrate(
                 inout * nu * sigma * ((Theta1j + Theta0j + xij) * (Conj(Theta1i) + Theta0i + xii)), mesh,
-                order=2 * (Order + 1)).real
+                order=Integration_Order).real
     R += np.transpose(R - np.diag(np.diag(R))).real
     I += np.transpose(I - np.diag(np.diag(I))).real
     return R, I

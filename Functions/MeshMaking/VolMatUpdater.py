@@ -20,6 +20,8 @@ def VolMatUpdater(Geometry, OldMesh):
     murlist = []
     siglist = []
     inout = []
+    condlist=[]
+
     # Read the .geo file
     f = open("GeoFiles/" + Geometry, "r")
     f1 = f.readlines()
@@ -107,6 +109,25 @@ def VolMatUpdater(Geometry, OldMesh):
             inout.append(0)
         else:
             inout.append(1)
+#   Create a list of the different materials and tags for each subdomain
+#   so that each can be identified seperately
+    tags =[]
+    ntags = 0
+    for mat in matlist:
+        flag =0
+        for n in range(1,ntags):
+            print(n,tags[n-1],mat)
+            if mat==tags[n-1]:
+                condlist.append(n-1)
+                flag=1
+        if flag==0:
+            # tag not found
+            tags.append(mat)
+            condlist.append(ntags)
+            ntags = ntags +1
+    print(condlist,ntags,tags)
+
+
     f.close()
 
     # extract the number of boundaries and the outer boundaries
@@ -194,7 +215,7 @@ def VolMatUpdater(Geometry, OldMesh):
     inorout = dict(zip(matlist, inout))
     mur = dict(zip(matlist, murlist))
     sig = dict(zip(matlist, siglist))
+    cond=dict(zip(matlist,condlist))
 
-    return matlist, mur, sig, inorout
 
-
+    return matlist, mur, sig, inorout, cond, ntags, tags
