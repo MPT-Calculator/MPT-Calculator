@@ -225,6 +225,9 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
     print(f'N Prisms: {N_prisms}, N Tets: {N_tets}')
 
 
+    ### TESTING ###
+    # Additional_Int_Order = 2
+
     # For the combination of curved elements and high order elements, one can use the same quadrature rule as one would
     # use for high order elements on flat sided elements ie if the integrand is of degree 2*(order+1) then we just need
     # to use an rule that can integrate up to 2*(order+1) exactly. This is because other approximations are made with
@@ -237,7 +240,9 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
     # eg |B| = int_B \dxi or int_B e_i \times \xi \cdot e_j \times \xi d\xi that strongly depend on the geometry order
     # (and not FEM order) and hence we set an integration_order for the post processing that is very conservative and
     # takes both 3*(curve-1) and 2*(order+1) in to account as the degree of the integrand.
-    Integration_Order = 2*(Order+1) + 3*(curve_degree-1)
+    Integration_Order = np.max([2*(Order+1), 3*(curve_degree-1)])
+    # Integration_Order = 2*(Order+1)+ 3*(curve_degree-1)
+    # Integration_Order = 2*(Order+1)
 
 
 
@@ -291,7 +296,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
 
     #Check the validity of the eddy-current model for the object
     if EddyCurrentTest == True:
-        EddyCurrentTest = Checkvalid(Geometry,Order,alpha,inorout,mur,sig,cond,ntags,tags)
+        EddyCurrentTest = Checkvalid(Geometry,Order,alpha,inorout,mur,sig,cond,ntags,tags, curve_degree, Integration_Order, Additional_Int_Order)
 
     if Single==True:
         if MultiProcessing!=True:
@@ -545,4 +550,4 @@ def save_all_figures(path, format='png', suffix='', prefix=''):
 
 
 if __name__ == '__main__':
-    main(geometry='Tetra.geo', order=3, use_parallel=True, use_OCC=False, use_POD=True)
+    Return = main()
