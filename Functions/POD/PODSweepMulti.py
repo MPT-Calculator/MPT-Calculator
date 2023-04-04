@@ -5,7 +5,7 @@ Changed pool generation to spawn to fix linux bug.
 
 """
 #Importing
-
+import gc
 import os
 from contextlib import contextmanager
 import sys
@@ -44,6 +44,9 @@ from matplotlib.ticker import MaxNLocator
 
 def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, PlotPod, CPUs, sweepname, SavePOD,
                   PODErrorBars, BigProblem, Integration_Order, Additional_Int_Order, curve=5, recoverymode=False, NumSolverThreads='default', save_U=False):
+    timing_dictionary = {}
+
+    timing_dictionary['start_time'] = time.time()
 
     Object = Object[:-4] + ".vol"
     # Set up the Solver Parameters
@@ -180,6 +183,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
                 N0[i, j] = (alpha ** 3 / 4) * (
                     Integrate(mu ** (-1) * (InnerProduct(curl(Theta0i), curl(Theta0j))), mesh, order=Integration_Order))
 
+    timing_dictionary['Theta0'] = time.time()
 
     #########################################################################
     # Theta1
@@ -268,6 +272,8 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
             else:
                 for j in range(ndof2):
                     Theta1Sols[j, i, :] = Outputs[i][0][j][0]
+
+        timing_dictionary['Theta1'] = time.time()
 
         ########################################################################
         # Create the ROM
@@ -568,6 +574,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
 
         # Clear the variables
         fes3, amax, apre, pre, invh1, m = None, None, None, None, None, None
+    timing_dictionary['ROM'] = time.time()
 
     ######################################################################
     # Produce the sweep on the lower dimensional space
@@ -577,6 +584,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         g[:, k, 1] = np.linalg.solve(HA0H2 + HA1H2 * omega, HR2 * omega)
         g[:, k, 2] = np.linalg.solve(HA0H3 + HA1H3 * omega, HR3 * omega)
     # Work out where to send each frequency
+    timing_dictionary['SolvedSmallerSystem'] = time.time()
     Tensor_CPUs = min(NumberofFrequencies, multiprocessing.cpu_count(), CPUs)
     Tensor_CPUs = 1
 
@@ -601,6 +609,8 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         for j, Sim in enumerate(Count_Distribution[i]):
             TempArray[:, j, :] = g[:, Sim, :]
         Lower_Sols.append(TempArray)
+
+    timing_dictionary['AssignedCores'] = time.time()
 
 
     # Depending on if the user has specified using the slower integral method. This is known to produce the correct
@@ -629,12 +639,32 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         K += SymbolicBFI(inout * mu ** (-1) * curl(u) * Conj(curl(v)), bonus_intorder=Additional_Int_Order)
         K += SymbolicBFI((1 - inout) * curl(u) * Conj(curl(v)), bonus_intorder=Additional_Int_Order)
         K.Assemble()
+        rows, cols, vals = K.mat.COO()
+        del K
+        Q = sp.csr_matrix((vals, (rows, cols)))
+        del rows, cols, vals
+        gc.collect()
+
+        # For faster computation of tensor coefficients, we multiply with Ui before the loop.
+        Q11 = np.conj(np.transpose(u1Truncated)) @ Q @ u1Truncated
+        Q22 = np.conj(np.transpose(u2Truncated)) @ Q @ u2Truncated
+        Q33 = np.conj(np.transpose(u3Truncated)) @ Q @ u3Truncated
+        Q21 = np.conj(np.transpose(u2Truncated)) @ Q @ u1Truncated
+        Q31 = np.conj(np.transpose(u3Truncated)) @ Q @ u1Truncated
+        Q32 = np.conj(np.transpose(u3Truncated)) @ Q @ u2Truncated
+
+        del Q
+        Q_array = [Q11, Q22, Q33, Q21, Q31, Q32]
 
         A = BilinearForm(fes2, symmetric=True)
         A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=Additional_Int_Order)
         A.Assemble()
         rows, cols, vals = A.mat.COO()
+        del A
         A_mat = sp.csr_matrix((vals, (rows, cols)))
+
+        del rows, cols, vals
+        gc.collect()
 
         E = np.zeros((3, fes2.ndof), dtype=complex)
         G = np.zeros((3, 3))
@@ -645,32 +675,34 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
             E_lf += SymbolicLFI(sigma * inout * xivec[i] * v, bonus_intorder=Additional_Int_Order)
             E_lf.Assemble()
             E[i, :] = E_lf.vec.FV().NumPy()[:]
+            del E_lf
 
             for j in range(3):
                 G[i, j] = Integrate(sigma * inout * xivec[i] * xivec[j], mesh, order=Integration_Order)
 
-            H = E.transpose()
+        H = E.transpose()
 
-        rows, cols, vals = K.mat.COO()
-        Q = sp.csr_matrix((vals, (rows, cols)))
-        del K
-        del A
+        print(' Built K, Q, E, and G')
 
-        # For faster computation of tensor coefficients, we multiply with Ui before the loop.
-        Q11 = np.conj(np.transpose(u1Truncated)) @ Q @ u1Truncated
-        Q22 = np.conj(np.transpose(u2Truncated)) @ Q @ u2Truncated
-        Q33 = np.conj(np.transpose(u3Truncated)) @ Q @ u3Truncated
-        Q21 = np.conj(np.transpose(u2Truncated)) @ Q @ u1Truncated
-        Q31 = np.conj(np.transpose(u3Truncated)) @ Q @ u1Truncated
-        Q32 = np.conj(np.transpose(u3Truncated)) @ Q @ u2Truncated
 
-        Q_array = [Q11, Q22, Q33, Q21, Q31, Q32]
+
 
         # Similarly for the imaginary part, we multiply with the theta0 sols beforehand.
         A_mat_t0_1 = (A_mat) @ Theta0Sol[:, 0]
         A_mat_t0_2 = (A_mat) @ Theta0Sol[:, 1]
         A_mat_t0_3 = (A_mat) @ Theta0Sol[:, 2]
 
+        T11 = np.conj(np.transpose(u1Truncated)) @ A_mat @ u1Truncated
+        T22 = np.conj(np.transpose(u2Truncated)) @ A_mat @ u2Truncated
+        T33 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u3Truncated
+        T21 = np.conj(np.transpose(u2Truncated)) @ A_mat @ u1Truncated
+        T31 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u1Truncated
+        T32 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u2Truncated
+
+        T_array = [T11, T22, T33, T21, T31, T32]
+
+
+        del A_mat
         At0_array = [A_mat_t0_1, A_mat_t0_2, A_mat_t0_3]
 
         At0U11 = np.conj(u1Truncated.transpose()) @ A_mat_t0_1
@@ -681,6 +713,14 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         At0U32 = np.conj(u2Truncated.transpose()) @ A_mat_t0_3
 
         At0U_array = [At0U11, At0U22, At0U33, At0U21, At0U31, At0U32]
+
+        UAt011 = (u1Truncated.transpose()) @ A_mat_t0_1
+        UAt022 = (u2Truncated.transpose()) @ A_mat_t0_2
+        UAt033 = (u3Truncated.transpose()) @ A_mat_t0_3
+        UAt021 = (u2Truncated.transpose()) @ A_mat_t0_1
+        UAt031 = (u3Truncated.transpose()) @ A_mat_t0_1
+        UAt032 = (u3Truncated.transpose()) @ A_mat_t0_2
+        UAt0U_array = [UAt011, UAt022, UAt033, UAt021, UAt031, UAt032]
 
         c1_11 = (np.transpose(Theta0Sol[:, 0])) @ A_mat_t0_1
         c1_22 = (np.transpose(Theta0Sol[:, 1])) @ A_mat_t0_2
@@ -709,14 +749,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
 
         c8_array = [c8_11, c8_22, c8_33, c8_21, c8_31, c8_32]
 
-        T11 = np.conj(np.transpose(u1Truncated)) @ A_mat @ u1Truncated
-        T22 = np.conj(np.transpose(u2Truncated)) @ A_mat @ u2Truncated
-        T33 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u3Truncated
-        T21 = np.conj(np.transpose(u2Truncated)) @ A_mat @ u1Truncated
-        T31 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u1Truncated
-        T32 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u2Truncated
 
-        T_array = [T11, T22, T33, T21, T31, T32]
 
         EU_11 = E[0, :] @ np.conj(u1Truncated)
         EU_22 = E[1, :] @ np.conj(u2Truncated)
@@ -725,12 +758,26 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         EU_31 = E[2, :] @ np.conj(u1Truncated)
         EU_32 = E[2, :] @ np.conj(u2Truncated)
 
-        EU_array = [EU_11, EU_22, EU_33, EU_21, EU_31, EU_32]
+        EU_array_conj = [EU_11, EU_22, EU_33, EU_21, EU_31, EU_32]
+
+        H = E.transpose()
+
+        EU_11 = u1Truncated.transpose() @ H[:, 0]
+        EU_22 = u2Truncated.transpose() @ H[:, 1]
+        EU_33 = u3Truncated.transpose() @ H[:, 2]
+        EU_21 = u2Truncated.transpose() @ H[:, 0]
+        EU_31 = u3Truncated.transpose() @ H[:, 0]
+        EU_32 = u3Truncated.transpose() @ H[:, 1]
+
+        UH_array = [EU_11, EU_22, EU_33, EU_21, EU_31, EU_32]
+
+        timing_dictionary['BuildSystemMatrices'] = time.time()
 
         runlist = []
         for i in range(Tensor_CPUs):
             runlist.append((Core_Distribution[i], Q_array, c1_array, c5_array, c7, c8_array, At0_array, At0U_array,
-                            T_array, EU_array, Lower_Sols[i], G_Store, cutoff, fes2.ndof, alpha, False))
+                            UAt0U_array, T_array, EU_array_conj, UH_array, Lower_Sols[i], G_Store, cutoff, fes2.ndof,
+                            alpha, False))
 
         with multiprocessing.get_context('spawn').Pool(Tensor_CPUs) as pool:
             Outputs = pool.starmap(Theta1_Lower_Sweep_Mat_Method, runlist)
@@ -740,6 +787,8 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         print('manually closed pool')
     except:
         print('Pool has already closed.')
+
+
 
     # Unpack the outputs
     if use_integral is True or use_integral_debug is True:
@@ -783,6 +832,8 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
             ErrorTensors[Count_Distribution[i],:] = Distributed_Errors
 
     print(' frequency sweep complete')
+    timing_dictionary['Tensors'] = time.time()
+    np.save('Results/' + sweepname + f'/Data/Timings_cpus={CPUs}.npy', timing_dictionary)
 
     if PlotPod == True:
         if PODErrorBars == True:
