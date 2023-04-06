@@ -315,7 +315,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
                         # Array_Orig = Array
                         TensorArray, EigenValues, N0, PODTensors, PODEigenValues, elements, ErrorTensors, ndofs, PODArray, PODArray_orig, TensorArray_orig, EigenValues_orig, ErrorTensors_orig, PODEigenValues_orig, PODTensors_orig, N_Snaps, Error_Array, Array, Array_Orig = PODSweepIterative(
                             Geometry, Order, alpha, inorout, mur, sig, Array, PODArray,PlotPod, sweepname,
-                            SavePOD, PODErrorBars, BigProblem, curve=curve_degree, prism_flag=prism_flag, use_parallel=True, cpus=CPUs, save_U=Save_U)
+                            SavePOD, PODErrorBars, BigProblem, Integration_Order, Additional_Int_Order, curve=curve_degree, use_parallel=True, cpus=CPUs, save_U=Save_U)
 
                         sweepname = FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol,
                                                 alpha, Order, MeshSize, mur, sig, True, vtk_output, use_OCC,
