@@ -550,4 +550,4 @@ def save_all_figures(path, format='png', suffix='', prefix=''):
 
 
 if __name__ == '__main__':
-    Return = main()
+    Return = main(geometry='Tetra.geo', use_iterative_POD=True, use_parallel=True, use_POD=True)

@@ -171,7 +171,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         Theta0Sol[:, i] = theta0.vec.FV().NumPy()[:]
 
     # Calculate the N0 tensor
-    VolConstant = Integrate(1 - mu ** (-1), mesh)
+    VolConstant = Integrate(1 - mu ** (-1), mesh, order=Integration_Order)
     for i in range(3):
         Theta0i.vec.FV().NumPy()[:] = Theta0Sol[:, i]
         for j in range(3):

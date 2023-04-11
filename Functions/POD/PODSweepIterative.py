@@ -221,7 +221,7 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
     np.save('Results/' + sweepname + '/Data/Theta0.npy', Theta0Sol)
     timing_dictionary['Theta0'] = time.time()
     # Calculate the N0 tensor
-    VolConstant = Integrate(1 - mu ** (-1), mesh, Intgration_Order)
+    VolConstant = Integrate(1 - mu ** (-1), mesh, order=Integration_Order)
     for i in range(3):
         Theta0i.vec.FV().NumPy()[:] = Theta0Sol[:, i]
         for j in range(3):
@@ -778,12 +778,32 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
             K += SymbolicBFI(inout * mu ** (-1) * curl(u) * Conj(curl(v)), bonus_intorder=Additional_Int_Order)
             K += SymbolicBFI((1 - inout) * curl(u) * Conj(curl(v)), bonus_intorder=Additional_Int_Order)
             K.Assemble()
+            rows, cols, vals = K.mat.COO()
+            del K
+            Q = sp.csr_matrix((vals, (rows, cols)))
+            del rows, cols, vals
+            gc.collect()
+
+            # For faster computation of tensor coefficients, we multiply with Ui before the loop.
+            Q11 = np.conj(np.transpose(u1Truncated)) @ Q @ u1Truncated
+            Q22 = np.conj(np.transpose(u2Truncated)) @ Q @ u2Truncated
+            Q33 = np.conj(np.transpose(u3Truncated)) @ Q @ u3Truncated
+            Q21 = np.conj(np.transpose(u2Truncated)) @ Q @ u1Truncated
+            Q31 = np.conj(np.transpose(u3Truncated)) @ Q @ u1Truncated
+            Q32 = np.conj(np.transpose(u3Truncated)) @ Q @ u2Truncated
+
+            del Q
+            Q_array = [Q11, Q22, Q33, Q21, Q31, Q32]
 
             A = BilinearForm(fes2, symmetric=True)
             A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=Additional_Int_Order)
             A.Assemble()
             rows, cols, vals = A.mat.COO()
+            del A
             A_mat = sp.csr_matrix((vals, (rows, cols)))
+
+            del rows, cols, vals
+            gc.collect()
 
             E = np.zeros((3, fes2.ndof), dtype=complex)
             G = np.zeros((3, 3))
@@ -794,32 +814,29 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
                 E_lf += SymbolicLFI(sigma * inout * xivec[i] * v, bonus_intorder=Additional_Int_Order)
                 E_lf.Assemble()
                 E[i, :] = E_lf.vec.FV().NumPy()[:]
+                del E_lf
 
                 for j in range(3):
                     G[i, j] = Integrate(sigma * inout * xivec[i] * xivec[j], mesh, order=Integration_Order)
 
-                H = E.transpose()
-
-            rows, cols, vals = K.mat.COO()
-            Q = sp.csr_matrix((vals, (rows, cols)))
-            del K
-            del A
+            H = E.transpose()
 
             # For faster computation of tensor coefficients, we multiply with Ui before the loop.
-            Q11 = np.conj(np.transpose(u1Truncated)) @ Q @ u1Truncated
-            Q22 = np.conj(np.transpose(u2Truncated)) @ Q @ u2Truncated
-            Q33 = np.conj(np.transpose(u3Truncated)) @ Q @ u3Truncated
-            Q21 = np.conj(np.transpose(u2Truncated)) @ Q @ u1Truncated
-            Q31 = np.conj(np.transpose(u3Truncated)) @ Q @ u1Truncated
-            Q32 = np.conj(np.transpose(u3Truncated)) @ Q @ u2Truncated
-
-            Q_array = [Q11, Q22, Q33, Q21, Q31, Q32]
-
             # Similarly for the imaginary part, we multiply with the theta0 sols beforehand.
             A_mat_t0_1 = (A_mat) @ Theta0Sol[:, 0]
             A_mat_t0_2 = (A_mat) @ Theta0Sol[:, 1]
             A_mat_t0_3 = (A_mat) @ Theta0Sol[:, 2]
 
+            T11 = np.conj(np.transpose(u1Truncated)) @ A_mat @ u1Truncated
+            T22 = np.conj(np.transpose(u2Truncated)) @ A_mat @ u2Truncated
+            T33 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u3Truncated
+            T21 = np.conj(np.transpose(u2Truncated)) @ A_mat @ u1Truncated
+            T31 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u1Truncated
+            T32 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u2Truncated
+
+            T_array = [T11, T22, T33, T21, T31, T32]
+
+            del A_mat
             At0_array = [A_mat_t0_1, A_mat_t0_2, A_mat_t0_3]
 
             At0U11 = np.conj(u1Truncated.transpose()) @ A_mat_t0_1
@@ -830,6 +847,14 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
             At0U32 = np.conj(u2Truncated.transpose()) @ A_mat_t0_3
 
             At0U_array = [At0U11, At0U22, At0U33, At0U21, At0U31, At0U32]
+
+            UAt011 = (u1Truncated.transpose()) @ A_mat_t0_1
+            UAt022 = (u2Truncated.transpose()) @ A_mat_t0_2
+            UAt033 = (u3Truncated.transpose()) @ A_mat_t0_3
+            UAt021 = (u2Truncated.transpose()) @ A_mat_t0_1
+            UAt031 = (u3Truncated.transpose()) @ A_mat_t0_1
+            UAt032 = (u3Truncated.transpose()) @ A_mat_t0_2
+            UAt0U_array = [UAt011, UAt022, UAt033, UAt021, UAt031, UAt032]
 
             c1_11 = (np.transpose(Theta0Sol[:, 0])) @ A_mat_t0_1
             c1_22 = (np.transpose(Theta0Sol[:, 1])) @ A_mat_t0_2
@@ -858,15 +883,6 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
 
             c8_array = [c8_11, c8_22, c8_33, c8_21, c8_31, c8_32]
 
-            T11 = np.conj(np.transpose(u1Truncated)) @ A_mat @ u1Truncated
-            T22 = np.conj(np.transpose(u2Truncated)) @ A_mat @ u2Truncated
-            T33 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u3Truncated
-            T21 = np.conj(np.transpose(u2Truncated)) @ A_mat @ u1Truncated
-            T31 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u1Truncated
-            T32 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u2Truncated
-
-            T_array = [T11, T22, T33, T21, T31, T32]
-
             EU_11 = E[0, :] @ np.conj(u1Truncated)
             EU_22 = E[1, :] @ np.conj(u2Truncated)
             EU_33 = E[2, :] @ np.conj(u3Truncated)
@@ -874,15 +890,26 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
             EU_31 = E[2, :] @ np.conj(u1Truncated)
             EU_32 = E[2, :] @ np.conj(u2Truncated)
 
-            EU_array = [EU_11, EU_22, EU_33, EU_21, EU_31, EU_32]
+            EU_array_conj = [EU_11, EU_22, EU_33, EU_21, EU_31, EU_32]
+
+            H = E.transpose()
+
+            EU_11 = u1Truncated.transpose() @ H[:, 0]
+            EU_22 = u2Truncated.transpose() @ H[:, 1]
+            EU_33 = u3Truncated.transpose() @ H[:, 2]
+            EU_21 = u2Truncated.transpose() @ H[:, 0]
+            EU_31 = u3Truncated.transpose() @ H[:, 0]
+            EU_32 = u3Truncated.transpose() @ H[:, 1]
+
+            UH_array = [EU_11, EU_22, EU_33, EU_21, EU_31, EU_32]
 
             timing_dictionary['BuildSystemMatrices'] = time.time()
 
             runlist = []
             for i in range(Tensor_CPUs):
                 runlist.append((Core_Distribution[i], Q_array, c1_array, c5_array, c7, c8_array, At0_array, At0U_array,
-                                T_array, EU_array, Lower_Sols[i], G_Store, cutoff, fes2.ndof, alpha, False))
-
+                                UAt0U_array, T_array, EU_array_conj, UH_array, Lower_Sols[i], G_Store, cutoff,
+                                fes2.ndof, alpha, False))
             with multiprocessing.get_context('spawn').Pool(Tensor_CPUs) as pool:
                 Outputs = pool.starmap(Theta1_Lower_Sweep_Mat_Method, runlist)
 
@@ -909,10 +936,18 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
         else:
             for i, Output in enumerate(Outputs):
                 for j, Num in enumerate(Count_Distribution[i]):
-                    TensorArray[Num, :] = Output[0][j] + N0.flatten()
-                    R = TensorArray[Num, :].real.reshape(3, 3)
-                    I = TensorArray[Num, :].imag.reshape(3, 3)
-                    EigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
+                    if PODErrorBars == True:
+                        TensorArray[Num, :] = Output[0][j]
+                        TensorArray[Num, :] = Output[0][j] + N0.flatten()
+                        R = TensorArray[Num, :].real.reshape(3, 3)
+                        I = TensorArray[Num, :].imag.reshape(3, 3)
+                        EigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
+                        # ErrorTensors[Num, :] = Output[2][j]
+                    else:
+                        TensorArray[Num, :] = Output[0][j] + N0.flatten()
+                        R = TensorArray[Num, :].real.reshape(3, 3)
+                        I = TensorArray[Num, :].imag.reshape(3, 3)
+                        EigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
 
         print(' reduced order systems solved')
 
