@@ -218,6 +218,8 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
         for i, Direction in enumerate(Output):
             Theta0Sol[:, i] = Direction
 
+        del Output
+
     np.save('Results/' + sweepname + '/Data/Theta0.npy', Theta0Sol)
     timing_dictionary['Theta0'] = time.time()
     # Calculate the N0 tensor
@@ -323,14 +325,17 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
                 Runlist.append((np.asarray([PODArray[i]]),mesh,fes,fes2,Theta0Sol,xivec,alpha,sigma,mu,inout,Tolerance,Maxsteps,epsi,Solver,N0,NumberofSnapshots,True,False,counter,BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, 'Theta1_Sweep'))
 
         #Run on the multiple cores
+        multiprocessing.freeze_support()
         tqdm.tqdm.set_lock(multiprocessing.RLock())
         if ngsglobals.msg_level != 0:
             to = sys.stdout
         else:
             to = os.devnull
+
+        print('Computing Theta1')
         with supress_stdout(to=to):
-            with multiprocessing.get_context("spawn").Pool(Theta1_CPUs, initializer=tqdm.tqdm.set_lock, initargs=(tqdm.tqdm.get_lock(),)) as pool:
-                Outputs = list(tqdm.tqdm(pool.imap(imap_version, Runlist), total=len(Runlist), desc='Solving Theta1 Snapshots',dynamic_ncols=True))
+            with multiprocessing.get_context("spawn").Pool(Theta1_CPUs, maxtasksperchild=1, initializer=tqdm.tqdm.set_lock, initargs=(tqdm.tqdm.get_lock(),)) as pool:
+                    Outputs = list(tqdm.tqdm(pool.imap(imap_version, Runlist), total=len(Runlist), desc='Solving Theta1 Snapshots',dynamic_ncols=True, position=0, leave=True))
 
         try:
             pool.terminate()
@@ -1142,7 +1147,7 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
 
         Max_Error = [np.max(ErrorTensors.ravel())]
 
-        Omega_Max = Omega_Max[-(N_snaps_per_iter):]
+        Omega_Max = Omega_Max[-(N_snaps_per_iter):] # Grabbing frequencies of greatest error
 
         print(f'Adding Snapshots at omega = {Omega_Max}')
 
@@ -1165,16 +1170,18 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
         # and replace the old arrays completely.
         Theta1Sols_new = np.zeros((ndof2, NumberofSnapshots + len(Omega_Max), 3), dtype=complex)
         Theta1Sols_new[:, 0:NumberofSnapshots, :] = Theta1Sols
+
         PODTensors_new = np.zeros((NumberofSnapshots + len(Omega_Max), 9), dtype=complex)
         PODTensors_new[0:NumberofSnapshots, :] = PODTensors
+
         PODEigenValues_new = np.zeros((NumberofSnapshots + len(Omega_Max), 3), dtype=complex)
         PODEigenValues_new[0:NumberofSnapshots, :] = PODEigenValues
 
 
         if use_parallel is False:
             for i in range(3):
-                Theta1Sols[:,-2, i] += Theta1(fes,fes2,Theta0Sol[:,i],xivec[i],Order,alpha,nu_no_omega*Omega_Max[0],sigma,mu,inout,Tolerance,Maxsteps,epsi,Omega_Max[0],i,3,Solver, NumSolverThreads, Additional_Int_Order)
-                Theta1Sols[:,-1, i] += Theta1(fes,fes2,Theta0Sol[:,i],xivec[i],Order,alpha,nu_no_omega*Omega_Max[1],sigma,mu,inout,Tolerance,Maxsteps,epsi,Omega_Max[1],i,3,Solver, NumSolverThreads, Additional_Int_Order)
+                for j, o in enumerate(Omega_Max):
+                    Theta1Sols_new[:,-(j+1), i] += Theta1(fes,fes2,Theta0Sol[:,i],xivec[i],Order,alpha,nu_no_omega*o,sigma,mu,inout,Tolerance,Maxsteps,epsi,o,i,3,Solver, NumSolverThreads, Additional_Int_Order)
         else:
 
             # Work out where to send each frequency
@@ -1202,13 +1209,13 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
             Runlist = []
             manager = multiprocessing.Manager()
             counter = manager.Value('i', 0)
-            for i in range(Theta1_CPUs):
+            for i in range(len(Omega_Max)):
                 if PlotPod == True:
-                    Runlist.append((Core_Distribution[i], mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu, inout,
+                    Runlist.append((np.asarray([Omega_Max[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu, inout,
                                     Tolerance, Maxsteps, epsi, Solver, N0, len(Omega_Max), True, True, counter,
                                     BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, 'Theta1_Sweep'))
                 else:
-                    Runlist.append((Core_Distribution[i], mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu, inout,
+                    Runlist.append((np.asarray([Omega_Max[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu, inout,
                                     Tolerance, Maxsteps, epsi, Solver, N0, len(Omega_Max), True, False, counter,
                                     BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, 'Theta1_Sweep'))
 
@@ -1236,7 +1243,7 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
                         Theta1Sols_new[j, i+NumberofSnapshots, :] = Outputs[i][2][j][0]
                 else:
                     for j in range(ndof2):
-                        Theta1Sols_new[j, i+NumberofSnapshots, :] = Outputs[i][2][j][0]
+                        Theta1Sols_new[j, i+NumberofSnapshots, :] = Outputs[i][0][j][0]
 
             print(' solved theta1 problems     ')
 
