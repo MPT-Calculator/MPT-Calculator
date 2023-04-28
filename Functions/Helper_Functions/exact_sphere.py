@@ -45,7 +45,7 @@ def exact_sphere(alpha, epsilon, mur, sigma, omega, framework='hyperbolic'):
         js_2_kr = sym.sqrt(sym.pi / (2 * k)) * sym.besselj(5 / 2, k)
         mpt = (2 * np.pi * alpha ** 3) * (2 * (mu - mu0) * js_0_kr + (2 * mu + mu0) * js_2_kr) / (
                 (mu + 2 * mu0) * js_0_kr + (mu - mu0) * js_2_kr)
-        return np.complex(mpt.evalf())
+        return complex(mpt.evalf())
 
 
     else:

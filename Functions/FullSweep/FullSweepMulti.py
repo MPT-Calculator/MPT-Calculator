@@ -64,7 +64,10 @@ def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProb
     # the Theta1 problem and calculate the N0 tensor
 
     # Setup the finite element space
-    fes = HCurl(mesh, order=Order, dirichlet="outer", flags={"nograds": True})
+    # fes = HCurl(mesh, order=Order, dirichlet="outer", flags={"nograds": True})
+    dom_nrs_metal = [0 if mat == "air" else 1 for mat in mesh.GetMaterials()]
+    fes = HCurl(mesh, order=Order, dirichlet="outer", gradientdomains=dom_nrs_metal)
+
     # Count the number of degrees of freedom
     ndof = fes.ndof
 

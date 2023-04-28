@@ -71,6 +71,7 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
     # For testing, I'm making the t0 space the same size as the t1 space.
     dom_nrs_metal = [0 if mat == "air" else 1 for mat in mesh.GetMaterials()]
     fes = HCurl(mesh, order=Order, dirichlet="outer", complex=False, gradientdomains=dom_nrs_metal)
+    # fes = HCurl(mesh, order=Order, dirichlet="outer", flags = { "nograds" : True })
 
     # Count the number of degrees of freedom
     ndof = fes.ndof

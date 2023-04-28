@@ -1,3 +1,4 @@
+
 """
 Edit 06 Aug 2022: James Elgy
 Changed how N0 was calculated for PODSweep to be consistent with PODSweepMulti.
@@ -361,6 +362,7 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
 
 
     print(' solved theta1 problems     ')
+    del Outputs
     timing_dictionary['Theta1'] = time.time()
 
 
@@ -780,8 +782,8 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
         else:
             u, v = fes2.TnT()
             K = BilinearForm(fes2, symmetric=True)
-            K += SymbolicBFI(inout * mu ** (-1) * curl(u) * Conj(curl(v)), bonus_intorder=Additional_Int_Order)
-            K += SymbolicBFI((1 - inout) * curl(u) * Conj(curl(v)), bonus_intorder=Additional_Int_Order)
+            K += SymbolicBFI(inout * mu ** (-1) * curl(u) * Conj(curl(v)), bonus_intorder=Integration_Order - 2*(Order+1))
+            K += SymbolicBFI((1 - inout) * curl(u) * Conj(curl(v)), bonus_intorder=Integration_Order - 2*(Order+1))
             K.Assemble()
             rows, cols, vals = K.mat.COO()
             del K
@@ -801,7 +803,7 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
             Q_array = [Q11, Q22, Q33, Q21, Q31, Q32]
 
             A = BilinearForm(fes2, symmetric=True)
-            A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=Additional_Int_Order)
+            A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=Integration_Order - 2*(Order+1))
             A.Assemble()
             rows, cols, vals = A.mat.COO()
             del A
@@ -816,7 +818,7 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
             for i in range(3):
 
                 E_lf = LinearForm(fes2)
-                E_lf += SymbolicLFI(sigma * inout * xivec[i] * v, bonus_intorder=Additional_Int_Order)
+                E_lf += SymbolicLFI(sigma * inout * xivec[i] * v, bonus_intorder=Integration_Order - 2*(Order+1))
                 E_lf.Assemble()
                 E[i, :] = E_lf.vec.FV().NumPy()[:]
                 del E_lf
@@ -847,11 +849,11 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
             At0U11 = np.conj(u1Truncated.transpose()) @ A_mat_t0_1
             At0U22 = np.conj(u2Truncated.transpose()) @ A_mat_t0_2
             At0U33 = np.conj(u3Truncated.transpose()) @ A_mat_t0_3
-            At0U21 = np.conj(u1Truncated.transpose()) @ A_mat_t0_2
-            At0U31 = np.conj(u1Truncated.transpose()) @ A_mat_t0_3
-            At0U32 = np.conj(u2Truncated.transpose()) @ A_mat_t0_3
+            At0U12 = np.conj(u1Truncated.transpose()) @ A_mat_t0_2
+            At0U13 = np.conj(u1Truncated.transpose()) @ A_mat_t0_3
+            At0U23 = np.conj(u2Truncated.transpose()) @ A_mat_t0_3
 
-            At0U_array = [At0U11, At0U22, At0U33, At0U21, At0U31, At0U32]
+            At0U_array = [At0U11, At0U22, At0U33, At0U12, At0U13, At0U23]
 
             UAt011 = (u1Truncated.transpose()) @ A_mat_t0_1
             UAt022 = (u2Truncated.transpose()) @ A_mat_t0_2
@@ -954,6 +956,7 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
                         I = TensorArray[Num, :].imag.reshape(3, 3)
                         EigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
 
+        del Output
         print(' reduced order systems solved')
 
         print(' Computing Errors')

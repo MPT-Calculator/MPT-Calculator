@@ -2,7 +2,7 @@ import numpy as np
 from ngsolve import *
 import scipy.sparse as sp
 import gc
-
+import warnings
 
 # Function definition to solve the Theta1 problem
 # Output -The solution to the theta1 problem as a (NGSolve) gridfunction
@@ -41,6 +41,8 @@ def Theta1(fes, fes2, Theta0Sol, xi, Order, alpha, nu, sigma, mu, inout, Toleran
         c = Preconditioner(a, "local")  # Apply the local preconditioner
     c.Update()
 
+    # np.save('systemmatrix.npy', [a, f, c])
+
     # Solve
     f.vec.data += a.harmonic_extension_trans * f.vec
     res = f.vec.CreateVector()
@@ -51,6 +53,12 @@ def Theta1(fes, fes2, Theta0Sol, xi, Order, alpha, nu, sigma, mu, inout, Toleran
         Theta.vec.data += inverse * res
         Theta.vec.data += a.inner_solve * f.vec
         Theta.vec.data += a.harmonic_extension * Theta.vec
+
+    # Printing warning if solver didn't converge.
+    if inverse.GetSteps() == inverse.maxsteps:
+        warnings.warn(f'Solver did not converge within {inverse.maxsteps} iterations. Solution may be inaccurate.')
+
+
 
     Theta_Return = np.zeros([fes2.ndof], dtype=np.clongdouble)
     Theta_Return[:] = Theta.vec.FV().NumPy()

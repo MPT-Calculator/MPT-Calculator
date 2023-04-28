@@ -497,38 +497,23 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
     # use_integral = False
     if use_integral is False:
         u, v = fes2.TnT()
+        # Constructing 𝐊ᵢⱼ (eqn 7 from paper)
+        # For the K bilinear forms, and also later bilinear and linear forms, we specify an integration order specific
+        # to the postprocessing. See comment in main.py on the topic.
+        u, v = fes2.TnT()
         K = BilinearForm(fes2, symmetric=True)
-        K += SymbolicBFI(inout * mu ** (-1) * curl(u) * Conj(curl(v)), bonus_intorder=Additional_Int_Order)
-        K += SymbolicBFI((1 - inout) * curl(u) * Conj(curl(v)), bonus_intorder=Additional_Int_Order)
+        K += SymbolicBFI(inout * mu ** (-1) * curl(u) * Conj(curl(v)), bonus_intorder=Integration_Order - 2*(Order+1))
+        K += SymbolicBFI((1 - inout) * curl(u) * Conj(curl(v)), bonus_intorder=Integration_Order - 2*(Order+1))
         K.Assemble()
-
-        A = BilinearForm(fes2, symmetric=True)
-        A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=Additional_Int_Order)
-        A.Assemble()
-        rows, cols, vals = A.mat.COO()
-        A_mat = sp.csr_matrix((vals, (rows, cols)))
-
-        E = np.zeros((3, fes2.ndof), dtype=complex)
-        G = np.zeros((3, 3))
-
-        for i in range(3):
-
-            E_lf = LinearForm(fes2)
-            E_lf += SymbolicLFI(sigma * inout * xivec[i] * v, bonus_intorder=Additional_Int_Order)
-            E_lf.Assemble()
-            E[i, :] = E_lf.vec.FV().NumPy()[:]
-
-            for j in range(3):
-                G[i, j] = Integrate(sigma * inout * xivec[i] * xivec[j], mesh, order=Integration_Order)
-
-            H = E.transpose()
-
         rows, cols, vals = K.mat.COO()
-        Q = sp.csr_matrix((vals, (rows, cols)))
         del K
-        del A
+        Q = sp.csr_matrix((vals, (rows, cols)))
+        del rows, cols, vals
+        gc.collect()
 
         # For faster computation of tensor coefficients, we multiply with Ui before the loop.
+        # This computes MxM 𝐊ᴹᵢⱼ. For each of the combinations ij we store the smaller matrix rather than recompute in
+        # each case.
         Q11 = np.conj(np.transpose(u1Truncated)) @ Q @ u1Truncated
         Q22 = np.conj(np.transpose(u2Truncated)) @ Q @ u2Truncated
         Q33 = np.conj(np.transpose(u3Truncated)) @ Q @ u3Truncated
@@ -536,16 +521,101 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
         Q31 = np.conj(np.transpose(u3Truncated)) @ Q @ u1Truncated
         Q32 = np.conj(np.transpose(u3Truncated)) @ Q @ u2Truncated
 
+        del Q
+        Q_array = [Q11, Q22, Q33, Q21, Q31, Q32]
+
+
+        # Similar for 𝐂ᴹᵢⱼ. refered to as A in code. For each of the combinations ij we store the smaller matrix rather
+        # than recompute in each case.
+        # Using the same basis functions for both the theta0 and theta1 problems allows us to reduce the number of
+        # bilinear forms that need to be constructed.
+        # For 𝐍ᴷ = (𝐍₀)ᴷ then 𝐂 = 𝐂¹ = 𝐂² and 𝐬ᵢ = 𝐭ᵢ. In this way we only need to consider 𝐂 (called A in code), 𝐬
+        # (called E in code) and c (called G in code) from paper.
+        A = BilinearForm(fes2, symmetric=True)
+        A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=Integration_Order - 2*(Order+1))
+        A.Assemble()
+        rows, cols, vals = A.mat.COO()
+        del A
+        A_mat = sp.csr_matrix((vals, (rows, cols)))
+
+        del rows, cols, vals
+        gc.collect()
+
+        E = np.zeros((3, fes2.ndof), dtype=complex)
+        G = np.zeros((3, 3))
+
+        for i in range(3):
+
+            E_lf = LinearForm(fes2)
+            E_lf += SymbolicLFI(sigma * inout * xivec[i] * v, bonus_intorder=Integration_Order - 2*(Order+1))
+            E_lf.Assemble()
+            E[i, :] = E_lf.vec.FV().NumPy()[:]
+            del E_lf
+
+            for j in range(3):
+                G[i, j] = Integrate(sigma * inout * xivec[i] * xivec[j], mesh, order=Integration_Order)
+
+        H = E.transpose()
+
+        print(' Built K, Q, E, and G')
+
+        #Testing:
+        # run_test_comparison(u,v, sigma, xivec, inout, mesh, Theta0Sol, Lower_Sols, u1Truncated, fes, fes2)
+
         # Similarly for the imaginary part, we multiply with the theta0 sols beforehand.
         A_mat_t0_1 = (A_mat) @ Theta0Sol[:, 0]
         A_mat_t0_2 = (A_mat) @ Theta0Sol[:, 1]
         A_mat_t0_3 = (A_mat) @ Theta0Sol[:, 2]
+
+
+        # (𝐂)^M being the reduced MxM complex matrix. Similarly to the real part, we store each combination of i,j.
+        T11 = np.conj(np.transpose(u1Truncated)) @ A_mat @ u1Truncated
+        T22 = np.conj(np.transpose(u2Truncated)) @ A_mat @ u2Truncated
+        T33 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u3Truncated
+        T21 = np.conj(np.transpose(u2Truncated)) @ A_mat @ u1Truncated
+        T31 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u1Truncated
+        T32 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u2Truncated
+
+        T_array = [T11, T22, T33, T21, T31, T32]
+
+        # At this point, we have constructed each of the main matrices we need and obtained the reduced A matrix. The
+        # larger bilinear form can therefore be removed to save memory.
+        del A_mat
+
+        At0_array = [A_mat_t0_1, A_mat_t0_2, A_mat_t0_3]
+
+        # Here we compute (𝐨ⱼ)ᵀ (̅𝐂²)ᴹ
+        # Renamed to better fit naming convention
+        UAt011_conj = np.conj(u1Truncated.transpose()) @ A_mat_t0_1
+        UAt022_conj = np.conj(u2Truncated.transpose()) @ A_mat_t0_2
+        UAt033_conj = np.conj(u3Truncated.transpose()) @ A_mat_t0_3
+        UAt012_conj = np.conj(u1Truncated.transpose()) @ A_mat_t0_2
+        UAt013_conj = np.conj(u1Truncated.transpose()) @ A_mat_t0_3
+        UAt023_conj = np.conj(u2Truncated.transpose()) @ A_mat_t0_3
+
+        UAt0_conj = [UAt011_conj, UAt022_conj, UAt033_conj, UAt012_conj, UAt013_conj, UAt023_conj]
+
+
+        # Similarly we compute and store (𝐨ⱼ)ᵀ (𝐂²)ᴹ
+        UAt011 = (u1Truncated.transpose()) @ A_mat_t0_1
+        UAt022 = (u2Truncated.transpose()) @ A_mat_t0_2
+        UAt033 = (u3Truncated.transpose()) @ A_mat_t0_3
+        UAt021 = (u2Truncated.transpose()) @ A_mat_t0_1
+        UAt031 = (u3Truncated.transpose()) @ A_mat_t0_1
+        UAt032 = (u3Truncated.transpose()) @ A_mat_t0_2
+        UAt0U_array = [UAt011, UAt022, UAt033, UAt021, UAt031, UAt032]
+
+
+        # Finally, we can construct constants that do not depend on frequency.
+        # the constant c1 corresponds to 𝐨ⱼᵀ 𝐂⁽¹⁾ 𝐨ᵢ. Similar to other cases we store each combination of i and j.
         c1_11 = (np.transpose(Theta0Sol[:, 0])) @ A_mat_t0_1
         c1_22 = (np.transpose(Theta0Sol[:, 1])) @ A_mat_t0_2
         c1_33 = (np.transpose(Theta0Sol[:, 2])) @ A_mat_t0_3
         c1_21 = (np.transpose(Theta0Sol[:, 1])) @ A_mat_t0_1
         c1_31 = (np.transpose(Theta0Sol[:, 2])) @ A_mat_t0_1
         c1_32 = (np.transpose(Theta0Sol[:, 2])) @ A_mat_t0_2
+
+        # c5 corresponds to 𝐬ᵢᵀ 𝐨ⱼ. Note that E has been transposed here.
         c5_11 = E[0, :] @ Theta0Sol[:, 0]
         c5_22 = E[1, :] @ Theta0Sol[:, 1]
         c5_33 = E[2, :] @ Theta0Sol[:, 2]
@@ -553,12 +623,46 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
         c5_31 = E[2, :] @ Theta0Sol[:, 0]
         c5_32 = E[2, :] @ Theta0Sol[:, 1]
 
-        T11 = np.conj(np.transpose(u1Truncated)) @ A_mat @ u1Truncated
-        T22 = np.conj(np.transpose(u2Truncated)) @ A_mat @ u2Truncated
-        T33 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u3Truncated
-        T21 = np.conj(np.transpose(u2Truncated)) @ A_mat @ u1Truncated
-        T31 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u1Truncated
-        T32 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u2Truncated
+        # Similarly to other examples we store each combination rather than recompute
+        c1_array = [c1_11, c1_22, c1_33, c1_21, c1_31, c1_32]
+        c5_array = [c5_11, c5_22, c5_33, c5_21, c5_31, c5_32]
+
+        # c7 = G corresponds to cᵢⱼ from paper. Note that G does not depend on the FEM basis functions, rather is a
+        # polynomial.
+        c7 = G
+
+        # c8 corresponds to  𝐬ⱼᵀ 𝐨ᵢ and shold equal c5 for on diagonal entries.
+        c8_11 = Theta0Sol[:, 0] @ H[:, 0]
+        c8_22 = Theta0Sol[:, 1] @ H[:, 1]
+        c8_33 = Theta0Sol[:, 2] @ H[:, 2]
+        c8_21 = Theta0Sol[:, 1] @ H[:, 0]
+        c8_31 = Theta0Sol[:, 2] @ H[:, 0]
+        c8_32 = Theta0Sol[:, 2] @ H[:, 1]
+
+        c8_array = [c8_11, c8_22, c8_33, c8_21, c8_31, c8_32]
+
+        # EU is the reduced linear form for E. Here we compute (̅𝐭ᴹ)ᵀ.
+        EU_11 = E[0, :] @ np.conj(u1Truncated)
+        EU_22 = E[1, :] @ np.conj(u2Truncated)
+        EU_33 = E[2, :] @ np.conj(u3Truncated)
+        EU_21 = E[1, :] @ np.conj(u1Truncated)
+        EU_31 = E[2, :] @ np.conj(u1Truncated)
+        EU_32 = E[2, :] @ np.conj(u2Truncated)
+
+        EU_array_conj = [EU_11, EU_22, EU_33, EU_21, EU_31, EU_32]
+
+        H = E.transpose()
+
+        # also computing  (𝐭ᴹ)ᵀ
+        # Renamed to better fit naming convention
+        UH_11 = u1Truncated.transpose() @ H[:, 0]
+        UH_22 = u2Truncated.transpose() @ H[:, 1]
+        UH_33 = u3Truncated.transpose() @ H[:, 2]
+        UH_21 = u2Truncated.transpose() @ H[:, 0]
+        UH_31 = u3Truncated.transpose() @ H[:, 0]
+        UH_32 = u3Truncated.transpose() @ H[:, 1]
+
+        UH_array = [UH_11, UH_22, UH_33, UH_21, UH_31, UH_32]
 
     for k, omega in enumerate(tqdm.tqdm(Array, desc='Solving Reduced Order Systems')):
 
@@ -630,51 +734,66 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
                         gj = g3
                         wj = W3
 
-                    if i == 0 and j == 0:
-                        Q = Q11
-                        c1 = c1_11
-                        A_mat_t0 = A_mat_t0_1
-                        T = T11
-                        c5 = c5_11
-                    elif i == 1 and j == 1:
-                        Q = Q22
-                        c1 = c1_22
-                        A_mat_t0 = A_mat_t0_2
-                        T = T22
-                        c5 = c5_22
-                    elif i == 2 and j == 2:
-                        Q = Q33
-                        c1 = c1_33
-                        A_mat_t0 = A_mat_t0_3
-                        T = T33
-                        c5 = c5_33
-
+                    if i == j:
+                        Q = Q_array[i]
+                        T = T_array[i]
+                        c1 = c1_array[i]
+                        c8 = c8_array[i]
+                        A_mat_t0 = At0_array[i]
+                        At0U = UAt0_conj[i]
+                        UAt0 = UAt0U_array[i]
+                        c5 = c5_array[i]
+                        EU = EU_array_conj[i]
+                        EU_notconjed = UH_array[i]
                     elif i == 1 and j == 0:
-                        Q = Q21
-                        c1 = c1_21
-                        A_mat_t0 = A_mat_t0_1
-                        T = T21
-                        c5 = c5_21
+                        Q = Q_array[3]
+                        T = T_array[3]
+                        c1 = c1_array[3]
+                        At0U = UAt0_conj[3]
+                        UAt0 = UAt0U_array[3]
+                        c8 = c8_array[3]
+                        A_mat_t0 = At0_array[0]
+                        c5 = c5_array[3]
+                        EU = EU_array_conj[3]
+                        EU_notconjed = UH_array[3]
                     elif i == 2 and j == 0:
-                        Q = Q31
-                        c1 = c1_31
-                        A_mat_t0 = A_mat_t0_1
-                        T = T31
-                        c5 = c5_31
+                        Q = Q_array[4]
+                        T = T_array[4]
+                        At0U = UAt0_conj[4]
+                        UAt0 = UAt0U_array[4]
+                        c1 = c1_array[4]
+                        c8 = c8_array[4]
+                        A_mat_t0 = At0_array[0]
+                        c5 = c5_array[4]
+                        EU = EU_array_conj[4]
+                        EU_notconjed = UH_array[4]
                     elif i == 2 and j == 1:
-                        Q = Q32
-                        c1 = c1_32
-                        A_mat_t0 = A_mat_t0_2
-                        T = T32
-                        c5 = c5_32
+                        Q = Q_array[5]
+                        T = T_array[5]
+                        At0U = UAt0_conj[5]
+                        UAt0 = UAt0U_array[5]
+                        c1 = c1_array[5]
+                        c8 = c8_array[5]
+                        A_mat_t0 = At0_array[1]
+                        c5 = c5_array[5]
+                        EU = EU_array_conj[5]
+                        EU_notconjed = UH_array[5]
                     # # Looping through non-zero entries in sparse K matrix.
-
+                    # Calc Real Part:
                     A = np.conj(gi[None, :]) @ Q @ (gj)[:, None]
                     R[i, j] = (A * (-alpha ** 3) / 4).real
 
-                    c_sum = np.real(np.conj(wj[None, :]) @ A_mat @ wi) + 2 * np.real(
-                        wi[None, :] @ A_mat_t0) + 2 * np.real(E[i, :] @ (t0j + np.conj(wj)))
-                    I[i, j] = np.real((alpha ** 3 / 4) * omega * Mu0 * alpha ** 2 * (c1 + G[i, j] + c_sum))[0]
+                    # Calc Imag Part:
+                    p1 = np.real(np.conj(gi) @ T @ gj)
+                    p2 = np.real(1 * np.conj(gj.transpose()) @ At0U)
+                    p2 += np.real(1 * gi.transpose() @ UAt0)
+                    p3 = np.real(c8 + c5)
+                    p4 = np.real(1 * EU @ np.conj(gj))
+                    p4 += np.real(1 * gi @ EU_notconjed)
+                    # p4 += np.real(EU.transpose() @ np.conj(gi.transpose()))
+
+                    I[i, j] = np.real((alpha ** 3 / 4) * omega * 4 * np.pi * 1e-7 * alpha ** 2 * (
+                                c1 + c7[i, j] + p1 + p2 + p3 + p4))
 
         R += np.transpose(R - np.diag(np.diag(R))).real
         I += np.transpose(I - np.diag(np.diag(I))).real

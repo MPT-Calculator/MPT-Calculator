@@ -4,7 +4,9 @@ import numpy as np
 # import gc
 import tqdm
 
-def Theta1_Lower_Sweep_Mat_Method(Array, Q_array, c1_array, c5_array, c7, c8_array, At0_array, At0U_array, UAt0_array, T_array, EU_array, EU_array_notconjed, Sols, G_Store, cutoff, NOF, alpha, calc_errortensors):
+def Theta1_Lower_Sweep_Mat_Method(Array, Q_array, c1_array, c5_array, c7, c8_array,
+                                  At0_array, At0U_array, UAt0_array, T_array, EU_array, EU_array_notconjed,
+                                  Sols, G_Store, cutoff, NOF, alpha, calc_errortensors):
 
     if calc_errortensors is True:
         rom1 = np.zeros([1 + 2 * cutoff, 1], dtype=complex)
@@ -98,6 +100,9 @@ def Theta1_Lower_Sweep_Mat_Method(Array, Q_array, c1_array, c5_array, c7, c8_arr
                 p4 = np.real(1 * EU @ np.conj(gj))
                 p4 += np.real(1 * gi @ EU_notconjed)
                 # p4 += np.real(EU.transpose() @ np.conj(gi.transpose()))
+
+                # if omega > 1e7:
+                #     print(f'{omega}')
 
                 I[i,j] = np.real((alpha ** 3 / 4) * omega * 4*np.pi*1e-7 * alpha ** 2 * (c1 + c7[i, j] + p1 + p2 + p3 + p4))
 
