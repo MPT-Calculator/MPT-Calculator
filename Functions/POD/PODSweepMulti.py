@@ -31,15 +31,18 @@ from ..Core_MPT.Theta1 import *
 from ..Core_MPT.Theta1_Sweep import *
 from ..Core_MPT.Theta1_Lower_Sweep import *
 from ..Core_MPT.Theta1_Lower_Sweep_Mat_Method import *
+from ..Core_MPT.MPT_Preallocation import *
 from ..POD.calc_error_certificates import *
 from ..Core_MPT.imap_execution import *
 from ..Core_MPT.supress_stdout import *
+from ..FullSweep.generate_VTK import *
 sys.path.insert(0,"Settings")
 from Settings import SolverParameters, DefaultSettings, IterativePODParameters
 
 # Importing matplotlib for plotting comparisons
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator
+from .test_comparison import run_test_comparison
 
 
 def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, PlotPod, CPUs, sweepname, SavePOD,
@@ -48,39 +51,10 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
 
     timing_dictionary['start_time'] = time.time()
 
-    Object = Object[:-4] + ".vol"
+    EigenValues, Mu0, N0, NumberofFrequencies, NumberofSnapshots, TensorArray,  inout, mesh, mu, numelements, sigma = MPT_Preallocation(
+        Array, Object, PODArray, curve, inorout, mur, sig)
     # Set up the Solver Parameters
     Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()
-
-    # Loading the object file
-    ngmesh = ngmeshing.Mesh(dim=3)
-    ngmesh.Load("VolFiles/" + Object)
-
-    # Creating the mesh and defining the element types
-    mesh = Mesh("VolFiles/" + Object)
-    mesh.Curve(curve)  # This can be used to refine the mesh
-    numelements = mesh.ne  # Count the number elements
-    print(" mesh contains " + str(numelements) + " elements")
-
-    # Set up the coefficients
-    # Scalars
-    Mu0 = 4 * np.pi * 10 ** (-7)
-    NumberofSnapshots = len(PODArray)
-    NumberofFrequencies = len(Array)
-    # Coefficient functions
-    mu_coef = [mur[mat] for mat in mesh.GetMaterials()]
-    mu = CoefficientFunction(mu_coef)
-    inout_coef = [inorout[mat] for mat in mesh.GetMaterials()]
-    inout = CoefficientFunction(inout_coef)
-    sigma_coef = [sig[mat] for mat in mesh.GetMaterials()]
-    sigma = CoefficientFunction(sigma_coef)
-
-    # Set up how the tensor and eigenvalues will be stored
-    N0 = np.zeros([3, 3])
-    TensorArray = np.zeros([NumberofFrequencies, 9], dtype=complex)
-    RealEigenvalues = np.zeros([NumberofFrequencies, 3])
-    ImaginaryEigenvalues = np.zeros([NumberofFrequencies, 3])
-    EigenValues = np.zeros([NumberofFrequencies, 3], dtype=complex)
 
     #########################################################################
     # Theta0
@@ -148,10 +122,11 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
     if recoverymode is False:
         np.save('Results/' + sweepname + '/Data/Theta0', Theta0Sol)
 
+
     # Poission Projection to acount for gradient terms:
     u, v = fes.TnT()
     m = BilinearForm(fes)
-    m += u * v * dx
+    m += SymbolicBFI(u * v, bonus_intorder=Additional_Int_Order)
     m.Assemble()
 
     # build gradient matrix as sparse matrix (and corresponding scalar FESpace)
@@ -171,7 +146,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         Theta0Sol[:, i] = theta0.vec.FV().NumPy()[:]
 
     # Calculate the N0 tensor
-    VolConstant = Integrate(1 - mu ** (-1), mesh)
+    VolConstant = Integrate(1 - mu ** (-1), mesh, order=Integration_Order)
     for i in range(3):
         Theta0i.vec.FV().NumPy()[:] = Theta0Sol[:, i]
         for j in range(3):
@@ -240,7 +215,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         multiprocessing.freeze_support()
         tqdm.tqdm.set_lock(multiprocessing.RLock())
         if ngsglobals.msg_level != 0:
-            to = sys.stdout
+            to = os.devnull
         else:
             to = os.devnull
         with supress_stdout(to=to):
@@ -634,10 +609,20 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
             Outputs = pool.starmap(Theta1_Lower_Sweep, Runlist)
 
     else:
+
+        print(Integration_Order)
+        print(Additional_Int_Order)
+        print(Additional_Int_Order)
+        print(f'{Integration_Order - 2*(Order+1)}')
+
+
+        # Constructing 𝐊ᵢⱼ (eqn 7 from paper)
+        # For the K bilinear forms, and also later bilinear and linear forms, we specify an integration order specific
+        # to the postprocessing. See comment in main.py on the topic.
         u, v = fes2.TnT()
         K = BilinearForm(fes2, symmetric=True)
-        K += SymbolicBFI(inout * mu ** (-1) * curl(u) * Conj(curl(v)), bonus_intorder=Additional_Int_Order)
-        K += SymbolicBFI((1 - inout) * curl(u) * Conj(curl(v)), bonus_intorder=Additional_Int_Order)
+        K += SymbolicBFI(inout * mu ** (-1) * curl(u) * Conj(curl(v)), bonus_intorder=Integration_Order - 2*(Order+1))
+        K += SymbolicBFI((1 - inout) * curl(u) * Conj(curl(v)), bonus_intorder=Integration_Order - 2*(Order+1))
         K.Assemble()
         rows, cols, vals = K.mat.COO()
         del K
@@ -646,6 +631,8 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         gc.collect()
 
         # For faster computation of tensor coefficients, we multiply with Ui before the loop.
+        # This computes MxM 𝐊ᴹᵢⱼ. For each of the combinations ij we store the smaller matrix rather than recompute in
+        # each case.
         Q11 = np.conj(np.transpose(u1Truncated)) @ Q @ u1Truncated
         Q22 = np.conj(np.transpose(u2Truncated)) @ Q @ u2Truncated
         Q33 = np.conj(np.transpose(u3Truncated)) @ Q @ u3Truncated
@@ -656,8 +643,15 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         del Q
         Q_array = [Q11, Q22, Q33, Q21, Q31, Q32]
 
+
+        # Similar for 𝐂ᴹᵢⱼ. refered to as A in code. For each of the combinations ij we store the smaller matrix rather
+        # than recompute in each case.
+        # Using the same basis functions for both the theta0 and theta1 problems allows us to reduce the number of
+        # bilinear forms that need to be constructed.
+        # For 𝐍ᴷ = (𝐍₀)ᴷ then 𝐂 = 𝐂¹ = 𝐂² and 𝐬ᵢ = 𝐭ᵢ. In this way we only need to consider 𝐂 (called A in code), 𝐬
+        # (called E in code) and c (called G in code) from paper.
         A = BilinearForm(fes2, symmetric=True)
-        A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=Additional_Int_Order)
+        A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=Integration_Order - 2*(Order+1))
         A.Assemble()
         rows, cols, vals = A.mat.COO()
         del A
@@ -672,7 +666,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         for i in range(3):
 
             E_lf = LinearForm(fes2)
-            E_lf += SymbolicLFI(sigma * inout * xivec[i] * v, bonus_intorder=Additional_Int_Order)
+            E_lf += SymbolicLFI(sigma * inout * xivec[i] * v, bonus_intorder=Integration_Order - 2*(Order+1))
             E_lf.Assemble()
             E[i, :] = E_lf.vec.FV().NumPy()[:]
             del E_lf
@@ -684,14 +678,16 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
 
         print(' Built K, Q, E, and G')
 
-
-
+        #Testing:
+        # run_test_comparison(u,v, sigma, xivec, inout, mesh, Theta0Sol, Lower_Sols, u1Truncated, fes, fes2)
 
         # Similarly for the imaginary part, we multiply with the theta0 sols beforehand.
         A_mat_t0_1 = (A_mat) @ Theta0Sol[:, 0]
         A_mat_t0_2 = (A_mat) @ Theta0Sol[:, 1]
         A_mat_t0_3 = (A_mat) @ Theta0Sol[:, 2]
 
+
+        # (𝐂)^M being the reduced MxM complex matrix. Similarly to the real part, we store each combination of i,j.
         T11 = np.conj(np.transpose(u1Truncated)) @ A_mat @ u1Truncated
         T22 = np.conj(np.transpose(u2Truncated)) @ A_mat @ u2Truncated
         T33 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u3Truncated
@@ -701,19 +697,25 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
 
         T_array = [T11, T22, T33, T21, T31, T32]
 
-
+        # At this point, we have constructed each of the main matrices we need and obtained the reduced A matrix. The
+        # larger bilinear form can therefore be removed to save memory.
         del A_mat
+
         At0_array = [A_mat_t0_1, A_mat_t0_2, A_mat_t0_3]
 
-        At0U11 = np.conj(u1Truncated.transpose()) @ A_mat_t0_1
-        At0U22 = np.conj(u2Truncated.transpose()) @ A_mat_t0_2
-        At0U33 = np.conj(u3Truncated.transpose()) @ A_mat_t0_3
-        At0U21 = np.conj(u1Truncated.transpose()) @ A_mat_t0_2
-        At0U31 = np.conj(u1Truncated.transpose()) @ A_mat_t0_3
-        At0U32 = np.conj(u2Truncated.transpose()) @ A_mat_t0_3
+        # Here we compute (𝐨ⱼ)ᵀ (̅𝐂²)ᴹ
+        # Renamed to better fit naming convention
+        UAt011_conj = np.conj(u1Truncated.transpose()) @ A_mat_t0_1
+        UAt022_conj = np.conj(u2Truncated.transpose()) @ A_mat_t0_2
+        UAt033_conj = np.conj(u3Truncated.transpose()) @ A_mat_t0_3
+        UAt012_conj = np.conj(u1Truncated.transpose()) @ A_mat_t0_2
+        UAt013_conj = np.conj(u1Truncated.transpose()) @ A_mat_t0_3
+        UAt023_conj = np.conj(u2Truncated.transpose()) @ A_mat_t0_3
 
-        At0U_array = [At0U11, At0U22, At0U33, At0U21, At0U31, At0U32]
+        UAt0_conj = [UAt011_conj, UAt022_conj, UAt033_conj, UAt012_conj, UAt013_conj, UAt023_conj]
 
+
+        # Similarly we compute and store (𝐨ⱼ)ᵀ (𝐂²)ᴹ
         UAt011 = (u1Truncated.transpose()) @ A_mat_t0_1
         UAt022 = (u2Truncated.transpose()) @ A_mat_t0_2
         UAt033 = (u3Truncated.transpose()) @ A_mat_t0_3
@@ -722,6 +724,9 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         UAt032 = (u3Truncated.transpose()) @ A_mat_t0_2
         UAt0U_array = [UAt011, UAt022, UAt033, UAt021, UAt031, UAt032]
 
+
+        # Finally, we can construct constants that do not depend on frequency.
+        # the constant c1 corresponds to 𝐨ⱼᵀ 𝐂⁽¹⁾ 𝐨ᵢ. Similar to other cases we store each combination of i and j.
         c1_11 = (np.transpose(Theta0Sol[:, 0])) @ A_mat_t0_1
         c1_22 = (np.transpose(Theta0Sol[:, 1])) @ A_mat_t0_2
         c1_33 = (np.transpose(Theta0Sol[:, 2])) @ A_mat_t0_3
@@ -729,6 +734,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         c1_31 = (np.transpose(Theta0Sol[:, 2])) @ A_mat_t0_1
         c1_32 = (np.transpose(Theta0Sol[:, 2])) @ A_mat_t0_2
 
+        # c5 corresponds to 𝐬ᵢᵀ 𝐨ⱼ. Note that E has been transposed here.
         c5_11 = E[0, :] @ Theta0Sol[:, 0]
         c5_22 = E[1, :] @ Theta0Sol[:, 1]
         c5_33 = E[2, :] @ Theta0Sol[:, 2]
@@ -736,10 +742,15 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         c5_31 = E[2, :] @ Theta0Sol[:, 0]
         c5_32 = E[2, :] @ Theta0Sol[:, 1]
 
+        # Similarly to other examples we store each combination rather than recompute
         c1_array = [c1_11, c1_22, c1_33, c1_21, c1_31, c1_32]
         c5_array = [c5_11, c5_22, c5_33, c5_21, c5_31, c5_32]
+
+        # c7 = G corresponds to cᵢⱼ from paper. Note that G does not depend on the FEM basis functions, rather is a
+        # polynomial.
         c7 = G
 
+        # c8 corresponds to  𝐬ⱼᵀ 𝐨ᵢ and shold equal c5 for on diagonal entries.
         c8_11 = Theta0Sol[:, 0] @ H[:, 0]
         c8_22 = Theta0Sol[:, 1] @ H[:, 1]
         c8_33 = Theta0Sol[:, 2] @ H[:, 2]
@@ -749,8 +760,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
 
         c8_array = [c8_11, c8_22, c8_33, c8_21, c8_31, c8_32]
 
-
-
+        # EU is the reduced linear form for E. Here we compute (̅𝐭ᴹ)ᵀ.
         EU_11 = E[0, :] @ np.conj(u1Truncated)
         EU_22 = E[1, :] @ np.conj(u2Truncated)
         EU_33 = E[2, :] @ np.conj(u3Truncated)
@@ -762,20 +772,22 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
 
         H = E.transpose()
 
-        EU_11 = u1Truncated.transpose() @ H[:, 0]
-        EU_22 = u2Truncated.transpose() @ H[:, 1]
-        EU_33 = u3Truncated.transpose() @ H[:, 2]
-        EU_21 = u2Truncated.transpose() @ H[:, 0]
-        EU_31 = u3Truncated.transpose() @ H[:, 0]
-        EU_32 = u3Truncated.transpose() @ H[:, 1]
+        # also computing  (𝐭ᴹ)ᵀ
+        # Renamed to better fit naming convention
+        UH_11 = u1Truncated.transpose() @ H[:, 0]
+        UH_22 = u2Truncated.transpose() @ H[:, 1]
+        UH_33 = u3Truncated.transpose() @ H[:, 2]
+        UH_21 = u2Truncated.transpose() @ H[:, 0]
+        UH_31 = u3Truncated.transpose() @ H[:, 0]
+        UH_32 = u3Truncated.transpose() @ H[:, 1]
 
-        UH_array = [EU_11, EU_22, EU_33, EU_21, EU_31, EU_32]
+        UH_array = [UH_11, UH_22, UH_33, UH_21, UH_31, UH_32]
 
         timing_dictionary['BuildSystemMatrices'] = time.time()
 
         runlist = []
         for i in range(Tensor_CPUs):
-            runlist.append((Core_Distribution[i], Q_array, c1_array, c5_array, c7, c8_array, At0_array, At0U_array,
+            runlist.append((Core_Distribution[i], Q_array, c1_array, c5_array, c7, c8_array, At0_array, UAt0_conj,
                             UAt0U_array, T_array, EU_array_conj, UH_array, Lower_Sols[i], G_Store, cutoff, fes2.ndof,
                             alpha, False))
 
@@ -822,6 +834,18 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
 
     print(' reduced order systems solved')
 
+    ### EXPORTING TO VTK
+    # sweepname = 'Results/'
+    # dom_nrs_metal = [0 if mat == 'air' else 1 for mat in mesh.GetMaterials()]
+    # for index, om in enumerate(Array):
+    #     # Projecting POD solutions to higher dimensional space.
+    #     W1 = np.dot(u1Truncated, Lower_Sols[:, index, 0]).flatten()
+    #     W2 = np.dot(u2Truncated, Lower_Sols[:, index, 1]).flatten()
+    #     W3 = np.dot(u2Truncated, Lower_Sols[:, index, 3]).flatten()
+    #
+    #     generate_VTK(mesh, fes2, [W1, W2, W3], om, sigma, sweepname, alpha, dom_nrs_metal)
+
+
     if (use_integral is False) and (use_integral_debug is False) and (PODErrorBars is True):
         print(' Computing Errors')
         # For parallelisation, this has to be a separate function. Also with the intention that we can also reuse this
@@ -845,4 +869,5 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
             return TensorArray, EigenValues, N0, numelements, ErrorTensors, (ndof, ndof2)
         else:
             return TensorArray, EigenValues, N0, numelements, (ndof, ndof2)
+
 

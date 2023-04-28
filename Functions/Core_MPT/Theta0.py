@@ -1,7 +1,11 @@
+import warnings
+
 import numpy as np
 from ngsolve import *
 import scipy.sparse as sp
 import gc
+from matplotlib import pyplot as plt
+import warnings
 
 
 # Function definition to solve the Theta0 problem
@@ -45,6 +49,10 @@ def Theta0(fes, Order, alpha, mu, inout, e, Tolerance, Maxsteps, epsi, simnumber
 
     Theta_Return = np.zeros([fes.ndof], dtype=np.longdouble)
     Theta_Return[:] = Theta.vec.FV().NumPy()
+
+    # Printing warning if solver didn't converge.
+    if inverse.GetSteps() == inverse.maxsteps:
+        warnings.warn(f'Solver did not converge within {inverse.maxsteps} iterations. Solution may be inaccurate.')
 
     del f, a, c, res, u, v, inverse, Theta
     gc.collect()

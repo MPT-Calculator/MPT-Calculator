@@ -208,6 +208,27 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
 
 
 
+    # For the combination of curved elements and high order elements, one can use the same quadrature rule as one would
+    # use for high order elements on flat sided elements ie if the integrand is of degree 2*(order+1) then we just need
+    # to use an rule that can integrate up to 2*(order+1) exactly. This is because other approximations are made with
+    # fem and the error associated with the numerical integration gets absorbed with the other approximation. The
+    # result is care of Ciarlet, Finite element method for elliptic equations chapter 4 pg 178 and Section 4.4. However,
+    # this only holds true when considering integals needed for the FEM approximation ie in the bilinear or linear
+    # forms.
+    #
+    # When computing the MPTs as post processing steps, we have integrals not associated with a FEM approximation
+    # eg |B| = int_B \dxi or int_B e_i \times \xi \cdot e_j \times \xi d\xi that strongly depend on the geometry order
+    # (and not FEM order) and hence we set an integration_order for the post processing that is very conservative and
+    # takes both 3*(curve-1) and 2*(order+1) in to account as the degree of the integrand.
+
+    # From testing with larger objects, we observed errors between the integral method and equivalent matrix
+    # multiplication method. We suspect NGSolve's integration rule goes wrong for higher degrees (its probably obtained
+    # through recursive relationships to get the Gauss points or solving a system and there is too much round-off error
+    # for higher degrees). In practice this should be enough for curve=5 and/or order up to 5.
+    Integration_Order = np.min( [np.max([2*(Order+1), 3*(curve_degree-1)]), 12] )
+
+    if curve_degree > 5:
+        warn('Using a curve degree > 5 may result in inaccurate integration.')
 
     # Here, we figure out if the mesh contains prismatic elements or not. This is then used when assigning bonus
     # integration orders (0 if prisms, 2 else) when constructing the bilinear and linear forms used in the fast
@@ -221,28 +242,10 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
         prism_flag = False
         Additional_Int_Order = 2
 
+    # Additional_Int_Order = np.max([0, Integration_Order - 2*(Order+1)])
+
     print(f'Mesh Contains Prisms? {prism_flag}')
     print(f'N Prisms: {N_prisms}, N Tets: {N_tets}')
-
-
-    ### TESTING ###
-    # Additional_Int_Order = 2
-
-    # For the combination of curved elements and high order elements, one can use the same quadrature rule as one would
-    # use for high order elements on flat sided elements ie if the integrand is of degree 2*(order+1) then we just need
-    # to use an rule that can integrate up to 2*(order+1) exactly. This is because other approximations are made with
-    # fem and the error associated with the numerical integration gets absorbed with the other approximation. The
-    # result is care of Ciarlet, Finite element method for elliptic equations chapter 4 pg 178 and Section 4.4. However,
-    # this only holds true when considering integals needed for the FEM approximation ie in the bilinear or linear
-    # forms.
-    #
-    # When computing the MPTs as post processing steps, we have integrals not associated with a FEM approximation
-    # eg |B| = int_B \dxi or int_B e_i \times \xi \cdot e_j \times \xi d\xi that strongly depend on the geometry order
-    # (and not FEM order) and hence we set an integration_order for the post processing that is very conservative and
-    # takes both 3*(curve-1) and 2*(order+1) in to account as the degree of the integrand.
-    Integration_Order = np.max([2*(Order+1), 3*(curve_degree-1)])
-    # Integration_Order = 2*(Order+1)+ 3*(curve_degree-1)
-    # Integration_Order = 2*(Order+1)
 
 
 
@@ -550,4 +553,4 @@ def save_all_figures(path, format='png', suffix='', prefix=''):
 
 
 if __name__ == '__main__':
-    Return = main()
+    main()
