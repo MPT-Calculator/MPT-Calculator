@@ -553,4 +553,5 @@ def save_all_figures(path, format='png', suffix='', prefix=''):
 
 
 if __name__ == '__main__':
-    main()
+    Return = main()
+    
