@@ -17,7 +17,11 @@ from .DictionaryList import *
 def FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol, alpha, Order, MeshSize, mur, sig,
                 ErrorTensors, VTK, using_OCC, using_interative_POD=False):
     # Find how the user wants the data saved
-    FolderStructure = SaverSettings()
+    # FolderStructure = SaverSettings()
+
+    # Here we specify a temporary folder structure to be created in the results Directory. We will copy it across to
+    # a desired folder later.
+    FolderStructure = 'Default'
 
     if FolderStructure == "Default":
         # Create the file structure
@@ -114,5 +118,11 @@ def FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol, 
     if using_OCC is True:
         copyfile('OCC_Geometry/' + Geometry[:-4] + '.py',
                  "Results/" + sweepname + "/Input_files/" + Geometry[:-4] + '.py')
+
+
+    # Copying across the folder structure to the desired directory:
+    FolderStructure = SaverSettings()
+    if FolderStructure != 'Default':
+        copytree('Results/' + sweepname, FolderStructure + sweepname, dirs_exist_ok=True)
 
     return sweepname

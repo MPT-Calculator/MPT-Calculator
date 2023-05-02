@@ -20,7 +20,10 @@ from .DictionaryList import *
 def PODSave(Geometry, Array, TensorArray, EigenValues, N0, PODTensors, PODEigenValues, PODArray, PODTol, elements,
             alpha, Order, MeshSize, mur, sig, ErrorTensors, EddyCurrentTest, invariants, using_iterative_POD=False):
     # Find how the user wants the data to be saved
-    FolderStructure = SaverSettings()
+    # FolderStructure = SaverSettings()
+
+    # Create a temp folder in the results directory.
+    FolderStructure = 'Default'
 
     if FolderStructure == "Default":
         # Create the file structure
