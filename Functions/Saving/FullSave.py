@@ -20,7 +20,10 @@ from .DictionaryList import *
 def FullSave(Geometry, Array, TensorArray, EigenValues, N0, Pod, PODArray, PODTol, elements, alpha, Order, MeshSize,
              mur, sig, ErrorTensors, EddyCurrentTest, invariants):
     # Find how the user wants the data to be saved
-    FolderStructure = SaverSettings()
+    # FolderStructure = SaverSettings()
+
+    # Create a temp folder in the results directory.
+    FolderStructure = 'Default'
 
     if FolderStructure == "Default":
         # Create the file structure

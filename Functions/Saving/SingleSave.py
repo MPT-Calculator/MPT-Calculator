@@ -17,7 +17,10 @@ from .DictionaryList import *
 def SingleSave(Geometry, Omega, MPT, EigenValues, N0, elements, alpha, Order, MeshSize, mur, sig, EddyCurrentTest,
                invariants):
     # Find how the user wants the data to be saved
-    FolderStructure = SaverSettings()
+    # FolderStructure = SaverSettings()
+
+    # Create a temp folder in the results directory.
+    FolderStructure = 'Default'
 
     if FolderStructure == "Default":
         # Create the file structure

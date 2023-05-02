@@ -14,13 +14,13 @@ import numpy as np
 import subprocess
 import os
 from warnings import warn
+from shutil import copytree, rmtree
 
 from matplotlib import pyplot as plt
 
 sys.path.insert(0, "Functions")
 sys.path.insert(0, "Settings")
 from Functions.Helper_Functions.exact_sphere import exact_sphere
-# from MeshCreation import *
 from Functions.MeshMaking.Meshmaker import *
 from Functions.MeshMaking.VolMatUpdater import *
 from Functions.MeshMaking.Generate_From_Python import *
@@ -35,17 +35,9 @@ from Functions.Saving.FullSave import *
 from Functions.Saving.SingleSave import *
 from Functions.Saving.PODSave import *
 from Functions.Saving.FolderMaker import *
-# from FullSolvers import *
-# from PODSolvers import *
-# from ResultsFunctions import *
 from Checkvalid import *
 from Functions.Helper_Functions.count_prismatic_elements import count_prismatic_elements
-from matplotlib.ticker import MaxNLocator
-import pickle
 
-
-# from ngsolve import ngsglobals
-# ngsglobals.msg_level = 0
 
 
 def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry='default', frequency_array='default', use_OCC=False,
@@ -522,6 +514,14 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
 
     ReturnDict['Invariants'] = invariants
     ReturnDict['SweepName'] = sweepname
+
+    # Copying across folder structure to desired directory:
+    # Copies folder structure from results folder to desired folder, and removes left over folder tree.
+    FolderStructure = SaverSettings()
+    if FolderStructure != 'Default':
+        copytree('Results/' + sweepname, FolderStructure + sweepname, dirs_exist_ok=True)
+        rmtree('Results/' + sweepname)
+
 
     return ReturnDict
 

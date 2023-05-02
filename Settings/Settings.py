@@ -9,7 +9,7 @@ from ngsolve import *
 #Function definition to set up default settings
 def DefaultSettings():
     #How many cores to be used (monitor memory consuption)
-    CPUs = 2
+    CPUs = 4
     #(int)
 
     #Is it a big problem (more memory efficiency but slower)
@@ -52,7 +52,7 @@ def AdditionalOutputs():
     #(boolean)
 
     #Test where the eddy-current model breaks for the object
-    EddyCurrentTest = True#False
+    EddyCurrentTest = False
     #(boolean)
 
     #Produce a vtk outputfile for the eddy-currents (outputs a large file!)
@@ -61,7 +61,7 @@ def AdditionalOutputs():
     #object (single frequency only)
 
     #Refine the vtk output (extremely large file!)
-    Refine_vtk = False
+    Refine_vtk = True
     #(boolean) do you want ngsolve to refine the solution before exporting
     #to the vtk file (single frequency only)
     #(not compatable with all NGSolve versions)
@@ -78,7 +78,7 @@ def AdditionalOutputs():
 #Function definition to set up default settings
 def SaverSettings():
     #Place to save the results to
-    FolderName = "Default"
+    FolderName = 'Default'
     #(string) This defines the folder (and potentially subfolders) the
     #data will be saved in (if "Default" then a predetermined the data
     #will be saved in a predetermined folder structure)
@@ -145,7 +145,7 @@ def IterativePODParameters():
     NAdditionalSnapshotsPerIter = 2
 
     # (int) Maximum number of iterations that will run in the iterative process.
-    MaxIter = 10
+    MaxIter = 20
 
     # (float) Stopping tolerance (max(error)/object_volume) for the iterative process.
     Tol = 1e-1
