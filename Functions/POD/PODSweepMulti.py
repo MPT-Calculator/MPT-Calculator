@@ -35,14 +35,13 @@ from ..Core_MPT.MPT_Preallocation import *
 from ..POD.calc_error_certificates import *
 from ..Core_MPT.imap_execution import *
 from ..Core_MPT.supress_stdout import *
-from ..FullSweep.generate_VTK import *
 sys.path.insert(0,"Settings")
 from Settings import SolverParameters, DefaultSettings, IterativePODParameters
 
 # Importing matplotlib for plotting comparisons
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator
-from .test_comparison import run_test_comparison
+
 
 
 def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, PlotPod, CPUs, sweepname, SavePOD,
