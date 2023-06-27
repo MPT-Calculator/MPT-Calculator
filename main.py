@@ -551,5 +551,5 @@ def save_all_figures(path, format='png', suffix='', prefix=''):
 
 if __name__ == '__main__':
 
-    single = main(geometry='Flat_buckle.geo', use_POD=True, start_stop=(1,10,81), order=4, alpha=1e-3)
+    output = main()
 
