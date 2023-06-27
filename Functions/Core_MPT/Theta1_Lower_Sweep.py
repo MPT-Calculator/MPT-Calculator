@@ -201,7 +201,7 @@ def Theta1_Lower_Sweep(Array, mesh, fes, fes2, Sols, u1Truncated, u2Truncated, u
         # T31 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u1Truncated
         # T32 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u2Truncated
 
-    for k, omega in enumerate(tqdm.tqdm(Array, desc='Solving Reduced Order System')):
+    for k, omega in enumerate(tqdm.tqdm(Array, desc='Solving For Coefficients')):
 
         W1 = Sols[:, k, 0]
         W2 = Sols[:, k, 1]
