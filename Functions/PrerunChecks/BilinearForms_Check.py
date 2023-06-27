@@ -104,15 +104,15 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
 
 
     # Checking for convergence:
-    #if counter >= max_iter:
-    #    warnings.warn("K Bilinear Form did not converge. Trying again with linear geometry.")
-    #    if curve_order > 1:
-    #        return BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max_iter, 1, starting_order, sweepname)
-    #        curve_order = 1
-    #        mesh.Curve(1)
-    #    else:
-    #        warnings.warn("K Bilinear Form did not converge with linear geometry. This may indicate a mesh error.")
-    #
+    if counter >= max_iter:
+        warnings.warn("K Bilinear Form did not converge. Trying again with linear geometry.")
+        if curve_order > 1:
+            return BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max_iter, 1, starting_order, sweepname)
+            curve_order = 1
+            mesh.Curve(1)
+        else:
+            warnings.warn("K Bilinear Form did not converge with linear geometry. This may indicate a mesh error.")
+    
     K_order = bonus_intord
     print(f'K Bilinear Form Converged using order {K_order}')
 
@@ -172,14 +172,14 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
 
 
     # Checking for convergence:
-    #if counter >= max_iter:
-    #    warnings.warn("C Bilinear Form did not converge. Trying again with linear geometry.")
-    #    if curve_order > 1:
-    #        return BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max_iter, 1, starting_order, sweepname)
-    #        curve_order = 1
-    #        mesh.Curve(1)
-    #    else:
-    #        warnings.warn("C Bilinear Form did not converge with linear geometry. This may indicate a mesh error.")
+    if counter >= max_iter:
+        warnings.warn("C Bilinear Form did not converge. Trying again with linear geometry.")
+        if curve_order > 1:
+            return BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max_iter, 1, starting_order, sweepname)
+            curve_order = 1
+            mesh.Curve(1)
+        else:
+            warnings.warn("C Bilinear Form did not converge with linear geometry. This may indicate a mesh error.")
     C_order = bonus_intord
     #
     print(f'C Bilinear Form Converged using order {C_order}')
