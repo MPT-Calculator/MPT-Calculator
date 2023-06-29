@@ -1,4 +1,4 @@
-#MPT-Calculator
+# MPT-Calculator
 
 MPT-Calculator is a series of python scripts which calls the NGSolve [1,2,3] high order finite element method (FEM) library
 
@@ -20,12 +20,12 @@ The technical details of the implementation will be described in [6].
 
 Plots of the computed tensor coefficients as a function of frequency are created and the output data and plots are automatically stored so that they can be recreated, if desired.
 
-#To get started
+# To get started
 
 Please open the set of Jupyter Tutorials available in the Tutorial folder starting with Tutorials/a_Installation.ipynb, which describes the installation and setup of MPT-Calculator.
 
 
-#Referencing
+# Referencing
 
 If you use the tool, please refer to it in your work by citing the references
 
