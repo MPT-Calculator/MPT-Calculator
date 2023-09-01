@@ -35,13 +35,13 @@ If you use the tool, please refer to it in your work by citing the references
 
 [6] B. A. Wilson and P. D. Ledger, Efficient computation of the magnetic polarizabiltiy tensor spectral signature using pod. International Journal for Numerical Methods in Engineering 122, 1940-1963, 2021.
 
-[7] P.D. Ledger, B.A. Wilson, A.A.S. Amad, W.R.B. Lionheart Identification of meallic objects using spectral MPT signatures: Object characterisation and invariants. International Journal for Numerical Methods in Engineering. Accepted Author Manuscript, 2021. https://onlinelibrary.wiley.com/doi/epdf/10.1002/nme.6688
+[7] P.D. Ledger, B.A. Wilson, A.A.S. Amad, W.R.B. Lionheart, Identification of meallic objects using spectral MPT signatures: Object characterisation and invariants. International Journal for Numerical Methods in Engineering. 122(15), 2021. https://onlinelibrary.wiley.com/doi/epdf/10.1002/nme.6688
 
-[8] J. Elgy, P.D. Ledger, J.L. Davidson, T. Ozdeger and A.J. Peyton Computations and measurement of the magnetic polarizability tensor characterisation of highly conducting and magnetic objects. Submitted 2023.
+[8] J. Elgy, P.D. Ledger, J.L. Davidson, T. Ozdeger and A.J. Peyton, Computations and measurement of the magnetic polarizability tensor characterisation of highly conducting and magnetic objects. Engineering Computations, 2023, doi:10.1108/EC-11-2022-0688.
 
 as well as those of NGSolve:
 
-[1]J. Schoberl, C++11 Implementation of Finite Elements in NGSolve, ASC Report 30/2014, Institute for Analysis and Scientific Computing, Vienna University of Technology, 2014.
+[1] J. Schoberl, C++11 Implementation of Finite Elements in NGSolve, ASC Report 30/2014, Institute for Analysis and Scientific Computing, Vienna University of Technology, 2014.
 
 [2] S. Zaglmayr, High Order Finite Elements for Electromagnetic Field Computation, PhD Thesis, Johannes Kepler University Linz, 2006
 
