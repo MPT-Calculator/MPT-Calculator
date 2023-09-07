@@ -13086,14 +13086,14 @@ div#notebook {
   <div tabindex="-1" id="notebook" class="border-box-sizing">
     <div class="container" id="notebook-container">
 
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=45a35fb6" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h1 id="7---Boundary-Layer-Elements">7 - Boundary Layer Elements<a class="anchor-link" href="#7---Boundary-Layer-Elements">&#182;</a></h1>
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=5f204961" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>In this tutorial, we discuss how we can add thin layers of prismatic elements to the surface of conducting objects in our meshes.</p>
@@ -13108,7 +13108,7 @@ To this end, we set $\tau=\delta/\alpha$ to be the smallest non-dimensional skin
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=485e5190" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Cube-Example">Cube Example<a class="anchor-link" href="#Cube-Example">&#182;</a></h2><p>Taking the cube example that we worked through in tutorial <a href="./6_Generating_mesh_from_step_file.ipynb">6</a>, we want to generate a homogeneous magnetic cube with a single thin layer of prismatic boundary layer elements of thickness 0.5 units.</p>
@@ -13118,7 +13118,7 @@ To this end, we set $\tau=\delta/\alpha$ to be the smallest non-dimensional skin
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
+<div id="cell-id=e1e2c3f0" class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
@@ -13151,7 +13151,7 @@ To this end, we set $\tau=\delta/\alpha$ to be the smallest non-dimensional skin
 </div>
 
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=f062355e" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>generates a standard tetrahedral mesh for a cube.</p>
@@ -13162,7 +13162,7 @@ method.</p>
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
+<div id="cell-id=95ff0d05" class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
@@ -13187,7 +13187,7 @@ method.</p>
 <pre>Help on method BoundaryLayer in module netgen.libngpy._meshing:
 
 BoundaryLayer(...) method of netgen.libngpy._meshing.Mesh instance
-    BoundaryLayer(self: netgen.libngpy._meshing.Mesh, boundary: Union[str, int], thickness: Union[float, list], material: Union[str, Dict[str, str]], domains: Union[str, int] = &#39;.*&#39;, outside: bool = False, project_boundaries: Optional[str] = None, grow_edges: bool = True, limit_growth_vectors: bool = True) -&gt; None
+    BoundaryLayer(self: netgen.libngpy._meshing.Mesh, boundary: Union[str, int], thickness: Union[float, list], material: str, domains: Union[str, int] = &#39;.*&#39;, outside: bool = False, project_boundaries: Optional[str] = None, grow_edges: bool = True, limit_growth_vectors: bool = True) -&gt; None
     
     
     Add boundary layer to mesh.
@@ -13226,7 +13226,7 @@ BoundaryLayer(...) method of netgen.libngpy._meshing.Mesh instance
 </div>
 
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=d7553740" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>We want to introduce a single thin layer of prisms to the interior of the cube so we need to set $\texttt{thickness=[0.5]}$, and $\texttt{domain='cube'}$.
@@ -13236,7 +13236,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
+<div id="cell-id=d6c31bd6" class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
@@ -13260,7 +13260,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 
 </div>
-<div class="cell border-box-sizing code_cell rendered">
+<div id="cell-id=32ca40e6" class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
@@ -13273,7 +13273,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=fa8f13c2" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>If we wanted multiple layers of prismatic elements, we would specify a list of thicknesses. E.g. $\texttt{thickness=[0.5,0.3,0.2]}$. The thicknesses are assigned with the first entry corresponding to the outermost layer. Similarly, if we wanted each layer to be of a different material, we can specify $\texttt{material=[mat_1, mat_2, mat_3]}$ etc.</p>
@@ -13281,7 +13281,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=af334f11" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>In Netgen, we can view the additional prismatic boundary layer via $\texttt{view} \rightarrow \texttt{Viewing Options} \rightarrow \texttt{Mesh} \rightarrow \texttt{Show Prisms}$</p>
@@ -13291,7 +13291,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=f82345b1" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Sphere-Example">Sphere Example<a class="anchor-link" href="#Sphere-Example">&#182;</a></h2><p>The $\texttt{BoundaryLayer}$ method requires a defined edge that it can use to correctly introduce the layer of prisms, such as the edge of a cube.</p>
@@ -13301,7 +13301,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
+<div id="cell-id=e2649510" class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
@@ -13319,7 +13319,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=e96f11cb" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>Now we want to split the sphere into two hemispheres and rejoin them.</p>
@@ -13327,7 +13327,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
+<div id="cell-id=fb192293" class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
@@ -13342,7 +13342,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=60eceb35" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>If we now draw the sphere geometry, we see that we have introduced a bisecting plane</p>
@@ -13350,7 +13350,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
+<div id="cell-id=bb6466d2" class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
@@ -13397,7 +13397,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=9f1c1e73" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>and now we can proceed as before by defining a outer region, and assigning material names etc</p>
@@ -13405,7 +13405,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
+<div id="cell-id=9f5b0b3d" class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
@@ -13424,7 +13424,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=c9c7e3df" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>and generate a coarse mesh</p>
@@ -13432,7 +13432,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
+<div id="cell-id=bc387ea2" class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[9]:</div>
 <div class="inner_cell">
@@ -13446,7 +13446,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=bcc3717e" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>before finally including the boundary layer elements</p>
@@ -13454,7 +13454,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
+<div id="cell-id=1d146d41" class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[10]:</div>
 <div class="inner_cell">
@@ -13478,7 +13478,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=61460cdf" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>The equivalent $\texttt{.py}$ file for this example can be found in <a href="../OCC_Geometry/OCC_sphere_prism.py">$\texttt{OCC_Geometry/OCC_sphere_prism.py}$</a>.</p>
@@ -13486,7 +13486,7 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=c7dc99ed" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="$p$-Refinement-Convergence">$p$ Refinement Convergence<a class="anchor-link" href="#$p$-Refinement-Convergence">&#182;</a></h2><p>With the introduction of the prismatic layer, we see that MPT-Calculator is able to acheive converged results over a much wider frequency range than the equivalent tetrahedral mesh.</p>
@@ -13506,14 +13506,14 @@ We also want a homogeneous cube, so we also need to specify that the material of
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=4d67fc49" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
+<div id="cell-id=2951612e" class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">

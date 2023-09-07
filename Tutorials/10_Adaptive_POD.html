@@ -13086,7 +13086,7 @@ div#notebook {
   <div tabindex="-1" id="notebook" class="border-box-sizing">
     <div class="container" id="notebook-container">
 
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=c0230fbc" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h1 id="Adaptive-POD-For-Reducing-Error-Certificates">Adaptive POD For Reducing Error Certificates<a class="anchor-link" href="#Adaptive-POD-For-Reducing-Error-Certificates">&#182;</a></h1><p>Previously, in Tutorial <a href="./2_POD_solve_example.ipynb">2</a>, we saw that we can compute an approximation of the full order solution using a smaller number of logarithmically spaced snapshots. In addition, we saw that we could compute upper bound error certificates at negligible computational cost corresponding to the difference between the ROM and full order solutions:</p>
@@ -13097,7 +13097,7 @@ div#notebook {
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=54daa2f3" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Workflow">Workflow<a class="anchor-link" href="#Workflow">&#182;</a></h2><p>The adaptive POD mode of MPT calculator operates as follows:</p>
@@ -13108,7 +13108,7 @@ div#notebook {
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=70edf9d0" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Choosing-Tolerance">Choosing Tolerance<a class="anchor-link" href="#Choosing-Tolerance">&#182;</a></h2><p>To account for different sized objects, which give rise to a larger magnitude $(\mathcal{R}[\alpha B, \omega])_{ij}$, $(\mathcal{I}[\alpha B, \omega])_{ij}$ and larger $(\Delta[\omega])_{ij}$ we scale the tolerance by the object volume $V$.</p>
@@ -13125,7 +13125,7 @@ div#notebook {
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=78923696" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Choosing-Number-of-Additional-Snapshots-Per-Iteration">Choosing Number of Additional Snapshots Per Iteration<a class="anchor-link" href="#Choosing-Number-of-Additional-Snapshots-Per-Iteration">&#182;</a></h2><p>Typically in iterative refinement schemes such as these, more that one frequency is flagged for refinement. In MPT-Calculator, this is controlled by $\texttt{NAdditionalSnapshotsPerIter}$ in $\texttt{Settings.py}$:</p>
@@ -13142,7 +13142,7 @@ div#notebook {
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=6e4aba1d" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Usage">Usage<a class="anchor-link" href="#Usage">&#182;</a></h2><p>To use the iterative POD method, we set $\texttt{use_iterative_POD = True}$ when calling $\texttt{main}$. Note that $\texttt{PODErrorBars}$ must be set to $\texttt{True}$ in $\texttt{Settings.py}$.</p>
@@ -13151,7 +13151,7 @@ div#notebook {
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
+<div id="cell-id=2481d5b0" class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
@@ -13172,7 +13172,7 @@ div#notebook {
 </div>
 
 </div>
-<div class="cell border-box-sizing code_cell rendered">
+<div id="cell-id=3f044a5d" class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
@@ -13581,7 +13581,7 @@ Adding Snapshots at omega = [2424462.01708233 1193776.64171444]
 </div>
 
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=3b62538b" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Saving">Saving<a class="anchor-link" href="#Saving">&#182;</a></h2><p>Results are returned from $\texttt{main}$ as before, and results (including graphs and input files) are stored in the Results folder following the convention:</p>
@@ -13593,7 +13593,7 @@ Adding Snapshots at omega = [2424462.01708233 1193776.64171444]
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=28284f50" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Return-Values">Return Values<a class="anchor-link" href="#Return-Values">&#182;</a></h2><p>When running the iterative POD method, additional results are returned within the output directory. These are:</p>
@@ -13610,7 +13610,7 @@ Adding Snapshots at omega = [2424462.01708233 1193776.64171444]
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=44948503" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h1 id=""><a class="anchor-link" href="#">&#182;</a></h1>

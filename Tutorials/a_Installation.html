@@ -13086,14 +13086,14 @@ div#notebook {
   <div tabindex="-1" id="notebook" class="border-box-sizing">
     <div class="container" id="notebook-container">
 
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=ca79382a-af96-4017-b92b-42dd30f4b5ef" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h1 id="MPT-Calculator-Installation">MPT-Calculator Installation<a class="anchor-link" href="#MPT-Calculator-Installation">&#182;</a></h1>
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=b48c789c-1601-4b75-a006-b7a5020b3457" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Software-Overview:">Software Overview:<a class="anchor-link" href="#Software-Overview:">&#182;</a></h2><p>The MPT-Calculator is an open source Python library to calculate the coefficents of the Magnetic Polarizability Tensor (MPT) characterterisation of a conducting magnetic object using high order finite elements and the <a href="https://ngsolve.org/">NGSolve</a> finite element package. Currently, the software supports:</p>
@@ -13110,14 +13110,14 @@ div#notebook {
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=038f2dc2-28dc-4e9a-9064-accd972ba367" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Requirements:">Requirements:<a class="anchor-link" href="#Requirements:">&#182;</a></h2>
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=b5b8859f-e120-4a50-9d24-15205798e159" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p><strong>For these examples, we are using Python 3.8 and NGSolve 6.2.2204</strong></p>
@@ -13144,7 +13144,7 @@ which are all available via $\texttt{pip3}$ using an appropriate command prompt 
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=bfeb0003-f372-4254-9530-c10e2d0520f0" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>Finally, for parallel execution in Linux, we also need to set the following environment variables:</p>
@@ -13157,7 +13157,7 @@ which are all available via $\texttt{pip3}$ using an appropriate command prompt 
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=2a1dbb48-b275-4a9b-b113-f5e099220fd9" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="Jupyter-Support:">Jupyter Support:<a class="anchor-link" href="#Jupyter-Support:">&#182;</a></h3><p>NGsolve and Netgen are compatible with Jupyter notebooks and offer web based visualisation.</p>
@@ -13180,7 +13180,7 @@ which are all available via $\texttt{pip3}$ using an appropriate command prompt 
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=f29d08e8" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Obtaining-MPT-Calculator-from-Github">Obtaining MPT-Calculator from Github<a class="anchor-link" href="#Obtaining-MPT-Calculator-from-Github">&#182;</a></h2><p>The easiest way to obtain MPT-Calculator from its Github repository, follow the link <a href="https://github.com/MPT-Calculator/MPT-Calculator">https://github.com/MPT-Calculator/MPT-Calculator</a>.</p>
@@ -13190,7 +13190,7 @@ which are all available via $\texttt{pip3}$ using an appropriate command prompt 
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=15b25a17-99c7-4d60-aede-8afc63872527" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Structure:">Structure:<a class="anchor-link" href="#Structure:">&#182;</a></h2><p>Regarding the structure of the MPT-Calculator library, the user is expected to interact with $\texttt{main.py}$, $\texttt{Settings.py}$, and $\texttt{PlotterSettings.py}$ with $\texttt{PlotterSettings.py}$ rarely being needed. These files along with a geometry file allow the user to produce an array of MPT spectral signatures for many different objects.</p>
@@ -13227,6 +13227,8 @@ which are all available via $\texttt{pip3}$ using an appropriate command prompt 
 │<span class="w">   </span>│<span class="w">   </span>├──<span class="w"> </span>PODSolvers.py
 │<span class="w">   </span>│<span class="w">   </span>├──<span class="w"> </span>ResultsFunctions.py
 │<span class="w">   </span>│<span class="w">   </span>└──<span class="w"> </span>SingleSolve.py
+│<span class="w">   </span>├──<span class="w"> </span>Prerun_Checks
+│<span class="w">   </span>│<span class="w">   </span>└──<span class="w"> </span>BilinearForms_Check.py
 │<span class="w">   </span>├──<span class="w"> </span>POD
 │<span class="w">   </span>│<span class="w">   </span>├──<span class="w"> </span>calc_error_certificates.py
 │<span class="w">   </span>│<span class="w">   </span>├──<span class="w"> </span>PODP.py
@@ -13309,7 +13311,7 @@ which are all available via $\texttt{pip3}$ using an appropriate command prompt 
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=d2b14a7e" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Helper-Functions">Helper Functions<a class="anchor-link" href="#Helper-Functions">&#182;</a></h2><p>In addition to the core MPT-Calculator functions, we have provided several useful functions under the $\texttt{Functions/Helper_Functions}$ directory.</p>
@@ -13324,14 +13326,14 @@ which are all available via $\texttt{pip3}$ using an appropriate command prompt 
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=9da88ec4-5c11-46af-a355-412a7180ffde" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="MPT-Calculator-Pipeline">MPT-Calculator Pipeline<a class="anchor-link" href="#MPT-Calculator-Pipeline">&#182;</a></h2>
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=c893b95c-1436-448a-884f-fc08311567c4" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>The general pipeline for MPT-Calculator is as follows:</p>
@@ -13340,7 +13342,7 @@ which are all available via $\texttt{pip3}$ using an appropriate command prompt 
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+<div id="cell-id=fb1001e6-3a3c-4af0-afca-9dbec54f3563" class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>More detail on the structure of the original code can be found in</p>
@@ -13349,7 +13351,7 @@ which are all available via $\texttt{pip3}$ using an appropriate command prompt 
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
+<div id="cell-id=a90dcb03" class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
