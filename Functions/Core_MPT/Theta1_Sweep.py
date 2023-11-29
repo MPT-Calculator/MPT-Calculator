@@ -4,20 +4,36 @@ import os
 
 # import the desired library
 from ngsolve import *
-# unsilence command-line output
-
 import gc
 import tqdm
+import scipy.sparse as sp
+from .Theta1_Lower_Sweep_Mat_Method import *
+from .Construct_Matrices import *
+from .. .Settings.Settings import SolverParameters
+
+from ngsolve.krylovspace import CGSolver
 
 
 
 def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv ,inout ,Tolerance ,Maxsteps ,epsi ,Solver
-                 ,N0 ,TotalNOF ,Vectors ,Tensors ,Multi ,BP, Order, num_solver_threads, Integration_Order, Additional_Int_Order):
+                 ,N0 ,TotalNOF ,Vectors ,Tensors ,Multi ,BP, Order, num_solver_threads, Integration_Order, Additional_Int_Order, bilinear_bonus_int_order):
+    
+    
+    # Loading in option to use mat method or integral method.
+    _, _, _, _, _, use_integral = SolverParameters()
+    use_mat_method = not use_integral
+
+    
     # print(' solving theta1')
     # Setup variables
     Mu0 = 4* np.pi * 10 ** (-7)
     nu_no_omega = Mu0 * (alpha ** 2)
     NOF = len(Array)
+
+    # EDIT JAMES 26 Sept 2023:
+    # Scaling epsi by 1/nu. This is so that the contributions to the bilinear form scale with omega in the same way.
+    #epsi_r = epsi / (nu_no_omega * 10)
+
 
     # Setup where to store tensors
     if Tensors == True:
@@ -84,12 +100,12 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
         enumerator = tqdm.tqdm(Array, desc='Solving Theta1', total=len(Array))
 
     for k, Omega in enumerate(enumerator):
-
+        reg = epsi
         #Create the bilinear form
         a = BilinearForm(fes2, symmetric=True, condense=True)
         a += SymbolicBFI((mu_inv) * InnerProduct(curl(u), curl(v)), bonus_intorder=Additional_Int_Order)
         a += SymbolicBFI((1j) * inout * nu_no_omega * Omega * sigma * InnerProduct(u, v), bonus_intorder=Additional_Int_Order)
-        a += SymbolicBFI((1j) * (1 - inout) * epsi * InnerProduct(u, v), bonus_intorder=Additional_Int_Order)
+        a += SymbolicBFI((1j) * (1 - inout) * reg * InnerProduct(u, v), bonus_intorder=Additional_Int_Order)
 
         if Solver == "bddc":
             c = Preconditioner(a, "bddc")  # Apply the bddc preconditioner
@@ -102,7 +118,7 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
 
         # Calculate the inverse operator
         with TaskManager():
-            inverse = CGSolver(a.mat, c.mat, precision=Tolerance, maxsteps=Maxsteps)
+            inverse = CGSolver(a.mat, c.mat, tol=Tolerance, maxiter=Maxsteps)
 
         # Solve in each direction
 
@@ -148,7 +164,7 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
             Theta1Sols[:, k, 1] = Theta2.vec.FV().NumPy()
             Theta1Sols[:, k, 2] = Theta3.vec.FV().NumPy()
 
-        if Tensors == True:
+        if Tensors == True and use_mat_method is False:
             # Calculate upper triangle of tensor
             R = np.zeros([3, 3])
             I = np.zeros([3, 3])
@@ -189,7 +205,7 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
 
         # To reduce memory usage, we delete inverse, a, and c at the end of each iteration.
         del inverse, a, c
-
+    
     del enumerator
     del f1, f2, f3, ftemp
     del res
@@ -197,6 +213,36 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
     del Theta3, Theta2, Theta1
     gc.collect()
 
+    
+    
+    
+    
+    
+    # If computing using matrix method:
+    if Tensors==True and use_mat_method is True:
+        U_proxy = sp.eye(ndof)
+    
+        At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array = Construct_Matrices(
+        Integration_Order, Theta0Sols, bilinear_bonus_int_order, fes2, inout, mesh, mu_inv, sigma, '', u,
+        U_proxy, U_proxy, U_proxy, v, xivec)
+	
+        del U_proxy
+	
+        TensorArray, _ = Theta1_Lower_Sweep_Mat_Method(Array, Q_array, c1_array, c5_array, c7, c8_array, At0_array, UAt0_conj,
+                            UAt0U_array, T_array, EU_array_conj, UH_array, Theta1Sols, [], '',
+                            fes2.ndof,
+                            alpha, False)
+    
+    
+        del At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array
+        
+        for k in range(TensorArray.shape[0]):
+            R = TensorArray[k,:].reshape(3,3).real
+            I = TensorArray[k,:].reshape(3,3).imag
+            EigenValues[k, :] = np.sort(np.linalg.eigvals(N0 + R)) + 1j * np.sort(np.linalg.eigvals(I))
+        
+            TensorArray[k,:] = TensorArray[k,:] + N0.reshape(1,9)
+    
     if Tensors == True and Vectors == True:
         return TensorArray, EigenValues, Theta1Sols
     elif Tensors == True:

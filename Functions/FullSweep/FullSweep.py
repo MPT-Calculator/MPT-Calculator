@@ -78,21 +78,21 @@ def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSol
     if use_integral is True:
         TensorArray, EigenValues = Theta1_Sweep(Array, mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
                                                 Tolerance, Maxsteps, epsi, Solver, N0, NumberofFrequencies, False, True,
-                                                False, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order)
+                                                False, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_intorder)
     else:
         Theta1Sols = Theta1_Sweep(Array, mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
                                                 Tolerance, Maxsteps, epsi, Solver, N0, NumberofFrequencies, True, False,
-                                                False, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order)
+                                                False, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_intorder)
 
     print(' solved theta1 problems     ')
 
-    if use_integral is False:
-        # I'm aware that pre and post multiplying by identity of size ndof2 is slower than using K and A matrices outright,
-        # however this allows us to reuse the Construct_Matrices function rather than add (significantly) more code.
-        identity1 = sp.identity(ndof2)
-        TensorArray, EigenValues = Theta1_Lower_Sweep(Array, mesh, fes, fes2, Theta1Sols, identity1, identity1, identity1,
-                                   Theta0Sol, xivec, alpha, sigma, mu_inv, inout, N0, NumberofFrequencies, False,
-                                   False, 0, 0, Order, Integration_Order, bilinear_bonus_intorder, use_integral)
+    # if use_integral is False:
+    #     # I'm aware that pre and post multiplying by identity of size ndof2 is slower than using K and A matrices outright,
+    #     # however this allows us to reuse the Construct_Matrices function rather than add (significantly) more code.
+    #     identity1 = sp.identity(ndof2)
+    #     TensorArray, EigenValues = Theta1_Lower_Sweep(Array, mesh, fes, fes2, Theta1Sols, identity1, identity1, identity1,
+    #                                Theta0Sol, xivec, alpha, sigma, mu_inv, inout, N0, NumberofFrequencies, False,
+    #                                False, 0, 0, Order, Integration_Order, bilinear_bonus_intorder, use_integral)
 
     print(' frequency sweep complete')
 

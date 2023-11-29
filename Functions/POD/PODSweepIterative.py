@@ -212,11 +212,13 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
             PODTensors, PODEigenValues, Theta1Sols[:, :, :] = Theta1_Sweep(PODArray, mesh, fes, fes2, Theta0Sol, xivec,
                                                                            alpha, sigma, mu_inv, inout, Tolerance, Maxsteps,
                                                                            epsi, Solver, N0, NumberofFrequencies, True,
-                                                                           True, False, BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order)
+                                                                           True, False, BigProblem, Order, NumSolverThreads, Integration_Order,
+                                                                           Additional_Int_Order, bilinear_bonus_int_order)
         else:
             Theta1Sols[:, :, :] = Theta1_Sweep(PODArray, mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
                                                Tolerance, Maxsteps, epsi, Solver, N0, NumberofFrequencies, True, False,
-                                               False, BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order)
+                                               False, BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order,
+                                               bilinear_bonus_int_order)
     else:
         #Work out where to send each frequency
         Theta1_CPUs = min(NumberofSnapshots,multiprocessing.cpu_count(),CPUs)
@@ -246,9 +248,9 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
         counter = manager.Value('i', 0)
         for i in range(len(PODArray)):
             if PlotPod == True:
-                Runlist.append((np.asarray([PODArray[i]]),mesh,fes,fes2,Theta0Sol,xivec,alpha,sigma,mu_inv,inout,Tolerance,Maxsteps,epsi,Solver,N0,NumberofSnapshots,True,True,counter,BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, 'Theta1_Sweep'))
+                Runlist.append((np.asarray([PODArray[i]]),mesh,fes,fes2,Theta0Sol,xivec,alpha,sigma,mu_inv,inout,Tolerance,Maxsteps,epsi,Solver,N0,NumberofSnapshots,True,True,counter,BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_int_order, 'Theta1_Sweep'))
             else:
-                Runlist.append((np.asarray([PODArray[i]]),mesh,fes,fes2,Theta0Sol,xivec,alpha,sigma,mu_inv,inout,Tolerance,Maxsteps,epsi,Solver,N0,NumberofSnapshots,True,False,counter,BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, 'Theta1_Sweep'))
+                Runlist.append((np.asarray([PODArray[i]]),mesh,fes,fes2,Theta0Sol,xivec,alpha,sigma,mu_inv,inout,Tolerance,Maxsteps,epsi,Solver,N0,NumberofSnapshots,True,False,counter,BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_int_order, 'Theta1_Sweep'))
 
         #Run on the multiple cores
         multiprocessing.freeze_support()
@@ -848,11 +850,13 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
                 if PlotPod == True:
                     Runlist.append((np.asarray([Omega_Max[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
                                     Tolerance, Maxsteps, epsi, Solver, N0, len(Omega_Max), True, True, counter,
-                                    BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, 'Theta1_Sweep'))
+                                    BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order,
+                                    bilinear_bonus_int_order, 'Theta1_Sweep'))
                 else:
                     Runlist.append((np.asarray([Omega_Max[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
                                     Tolerance, Maxsteps, epsi, Solver, N0, len(Omega_Max), True, False, counter,
-                                    BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, 'Theta1_Sweep'))
+                                    BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order,
+                                    bilinear_bonus_int_order, 'Theta1_Sweep'))
 
             # Run on the multiple cores
             tqdm.tqdm.set_lock(multiprocessing.RLock())

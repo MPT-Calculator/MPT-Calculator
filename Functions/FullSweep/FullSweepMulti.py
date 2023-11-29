@@ -88,7 +88,7 @@ def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProb
     counter = manager.Value('i', 0)
     for i in range(len(Array)):
         Runlist.append((np.asarray([Array[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout, Tolerance,
-                        Maxsteps, epsi, Solver, N0, NumberofFrequencies, vectors, tensors, counter, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, 'Theta1_Sweep'))
+                        Maxsteps, epsi, Solver, N0, NumberofFrequencies, vectors, tensors, counter, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_int_order, 'Theta1_Sweep'))
 
 
     tqdm.tqdm.set_lock(multiprocessing.RLock())
@@ -102,10 +102,9 @@ def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProb
             Outputs = list(tqdm.tqdm(pool.imap(imap_version, Runlist, chunksize=1), total=len(Runlist), desc='Solving Theta1', dynamic_ncols=True))
 
     # Unpack the results
-    if use_integral is True:
-        for i in range(len(Outputs)):
-            EigenValues[i,:] = Outputs[i][1][0]
-            TensorArray[i,:] = Outputs[i][0][0]
+    for i in range(len(Outputs)):
+        EigenValues[i,:] = Outputs[i][1][0]
+        TensorArray[i,:] = Outputs[i][0][0]
 
     print("Frequency Sweep complete")
 
@@ -138,28 +137,28 @@ def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProb
                 TempArray[:, j, :] = Theta1Sols[:, Sim, :]
             Sols.append(TempArray)
 
-        # I'm aware that pre and post multiplying by identity of size ndof2 is slower than using K and A matrices outright,
-        # however this allows us to reuse the Construct_Matrices function rather than add (significantly) more code.
-        identity1 = sp.identity(ndof2)
-        # Cteate the inputs
-        Runlist = []
-        manager = multiprocessing.Manager()
-        counter = manager.Value('i', 0)
-        for i in range(CPUs):
-            Runlist.append((Core_Distribution[i], mesh, fes, fes2, Sols[i], identity1, identity1, identity1,
-                            Theta0Sol, xivec, alpha, sigma, mu_inv, inout, N0, NumberofFrequencies, counter,
-                            False, 0, 0, Order, Integration_Order, bilinear_bonus_int_order, use_integral))
+        # # I'm aware that pre and post multiplying by identity of size ndof2 is slower than using K and A matrices outright,
+        # # however this allows us to reuse the Construct_Matrices function rather than add (significantly) more code.
+        # identity1 = sp.identity(ndof2)
+        # # Cteate the inputs
+        # Runlist = []
+        # manager = multiprocessing.Manager()
+        # counter = manager.Value('i', 0)
+        # for i in range(CPUs):
+        #     Runlist.append((Core_Distribution[i], mesh, fes, fes2, Sols[i], identity1, identity1, identity1,
+        #                     Theta0Sol, xivec, alpha, sigma, mu_inv, inout, N0, NumberofFrequencies, counter,
+        #                     False, 0, 0, Order, Integration_Order, bilinear_bonus_int_order, use_integral))
 
-        # Run on the multiple cores
-        # Edit James Elgy: changed how pool was generated to 'spawn': see
-        # https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
-        with multiprocessing.get_context('spawn').Pool(CPUs) as pool:
-            Outputs = pool.starmap(Theta1_Lower_Sweep, Runlist)
+        # # Run on the multiple cores
+        # # Edit James Elgy: changed how pool was generated to 'spawn': see
+        # # https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
+        # with multiprocessing.get_context('spawn').Pool(CPUs) as pool:
+        #     Outputs = pool.starmap(Theta1_Lower_Sweep, Runlist)
 
-        for i, Output in enumerate(Outputs):
-            for j, Num in enumerate(Count_Distribution[i]):
-                TensorArray[Num, :] = Output[0][j]
-                EigenValues[Num, :] = Output[1][j]
+        # for i, Output in enumerate(Outputs):
+        #     for j, Num in enumerate(Count_Distribution[i]):
+        #         TensorArray[Num, :] = Output[0][j]
+        #         EigenValues[Num, :] = Output[1][j]
 
 
     return TensorArray, EigenValues, N0, numelements, (ndof, ndof2)
