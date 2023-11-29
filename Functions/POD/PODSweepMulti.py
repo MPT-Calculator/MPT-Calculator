@@ -177,10 +177,6 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
 
         timing_dictionary['Theta1'] = time.time()
 
-                
-       
-
-
         ########################################################################
         # Create the ROM
 
