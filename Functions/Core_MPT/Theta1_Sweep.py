@@ -9,7 +9,9 @@ import tqdm
 import scipy.sparse as sp
 from .Theta1_Lower_Sweep_Mat_Method import *
 from .Construct_Matrices import *
-from .. .Settings.Settings import SolverParameters
+
+sys.path.insert(0, "Settings")
+from Settings import SolverParameters
 
 from ngsolve.krylovspace import CGSolver
 
