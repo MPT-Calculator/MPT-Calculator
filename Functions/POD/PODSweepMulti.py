@@ -470,8 +470,8 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         Theta1Sols[:,:,1] = u2Truncated @ (g[:,:,1])
         Theta1Sols[:,:,2] = u3Truncated @ (g[:,:,2])
     
-        term1, term2, term3, term4, Z_upper_bound, Z_tilde_upper_bound = test_reg(Theta0Sol, fes2, Theta1Sols, 6, xivec, inout, epsi, alpha, Array, TensorArray, Integration_Order,
-                                                                mu_inv, sigma, N0)
+        #term1, term2, term3, term4, Z_upper_bound, Z_tilde_upper_bound = test_reg(Theta0Sol, fes2, Theta1Sols, 6, xivec, inout, epsi, alpha, Array, TensorArray, Integration_Order,
+        #                                                        mu_inv, sigma, N0)
         # term1_sym = np.zeros(term1.shape, dtype=complex)
         # term2_sym = np.zeros(term2.shape, dtype=complex)
         # term3_sym = np.zeros(term3.shape, dtype=complex)
@@ -482,12 +482,12 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
             #PODTensors[k,:] = PODTensors[k, :] + term1_sym[k,:,:].ravel() + term2_sym[k,:,:].ravel() + term3_sym[k,:,:].ravel() 
             #PODTensors = np.asarray(PODTensors)
         
-        np.savetxt('Z_upper_bound.csv', Z_upper_bound)
-        np.savetxt('Z_tilde_upper_bound.csv', Z_tilde_upper_bound)
-        shutil.copy('sum_reg_terms_real.csv', f'Results/{sweepname}/Data/sum_reg_terms_real.csv')
-        shutil.copy('sum_reg_terms_imag.csv', f'Results/{sweepname}/Data/sum_reg_terms_imag.csv')
-        shutil.copy('Z_upper_bound.csv', f'Results/{sweepname}/Data/Z_upper_bound.csv')
-        shutil.copy('Z_tilde_upper_bound.csv', f'Results/{sweepname}/Data/Z_tilde_upper_bound.csv')
+        # np.savetxt('Z_upper_bound.csv', Z_upper_bound)
+        # np.savetxt('Z_tilde_upper_bound.csv', Z_tilde_upper_bound)
+        # shutil.copy('sum_reg_terms_real.csv', f'Results/{sweepname}/Data/sum_reg_terms_real.csv')
+        # shutil.copy('sum_reg_terms_imag.csv', f'Results/{sweepname}/Data/sum_reg_terms_imag.csv')
+        # shutil.copy('Z_upper_bound.csv', f'Results/{sweepname}/Data/Z_upper_bound.csv')
+        # shutil.copy('Z_tilde_upper_bound.csv', f'Results/{sweepname}/Data/Z_tilde_upper_bound.csv')
 
 
 
