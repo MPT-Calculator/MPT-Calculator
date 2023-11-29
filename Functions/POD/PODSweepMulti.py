@@ -43,7 +43,7 @@ from ..POD.Truncated_SVD import *
 from ..POD.Constuct_ROM import *
 from ..POD.Construct_Linear_System import *
 
-from ..Core_MPT.test_reg import *
+#from ..Core_MPT.test_reg import *
 
 sys.path.insert(0,"Settings")
 from Settings import SolverParameters, DefaultSettings, IterativePODParameters
