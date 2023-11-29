@@ -79,8 +79,8 @@ def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProb
         vectors = False
         tensors = True
     else:
-        vectors = True
-        tensors = False
+        vectors = False
+        tensors = True
 
     # Create the inputs
     Runlist = []
@@ -102,40 +102,41 @@ def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProb
             Outputs = list(tqdm.tqdm(pool.imap(imap_version, Runlist, chunksize=1), total=len(Runlist), desc='Solving Theta1', dynamic_ncols=True))
 
     # Unpack the results
+    
     for i in range(len(Outputs)):
         EigenValues[i,:] = Outputs[i][1][0]
         TensorArray[i,:] = Outputs[i][0][0]
 
     print("Frequency Sweep complete")
 
-    if use_integral is False:
-        Theta1Sols = np.zeros((ndof2, NumberofFrequencies, 3), dtype=complex)
-        for i in range(len(Outputs)):
-            Theta1Sols[:, i, :] = np.asarray(np.squeeze(Outputs[i]))
+    # if use_integral is False:
+    #     Theta1Sols = np.zeros((ndof2, NumberofFrequencies, 3), dtype=complex)
+    #     for i in range(len(Outputs)):
+    #         Theta1Sols[:, i, :] = np.asarray(np.squeeze(Outputs[i]))
 
-        print(' Computing coefficients')
+    #     print(' Computing coefficients')
 
-        Core_Distribution = []
-        Count_Distribution = []
-        for i in range(CPUs):
-            Core_Distribution.append([])
-            Count_Distribution.append([])
-        # Distribute frequencies between the cores
-        CoreNumber = 0
-        for i, Omega in enumerate(Array):
-            Core_Distribution[CoreNumber].append(Omega)
-            Count_Distribution[CoreNumber].append(i)
-            if CoreNumber == CPUs - 1:
-                CoreNumber = 0
-            else:
-                CoreNumber += 1
-        # Distribute the lower dimensional solutions
-        Sols = []
-        for i in range(CPUs):
-            TempArray = np.zeros([ndof2, len(Count_Distribution[i]), 3], dtype=complex)
-            for j, Sim in enumerate(Count_Distribution[i]):
-                TempArray[:, j, :] = Theta1Sols[:, Sim, :]
-            Sols.append(TempArray)
+    #     Core_Distribution = []
+    #     Count_Distribution = []
+    #     for i in range(CPUs):
+    #         Core_Distribution.append([])
+    #         Count_Distribution.append([])
+    #     # Distribute frequencies between the cores
+    #     CoreNumber = 0
+    #     for i, Omega in enumerate(Array):
+    #         Core_Distribution[CoreNumber].append(Omega)
+    #         Count_Distribution[CoreNumber].append(i)
+    #         if CoreNumber == CPUs - 1:
+    #             CoreNumber = 0
+    #         else:
+    #             CoreNumber += 1
+    #     # Distribute the lower dimensional solutions
+    #     Sols = []
+    #     for i in range(CPUs):
+    #         TempArray = np.zeros([ndof2, len(Count_Distribution[i]), 3], dtype=complex)
+    #         for j, Sim in enumerate(Count_Distribution[i]):
+    #             TempArray[:, j, :] = Theta1Sols[:, Sim, :]
+    #         Sols.append(TempArray)
 
         # # I'm aware that pre and post multiplying by identity of size ndof2 is slower than using K and A matrices outright,
         # # however this allows us to reuse the Construct_Matrices function rather than add (significantly) more code.
