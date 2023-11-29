@@ -80,8 +80,8 @@ def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSol
                                                 Tolerance, Maxsteps, epsi, Solver, N0, NumberofFrequencies, False, True,
                                                 False, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_intorder)
     else:
-        Theta1Sols = Theta1_Sweep(Array, mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
-                                                Tolerance, Maxsteps, epsi, Solver, N0, NumberofFrequencies, True, False,
+        TensorArray, EigenValues = Theta1_Sweep(Array, mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
+                                                Tolerance, Maxsteps, epsi, Solver, N0, NumberofFrequencies, False, True,
                                                 False, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_intorder)
 
     print(' solved theta1 problems     ')
