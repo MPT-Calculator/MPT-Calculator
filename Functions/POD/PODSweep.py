@@ -101,11 +101,13 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
             PODTensors, PODEigenValues, Theta1Sols[:, :, :] = Theta1_Sweep(PODArray, mesh, fes, fes2, Theta0Sol, xivec,
                                                                            alpha, sigma, mu_inv, inout, Tolerance, Maxsteps,
                                                                            epsi, Solver, N0, NumberofFrequencies, True,
-                                                                           True, False, BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order)
+                                                                           True, False, BigProblem, Order, NumSolverThreads, Integration_Order, 
+                                                                           Additional_Int_Order, bilinear_bonus_int_ord)
         else:
             Theta1Sols[:, :, :] = Theta1_Sweep(PODArray, mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
                                                Tolerance, Maxsteps, epsi, Solver, N0, NumberofFrequencies, True, False,
-                                               False, BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order)
+                                               False, BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order,
+                                               bilinear_bonus_int_ord)
         print(' solved theta1 problems     ')
         #########################################################################
         # POD

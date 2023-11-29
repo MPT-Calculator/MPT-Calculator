@@ -43,12 +43,15 @@ from ..POD.Truncated_SVD import *
 from ..POD.Constuct_ROM import *
 from ..POD.Construct_Linear_System import *
 
+#from ..Core_MPT.test_reg import *
+
 sys.path.insert(0,"Settings")
 from Settings import SolverParameters, DefaultSettings, IterativePODParameters
 
 # Importing matplotlib for plotting comparisons
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator
+import shutil
 
 
 
@@ -129,11 +132,11 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
             if PlotPod == True:
                 Runlist.append((np.asarray([PODArray[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
                                 Tolerance, Maxsteps, epsi, Solver, N0, NumberofSnapshots, True, True, counter,
-                                BigProblem, Order, NumSolverThreads,Integration_Order, Additional_Int_Order, 'Theta1_Sweep'))
+                                BigProblem, Order, NumSolverThreads,Integration_Order, Additional_Int_Order, bilinear_bonus_int_order, 'Theta1_Sweep'))
             else:
                 Runlist.append((np.asarray([PODArray[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
                                 Tolerance, Maxsteps, epsi, Solver, N0, NumberofSnapshots, True, False, counter,
-                                BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, 'Theta1_Sweep'))
+                                BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_int_order, 'Theta1_Sweep'))
 
         # Run on the multiple cores
         multiprocessing.freeze_support()
@@ -334,7 +337,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         g[:, k, 0] = np.linalg.solve(HA0H1 + HA1H1 * omega, HR1 * omega)
         g[:, k, 1] = np.linalg.solve(HA0H2 + HA1H2 * omega, HR2 * omega)
         g[:, k, 2] = np.linalg.solve(HA0H3 + HA1H3 * omega, HR3 * omega)
-
+    
     # Work out where to send each frequency
     timing_dictionary['SolvedSmallerSystem'] = time.time()
     Tensor_CPUs = min(NumberofFrequencies, multiprocessing.cpu_count(), CPUs)
@@ -457,6 +460,37 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
     print(' frequency sweep complete')
     timing_dictionary['Tensors'] = time.time()
     np.save('Results/' + sweepname + f'/Data/Timings_cpus={CPUs}.npy', timing_dictionary)
+
+  # Computing additional terms for testing commutator
+    compute_additional_terms = True
+    if compute_additional_terms is True:
+        Theta1Sols = np.zeros((ndof, len(Array),3), dtype=complex)
+    
+        Theta1Sols[:,:,0] = u1Truncated @ (g[:,:,0])
+        Theta1Sols[:,:,1] = u2Truncated @ (g[:,:,1])
+        Theta1Sols[:,:,2] = u3Truncated @ (g[:,:,2])
+    
+        term1, term2, term3, term4, Z_upper_bound, Z_tilde_upper_bound = test_reg(Theta0Sol, fes2, Theta1Sols, 6, xivec, inout, epsi, alpha, Array, TensorArray, Integration_Order,
+                                                                mu_inv, sigma, N0)
+        # term1_sym = np.zeros(term1.shape, dtype=complex)
+        # term2_sym = np.zeros(term2.shape, dtype=complex)
+        # term3_sym = np.zeros(term3.shape, dtype=complex)
+        # for k in range(len(PODArray)):
+        #     term1_sym[k,:,:] = -(np.squeeze(term1[k,:,:]) + np.transpose(np.squeeze(term1[k, :, :])))/2
+        #     term2_sym[k,:,:] = (np.squeeze(term2[k,:,:]) + np.transpose(np.squeeze(term2[k, :, :])))/2
+        #     term3_sym[k,:,:] = -(np.squeeze(term3[k,:,:]) + np.transpose(np.squeeze(term3[k, :, :])))/2
+            #PODTensors[k,:] = PODTensors[k, :] + term1_sym[k,:,:].ravel() + term2_sym[k,:,:].ravel() + term3_sym[k,:,:].ravel() 
+            #PODTensors = np.asarray(PODTensors)
+        
+        np.savetxt('Z_upper_bound.csv', Z_upper_bound)
+        np.savetxt('Z_tilde_upper_bound.csv', Z_tilde_upper_bound)
+        shutil.copy('sum_reg_terms_real.csv', f'Results/{sweepname}/Data/sum_reg_terms_real.csv')
+        shutil.copy('sum_reg_terms_imag.csv', f'Results/{sweepname}/Data/sum_reg_terms_imag.csv')
+        shutil.copy('Z_upper_bound.csv', f'Results/{sweepname}/Data/Z_upper_bound.csv')
+        shutil.copy('Z_tilde_upper_bound.csv', f'Results/{sweepname}/Data/Z_tilde_upper_bound.csv')
+
+
+
 
     if PlotPod == True:
         if PODErrorBars == True:
