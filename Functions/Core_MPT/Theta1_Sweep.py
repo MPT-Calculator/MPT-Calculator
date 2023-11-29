@@ -9,10 +9,8 @@ import tqdm
 import scipy.sparse as sp
 from .Theta1_Lower_Sweep_Mat_Method import *
 from .Construct_Matrices import *
-
 sys.path.insert(0, "Settings")
 from Settings import SolverParameters
-
 from ngsolve.krylovspace import CGSolver
 
 
@@ -24,6 +22,10 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
     # Loading in option to use mat method or integral method.
     _, _, _, _, _, use_integral = SolverParameters()
     use_mat_method = not use_integral
+    
+    if use_mat_method is True:
+        temp_vectors = Vectors
+        Vectors = True
 
     
     # print(' solving theta1')
@@ -222,7 +224,7 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
     
     # If computing using matrix method:
     if Tensors==True and use_mat_method is True:
-        U_proxy = sp.eye(ndof)
+        U_proxy = sp.eye(fes2.ndof)
     
         At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array = Construct_Matrices(
         Integration_Order, Theta0Sols, bilinear_bonus_int_order, fes2, inout, mesh, mu_inv, sigma, '', u,
@@ -235,7 +237,7 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
                             fes2.ndof,
                             alpha, False)
     
-    
+        Vectors = temp_vectors
         del At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array
         
         for k in range(TensorArray.shape[0]):
