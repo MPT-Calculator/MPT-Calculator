@@ -64,7 +64,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
     timing_dictionary['start_time'] = time.time()
 
     EigenValues, Mu0, N0, NumberofFrequencies, NumberofSnapshots, TensorArray,  inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation(
-        Array, Object, PODArray, curve, inorout, mur, sig, Order, Order_L2, sweepname)
+        Array, Object, PODArray, curve, inorout, mur, sig, Order, Order_L2, sweepname, NumSolverThreads)
     # Set up the Solver Parameters
     Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()
 
@@ -395,7 +395,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
 
         At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array = Construct_Matrices(
             Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, inout, mesh, mu_inv, sigma, sweepname, u,
-            u1Truncated, u2Truncated, u3Truncated, v, xivec)
+            u1Truncated, u2Truncated, u3Truncated, v, xivec,NumSolverThreads, ReducedSolve=True)
 
         timing_dictionary['BuildSystemMatrices'] = time.time()
 
