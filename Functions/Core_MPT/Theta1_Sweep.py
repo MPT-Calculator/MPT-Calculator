@@ -22,6 +22,7 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
     # Loading in option to use mat method or integral method.
     _, _, _, _, _, use_integral = SolverParameters()
     use_mat_method = not use_integral
+    #use_mat_method = False
     
     if use_mat_method is True:
         temp_vectors = Vectors
@@ -119,10 +120,12 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
             c = Preconditioner(a, "local")  # Apply the local preconditioner
         # with TaskManager():
         c.Update()
+        print("Built A and C")
 
         # Calculate the inverse operator
         with TaskManager():
             inverse = CGSolver(a.mat, c.mat, tol=Tolerance, maxiter=Maxsteps)
+        print("Built inverse operator")
 
         # Solve in each direction
 
@@ -138,8 +141,14 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
         with TaskManager():
             res.data -= a.mat * Theta1.vec
             Theta1.vec.data += inverse * res
-            Theta1.vec.data += a.inner_solve * ftemp.data
+            #Theta1.vec.data += a.inner_solve * ftemp.data
+            #Theta1.vec.data += a.harmonic_extension * Theta1.vec
             Theta1.vec.data += a.harmonic_extension * Theta1.vec
+            Theta1.vec.data += a.inner_solve * ftemp.data
+            
+
+
+        print("Solevd e1")
 
         # e2
         res.data.FV().NumPy()[:] = f2.vec.FV().NumPy() * Omega
@@ -149,9 +158,12 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
         with TaskManager():
             res.data -= a.mat * Theta2.vec
             Theta2.vec.data += inverse * res
-            Theta2.vec.data += a.inner_solve * ftemp.data
+            #Theta2.vec.data += a.inner_solve * ftemp.data
+            #Theta2.vec.data += a.harmonic_extension * Theta2.vec
             Theta2.vec.data += a.harmonic_extension * Theta2.vec
-
+            Theta2.vec.data += a.inner_solve * ftemp.data
+        
+        print("Solevd e2")
         # e3
         res.data.FV().NumPy()[:] = f3.vec.FV().NumPy() * Omega
         with TaskManager():
@@ -160,13 +172,18 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
         with TaskManager():
             res.data -= a.mat * Theta3.vec
             Theta3.vec.data += inverse * res
-            Theta3.vec.data += a.inner_solve * ftemp.data
+            #Theta3.vec.data += a.inner_solve * ftemp.data
+            #Theta3.vec.data += a.harmonic_extension * Theta3.vec
             Theta3.vec.data += a.harmonic_extension * Theta3.vec
-
+            Theta3.vec.data += a.inner_solve * ftemp.data
+            
+        
+        print("Solevd e3")
         if Vectors == True:
             Theta1Sols[:, k, 0] = Theta1.vec.FV().NumPy()
             Theta1Sols[:, k, 1] = Theta2.vec.FV().NumPy()
             Theta1Sols[:, k, 2] = Theta3.vec.FV().NumPy()
+        print("Copied solutions")
 
         if Tensors == True and use_mat_method is False:
             # Calculate upper triangle of tensor
@@ -206,9 +223,11 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
             # Save in arrays
             TensorArray[k, :] = (N0 + R + 1j * I).flatten()
             EigenValues[k, :] = np.sort(np.linalg.eigvals(N0 + R)) + 1j * np.sort(np.linalg.eigvals(I))
+        print("Computed R,I")
 
         # To reduce memory usage, we delete inverse, a, and c at the end of each iteration.
         del inverse, a, c
+        print("deleted inverse, a,c")
     
     del enumerator
     del f1, f2, f3, ftemp
@@ -225,10 +244,10 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
     # If computing using matrix method:
     if Tensors==True and use_mat_method is True:
         U_proxy = sp.eye(fes2.ndof)
-    
+        #ReducedSolve=False
         At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array = Construct_Matrices(
         Integration_Order, Theta0Sols, bilinear_bonus_int_order, fes2, inout, mesh, mu_inv, sigma, '', u,
-        U_proxy, U_proxy, U_proxy, v, xivec)
+        U_proxy, U_proxy, U_proxy, v, xivec, num_solver_threads, ReducedSolve=False)
 	
         del U_proxy
 	
