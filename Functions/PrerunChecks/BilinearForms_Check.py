@@ -6,8 +6,9 @@ from ngsolve import *
 # from netgen.meshing import *
 import warnings
 import os
+import gc
 
-def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max_iter, curve_order, starting_order, sweepname):
+def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max_iter, curve_order, starting_order, sweepname, NumSolverThreads):
     """
     James Elgy - 2023
     Function to compute and check the convergence of the postprocessing bilinear forms.
@@ -27,7 +28,20 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
     bonus_intord - int - converged order of integration
     """
 
+    """
+    Paul Ledger 2024 edit
+    Avoid passing large amounts of data between an NG-Solve matrix and a Numpy/SciPy sparse array
+    We only need the Forbenious norm and by viewing the matrix AsVector this can be computed
+
+    Also update critera to save resources. Rather than checking the norm of the difference of values
+    Instead just check the absolute difference of the norms - we only use this for estimating the
+    order of integration for computing the MPTs after all
+    """
+
     print('Running Bilinear Forms Check')
+    
+    if NumSolverThreads != 'default':
+        SetNumThreads(NumSolverThreads)
     
     
     # Making directory to save graphs:
@@ -44,7 +58,7 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
     # defining finite element space.
     dom_nrs_metal = [0 if mat == "air" else 1 for mat in mesh.GetMaterials()]
     fes2 = HCurl(mesh, order=order, dirichlet="outer", complex=True, gradientdomains=dom_nrs_metal)
-
+    
 
     # Creating the bilinear form
     u, v = fes2.TnT()
@@ -54,38 +68,34 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
     ord_array = []
     bonus_intord = starting_order
 
-    # Sparsity pattern won't change, so we can create K using order 0 and obtain the number of non-zero entries
-    # for preallocation
-    K = BilinearForm(fes2, symmetric=True)
-    K += SymbolicBFI(inout * mu_inv * curl(u) * (curl(v)), bonus_intorder=bonus_intord)
-    K += SymbolicBFI((1 - inout) * curl(u) * (curl(v)), bonus_intorder=bonus_intord)
-    K.Assemble()
-
-    _, _, s = K.mat.COO()
-    rows = np.zeros(len(s))
-    cols = np.zeros(len(s))
-    vals = np.zeros(len(s))
 
     while (rel_diff > bilinearform_tol) and (counter < max_iter):
         print(f'K: Iteration {counter}: bonus_intord = {bonus_intord}')
         K = BilinearForm(fes2, symmetric=True)
         K += SymbolicBFI(inout * mu_inv * curl(u) * (curl(v)), bonus_intorder=bonus_intord)
         K += SymbolicBFI((1 - inout) * curl(u) * (curl(v)), bonus_intorder=bonus_intord)
-        K.Assemble()
-
-        # K is real here, so we discard imaginary part.
-        rows[:], cols[:], vals[:] = K.mat.COO()
-        # del K
+        #K += SymbolicBFI(epsi * u * v, bonus_intorder=bonus_intord)
+        with TaskManager():
+            K.Assemble()
+        
         if counter == 1:  # first iteration
-            vals_old = vals
+            nvalsold = np.linalg.norm(K.mat.AsVector()[:])
         else:
-            vals_new = vals
-            rel_diff = np.linalg.norm(vals_new - vals_old) / np.linalg.norm(vals_new)
-            vals_old = vals
+            last_rel_diff = rel_diff
+            nvals = np.linalg.norm(K.mat.AsVector()[:])
+            rel_diff = np.abs(nvals-nvalsold)/nvals
+            nvalsold = nvals
+            #vals_old = vals
             rel_diff_array += [rel_diff]
             ord_array += [bonus_intord]
+        del K
+        if counter > 1 and rel_diff >= last_rel_diff:
+            # No convergence
+            print("No convergence - exit loop and switch to linear geometry")
+            counter=max_iter
+            break
 
-        vals = np.zeros(len(s))  # reset vals
+        #vals = np.zeros(nz)  # reset vals
 
         # using bonus_intord =n and bonus_intord =n+1 gives the same result (?). So we use even orders.
         bonus_intord += 2
@@ -107,7 +117,8 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
     if counter >= max_iter:
         warnings.warn("K Bilinear Form did not converge. Trying again with linear geometry.")
         if curve_order > 1:
-            return BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max_iter, 1, starting_order, sweepname)
+            gc.collect()
+            return BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max_iter, 1, starting_order, sweepname, NumSolverThreads)
             curve_order = 1
             mesh.Curve(1)
         else:
@@ -127,33 +138,55 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
 
     # Sparsity pattern won't change so we can create A using order 0 and obtain the number of non-zero entries
     # for preallocation
-    A = BilinearForm(fes2, symmetric=True)
-    A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=bonus_intord)
-    A.Assemble()
+    #A = BilinearForm(fes2, symmetric=True)
+    #A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=bonus_intord)
+    #with TaskManager():
+    #    A.Assemble()
 
-    _, _, s = A.mat.COO()
-    rows = np.zeros(len(s))
-    cols = np.zeros(len(s))
-    vals = np.zeros(len(s))
+    #r, c, s = A.mat.COO()
+    #nz=len(s)
+    #del A, r, c, s
+    #rows = np.zeros(nz)
+    #cols = np.zeros(nz)
+    #vals = np.zeros(nz)
 
     while (rel_diff > bilinearform_tol) and (counter < max_iter):
         print(f'C: Iteration {counter}: bonus_intord = {bonus_intord}')
         A = BilinearForm(fes2, symmetric=True)
         A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=bonus_intord)
-        A.Assemble()
+        with TaskManager():
+            A.Assemble()
 
-        rows[:], cols[:], vals[:] = A.mat.COO()
-        # del K
+        #rows[:], cols[:], vals[:] = A.mat.COO()
+        #del A
+        #if counter == 1:  # first iteration
+        #    vals_old = vals
+        #else:
+        #    last_rel_diff = rel_diff
+        #    rel_diff = np.linalg.norm(vals - vals_old) / np.linalg.norm(vals)
+        #    vals_old = vals
+        #    rel_diff_array += [rel_diff]
+        #    ord_array += [bonus_intord]
+
         if counter == 1:  # first iteration
-            vals_old = vals
+            nvalsold = np.linalg.norm(A.mat.AsVector()[:])
         else:
-            vals_new = vals
-            rel_diff = np.linalg.norm(vals_new - vals_old) / np.linalg.norm(vals_new)
-            vals_old = vals
+            last_rel_diff = rel_diff
+            nvals = np.linalg.norm(A.mat.AsVector()[:])
+            rel_diff = np.abs(nvals-nvalsold)/nvals
+            nvalsold = nvals
+            #vals_old = vals
             rel_diff_array += [rel_diff]
             ord_array += [bonus_intord]
+        del A
 
-        vals = np.zeros(len(s))  # reset vals
+        if counter > 1 and rel_diff >= last_rel_diff:
+            # No convergence
+            print("No convergence - exit loop and switch to linear geometry")
+            counter=max_iter
+            break
+
+        #vals = np.zeros(nz)  # reset vals
 
         # using bonus_intord =n and bonus_intord =n+1 gives the same result (?). So we use even orders.
         bonus_intord += 2
@@ -175,7 +208,8 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
     if counter >= max_iter:
         warnings.warn("C Bilinear Form did not converge. Trying again with linear geometry.")
         if curve_order > 1:
-            return BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max_iter, 1, starting_order, sweepname)
+            gc.collect()
+            return BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max_iter, 1, starting_order, sweepname, NumSolverThreads)
             curve_order = 1
             mesh.Curve(1)
         else:
@@ -184,5 +218,6 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
     #
     print(f'C Bilinear Form Converged using order {C_order}')
 
+    gc.collect()
     return max([K_order, C_order])
 
