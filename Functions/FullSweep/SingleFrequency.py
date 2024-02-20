@@ -34,7 +34,7 @@ from Functions.Helper_Functions.count_prismatic_elements import count_prismatic_
 def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine, Integration_Order, Additional_Int_Order, Order_L2, sweepname,
                     curve=5, theta_solutions_only=False, num_solver_threads='default'):
 
-    _, Mu0, _, _, _, _, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation([Omega], Object, [], curve, inorout, mur, sig, Order, 0, sweepname)
+    _, Mu0, _, _, _, _, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation([Omega], Object, [], curve, inorout, mur, sig, Order, 0, sweepname, num_solver_threads)
     # Set up the Solver Parameters
     Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()
 
