@@ -32,7 +32,7 @@ def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSol
     print(' Running as full sweep')
 
     EigenValues, Mu0, N0, NumberofFrequencies, _, TensorArray, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_intorder = MPT_Preallocation(
-        Array, Object, [], curve, inorout, mur, sig, Order, Order_L2, sweepname)
+        Array, Object, [], curve, inorout, mur, sig, Order, Order_L2, sweepname,NumSolverThreads )
     # Set up the Solver Parameters
     Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()
 

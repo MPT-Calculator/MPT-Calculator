@@ -7,9 +7,12 @@ import scipy.sparse as sp
 import gc
 
 def Construct_Matrices(Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, inout, mesh, mu_inv, sigma, sweepname,
-                       u, u1Truncated, u2Truncated, u3Truncated, v, xivec):
+                       u, u1Truncated, u2Truncated, u3Truncated, v, xivec, NumSolverThreads, ReducedSolve=True ):
     obtain_orders_iteratively = False
     tol_bilinear = 1e-10
+
+    if NumSolverThreads != 'default':
+        SetNumThreads(NumSolverThreads)
     if obtain_orders_iteratively is False:
         # Constructing 𝐊ᵢⱼ (eqn 7 from paper)
         # For the K bilinear forms, and also later bilinear and linear forms, we specify an integration order specific
@@ -18,7 +21,8 @@ def Construct_Matrices(Integration_Order, Theta0Sol, bilinear_bonus_int_order, f
         K = BilinearForm(fes2, symmetric=True)
         K += SymbolicBFI(inout * mu_inv * curl(u) * Conj(curl(v)), bonus_intorder=bilinear_bonus_int_order)
         K += SymbolicBFI((1 - inout) * curl(u) * Conj(curl(v)), bonus_intorder=bilinear_bonus_int_order)
-        K.Assemble()
+        with TaskManager():
+            K.Assemble()
         rows, cols, vals = K.mat.COO()
         del K
         Q = sp.csr_matrix((vals, (rows, cols)))
@@ -35,7 +39,8 @@ def Construct_Matrices(Integration_Order, Theta0Sol, bilinear_bonus_int_order, f
             K = BilinearForm(fes2, symmetric=True)
             K += SymbolicBFI(inout * mu_inv * curl(u) * Conj(curl(v)), bonus_intorder=bonus_intord)
             K += SymbolicBFI((1 - inout) * curl(u) * Conj(curl(v)), bonus_intorder=bonus_intord)
-            K.Assemble()
+            with TaskManager():
+                K.Assemble()
 
             rows, cols, vals = K.mat.COO()
             # del K
@@ -68,12 +73,16 @@ def Construct_Matrices(Integration_Order, Theta0Sol, bilinear_bonus_int_order, f
     # For faster computation of tensor coefficients, we multiply with Ui before the loop.
     # This computes MxM 𝐊ᴹᵢⱼ. For each of the combinations ij we store the smaller matrix rather than recompute in
     # each case.
-    Q11 = np.conj(np.transpose(u1Truncated)) @ Q @ u1Truncated
-    Q22 = np.conj(np.transpose(u2Truncated)) @ Q @ u2Truncated
-    Q33 = np.conj(np.transpose(u3Truncated)) @ Q @ u3Truncated
-    Q21 = np.conj(np.transpose(u2Truncated)) @ Q @ u1Truncated
-    Q31 = np.conj(np.transpose(u3Truncated)) @ Q @ u1Truncated
-    Q32 = np.conj(np.transpose(u3Truncated)) @ Q @ u2Truncated
+    if ReducedSolve == True:
+        Q11 = np.conj(np.transpose(u1Truncated)) @ Q @ u1Truncated
+        Q22 = np.conj(np.transpose(u2Truncated)) @ Q @ u2Truncated
+        Q33 = np.conj(np.transpose(u3Truncated)) @ Q @ u3Truncated
+        Q21 = np.conj(np.transpose(u2Truncated)) @ Q @ u1Truncated
+        Q31 = np.conj(np.transpose(u3Truncated)) @ Q @ u1Truncated
+        Q32 = np.conj(np.transpose(u3Truncated)) @ Q @ u2Truncated
+    else:
+        Q11 = Q22 = Q33 = Q21 = Q31 = Q32 = Q
+    
     del Q
     Q_array = [Q11, Q22, Q33, Q21, Q31, Q32]
     # Similar for 𝐂ᴹᵢⱼ. refered to as A in code. For each of the combinations ij we store the smaller matrix rather
@@ -85,7 +94,8 @@ def Construct_Matrices(Integration_Order, Theta0Sol, bilinear_bonus_int_order, f
     if obtain_orders_iteratively is False:
         A = BilinearForm(fes2, symmetric=True)
         A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=bilinear_bonus_int_order)
-        A.Assemble()
+        with TaskManager():
+            A.Assemble()
         rows, cols, vals = A.mat.COO()
         del A
         A_mat = sp.csr_matrix((vals, (rows, cols)))
@@ -100,7 +110,8 @@ def Construct_Matrices(Integration_Order, Theta0Sol, bilinear_bonus_int_order, f
         while (rel_diff > tol_bilinear) and (counter < 20):
             A = BilinearForm(fes2, symmetric=True)
             A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=bonus_intord)
-            A.Assemble()
+            with TaskManager():
+                A.Assemble()
             rows, cols, vals = A.mat.COO()
             if counter == 1:  # first iteration
                 vals_old = vals
@@ -188,12 +199,15 @@ def Construct_Matrices(Integration_Order, Theta0Sol, bilinear_bonus_int_order, f
     A_mat_t0_2 = (A_mat) @ Theta0Sol[:, 1]
     A_mat_t0_3 = (A_mat) @ Theta0Sol[:, 2]
     # (𝐂)^M being the reduced MxM complex matrix. Similarly to the real part, we store each combination of i,j.
-    T11 = np.conj(np.transpose(u1Truncated)) @ A_mat @ u1Truncated
-    T22 = np.conj(np.transpose(u2Truncated)) @ A_mat @ u2Truncated
-    T33 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u3Truncated
-    T21 = np.conj(np.transpose(u2Truncated)) @ A_mat @ u1Truncated
-    T31 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u1Truncated
-    T32 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u2Truncated
+    if ReducedSolve == True:
+        T11 = np.conj(np.transpose(u1Truncated)) @ A_mat @ u1Truncated
+        T22 = np.conj(np.transpose(u2Truncated)) @ A_mat @ u2Truncated
+        T33 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u3Truncated
+        T21 = np.conj(np.transpose(u2Truncated)) @ A_mat @ u1Truncated
+        T31 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u1Truncated
+        T32 = np.conj(np.transpose(u3Truncated)) @ A_mat @ u2Truncated
+    else:
+        T11 = T22 = T33 = T21 = T31 = T32 = A_mat
     T_array = [T11, T22, T33, T21, T31, T32]
     # At this point, we have constructed each of the main matrices we need and obtained the reduced A matrix. The
     # larger bilinear form can therefore be removed to save memory.
@@ -201,20 +215,32 @@ def Construct_Matrices(Integration_Order, Theta0Sol, bilinear_bonus_int_order, f
     At0_array = [A_mat_t0_1, A_mat_t0_2, A_mat_t0_3]
     # Here we compute (𝐨ⱼ)ᵀ (̅𝐂²)ᴹ
     # Renamed to better fit naming convention
-    UAt011_conj = np.conj(u1Truncated.transpose()) @ A_mat_t0_1
-    UAt022_conj = np.conj(u2Truncated.transpose()) @ A_mat_t0_2
-    UAt033_conj = np.conj(u3Truncated.transpose()) @ A_mat_t0_3
-    UAt012_conj = np.conj(u1Truncated.transpose()) @ A_mat_t0_2
-    UAt013_conj = np.conj(u1Truncated.transpose()) @ A_mat_t0_3
-    UAt023_conj = np.conj(u2Truncated.transpose()) @ A_mat_t0_3
+    if ReducedSolve == True:
+        UAt011_conj = np.conj(u1Truncated.transpose()) @ A_mat_t0_1
+        UAt022_conj = np.conj(u2Truncated.transpose()) @ A_mat_t0_2
+        UAt033_conj = np.conj(u3Truncated.transpose()) @ A_mat_t0_3
+        UAt012_conj = np.conj(u1Truncated.transpose()) @ A_mat_t0_2
+        UAt013_conj = np.conj(u1Truncated.transpose()) @ A_mat_t0_3
+        UAt023_conj = np.conj(u2Truncated.transpose()) @ A_mat_t0_3
+    else:
+        UAt011_conj = A_mat_t0_1
+        UAt022_conj = UAt012_conj = A_mat_t0_2
+        UAt033_conj =  UAt013_conj = UAt023_conj = A_mat_t0_3
+        
     UAt0_conj = [UAt011_conj, UAt022_conj, UAt033_conj, UAt012_conj, UAt013_conj, UAt023_conj]
     # Similarly we compute and store (𝐨ⱼ)ᵀ (𝐂²)ᴹ
-    UAt011 = (u1Truncated.transpose()) @ A_mat_t0_1
-    UAt022 = (u2Truncated.transpose()) @ A_mat_t0_2
-    UAt033 = (u3Truncated.transpose()) @ A_mat_t0_3
-    UAt021 = (u2Truncated.transpose()) @ A_mat_t0_1
-    UAt031 = (u3Truncated.transpose()) @ A_mat_t0_1
-    UAt032 = (u3Truncated.transpose()) @ A_mat_t0_2
+    if ReducedSolve == True:
+        UAt011 = (u1Truncated.transpose()) @ A_mat_t0_1
+        UAt022 = (u2Truncated.transpose()) @ A_mat_t0_2
+        UAt033 = (u3Truncated.transpose()) @ A_mat_t0_3
+        UAt021 = (u2Truncated.transpose()) @ A_mat_t0_1
+        UAt031 = (u3Truncated.transpose()) @ A_mat_t0_1
+        UAt032 = (u3Truncated.transpose()) @ A_mat_t0_2
+    else:
+        UAt011 = UAt021 = UAt031 = A_mat_t0_1
+        UAt022 = UAt032 = A_mat_t0_2
+        UAt033 = A_mat_t0_3
+    
     UAt0U_array = [UAt011, UAt022, UAt033, UAt021, UAt031, UAt032]
     # Finally, we can construct constants that do not depend on frequency.
     # the constant c1 corresponds to 𝐨ⱼᵀ 𝐂⁽¹⁾ 𝐨ᵢ. Similar to other cases we store each combination of i and j.
@@ -246,21 +272,32 @@ def Construct_Matrices(Integration_Order, Theta0Sol, bilinear_bonus_int_order, f
     c8_32 = Theta0Sol[:, 2] @ H[:, 1]
     c8_array = [c8_11, c8_22, c8_33, c8_21, c8_31, c8_32]
     # EU is the reduced linear form for E. Here we compute (̅𝐭ᴹ)ᵀ.
-    EU_11 = E[0, :] @ np.conj(u1Truncated)
-    EU_22 = E[1, :] @ np.conj(u2Truncated)
-    EU_33 = E[2, :] @ np.conj(u3Truncated)
-    EU_21 = E[1, :] @ np.conj(u1Truncated)
-    EU_31 = E[2, :] @ np.conj(u1Truncated)
-    EU_32 = E[2, :] @ np.conj(u2Truncated)
+    if ReducedSolve == True:
+        EU_11 = E[0, :] @ np.conj(u1Truncated)
+        EU_22 = E[1, :] @ np.conj(u2Truncated)
+        EU_33 = E[2, :] @ np.conj(u3Truncated)
+        EU_21 = E[1, :] @ np.conj(u1Truncated)
+        EU_31 = E[2, :] @ np.conj(u1Truncated)
+        EU_32 = E[2, :] @ np.conj(u2Truncated)
+    else:
+        EU_11 = E[0, :]
+        EU_22 = EU_21 = E[1, :]
+        EU_33 = EU_31 = EU_32 = E[2, :]
     EU_array_conj = [EU_11, EU_22, EU_33, EU_21, EU_31, EU_32]
     H = E.transpose()
     # also computing  (𝐭ᴹ)ᵀ
     # Renamed to better fit naming convention
-    UH_11 = u1Truncated.transpose() @ H[:, 0]
-    UH_22 = u2Truncated.transpose() @ H[:, 1]
-    UH_33 = u3Truncated.transpose() @ H[:, 2]
-    UH_21 = u2Truncated.transpose() @ H[:, 0]
-    UH_31 = u3Truncated.transpose() @ H[:, 0]
-    UH_32 = u3Truncated.transpose() @ H[:, 1]
+    if ReducedSolve == True:
+        UH_11 = u1Truncated.transpose() @ H[:, 0]
+        UH_22 = u2Truncated.transpose() @ H[:, 1]
+        UH_33 = u3Truncated.transpose() @ H[:, 2]
+        UH_21 = u2Truncated.transpose() @ H[:, 0]
+        UH_31 = u3Truncated.transpose() @ H[:, 0]
+        UH_32 = u3Truncated.transpose() @ H[:, 1]
+    else:
+        UH_11 = UH_21 = UH_31 =  H[:, 0]
+        UH_22 = UH_32 =  H[:, 1]
+        UH_33 = H[:, 2]
+        
     UH_array = [UH_11, UH_22, UH_33, UH_21, UH_31, UH_32]
     return At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array

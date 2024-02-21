@@ -56,7 +56,7 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
     print(' Running as POD')
 
     EigenValues, Mu0, N0, NumberofFrequencies, NumberofSnapshots, TensorArray,  inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_ord = MPT_Preallocation(
-        Array, Object, PODArray, curve, inorout, mur, sig, Order, Order_L2, sweepname)
+        Array, Object, PODArray, curve, inorout, mur, sig, Order, Order_L2, sweepname, NumSolverThreads)
 
     Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()
 
@@ -332,7 +332,7 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
 
         At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array = Construct_Matrices(
             Integration_Order, Theta0Sol, bilinear_bonus_int_ord, fes2, inout, mesh, mu_inv, sigma, sweepname, u,
-            u1Truncated, u2Truncated, u3Truncated, v, xivec)
+            u1Truncated, u2Truncated, u3Truncated, v, xivec, NumSolverThreads, ReducedSolve=True)
 
         runlist = []
         for i in range(Tensor_CPUs):

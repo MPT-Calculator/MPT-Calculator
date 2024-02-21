@@ -124,7 +124,7 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
     CPUs = cpus
 
     EigenValues, Mu0, N0, NumberofFrequencies, NumberofSnapshots, TensorArray,  inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation(
-        Array, Object, PODArray, curve, inorout, mur, sig, Order, 0, sweepname)
+        Array, Object, PODArray, curve, inorout, mur, sig, Order, 0, sweepnamem, NumSolverThreads )
 
     # Updating PODErrorBars so that the function will always compute error certificates. We do it here so that the user
     # has the option not to show them in the final output plots.
@@ -543,7 +543,7 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
 
             At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array = Construct_Matrices(
                 Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, inout, mesh, mu_inv, sigma, sweepname, u,
-                u1Truncated, u2Truncated, u3Truncated, v, xivec)
+                u1Truncated, u2Truncated, u3Truncated, v, xivec, NumSolverThreads, ReducedSolve=True)
 
             timing_dictionary['BuildSystemMatrices'] = time.time()
 

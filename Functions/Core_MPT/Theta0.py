@@ -44,9 +44,11 @@ def Theta0(fes, Order, alpha, mu_inv, inout, e, Tolerance, Maxsteps, epsi, simnu
     res.data = f.vec - a.mat * Theta.vec
     inverse = CGSolver(a.mat, c.mat, precision=Tolerance, maxsteps=Maxsteps, printrates=True)
     Theta.vec.data += inverse * res
-    Theta.vec.data += a.inner_solve * f.vec
+    #Theta.vec.data += a.inner_solve * f.vec
+    #Theta.vec.data += a.harmonic_extension * Theta.vec
     Theta.vec.data += a.harmonic_extension * Theta.vec
-
+    Theta.vec.data += a.inner_solve * f.vec
+    
     Theta_Return = np.zeros([fes.ndof], dtype=np.longdouble)
     Theta_Return[:] = Theta.vec.FV().NumPy()
 

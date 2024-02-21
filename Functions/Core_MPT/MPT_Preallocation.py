@@ -8,7 +8,7 @@ sys.path.insert(0,"Settings")
 from Settings import PrerunCheckSettings
 
 
-def MPT_Preallocation(Array, Object, PODArray, curve, inorout, mur, sig, Order, Order_L2, sweepname):
+def MPT_Preallocation(Array, Object, PODArray, curve, inorout, mur, sig, Order, Order_L2, sweepname, NumSolverThreads):
     """
     James Elgy - 2023
     Function to gereate and preallocate arrays, NGSolve meshes and NGSolve coefficient functions based on desired input.
@@ -87,7 +87,7 @@ def MPT_Preallocation(Array, Object, PODArray, curve, inorout, mur, sig, Order, 
     # Running pre-sweep checks for integration order and mesh consistency.
     run, bilinear_tol, max_iter = PrerunCheckSettings()
     if run is True:
-        bilinear_bonus_int_order = BilinearForms_Check(mesh, Order, mu_inv, sigma, inout, bilinear_tol, max_iter, curve, 2+L2Order, sweepname)
+        bilinear_bonus_int_order = BilinearForms_Check(mesh, Order, mu_inv, sigma, inout, bilinear_tol, max_iter, curve, 2+L2Order, sweepname, NumSolverThreads)
         # check_mesh_volumes(mesh, inout, True, Object, max([2*Order+2, 3*(curve-1)]), curve)
 
     else:

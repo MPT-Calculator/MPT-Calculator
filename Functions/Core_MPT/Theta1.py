@@ -51,8 +51,13 @@ def Theta1(fes, fes2, Theta0Sol, xi, Order, alpha, nu, sigma, mu_inv, inout, Tol
         res.data = f.vec - a.mat * Theta.vec
         inverse = CGSolver(a.mat, c.mat, precision=Tolerance, maxsteps=Maxsteps)
         Theta.vec.data += inverse * res
-        Theta.vec.data += a.inner_solve * f.vec
+        
+        #Theta.vec.data += a.inner_solve * f.vec
+        #Theta.vec.data += a.harmonic_extension * Theta.vec
+        
         Theta.vec.data += a.harmonic_extension * Theta.vec
+        Theta.vec.data += a.inner_solve * f.vec
+
 
     # Printing warning if solver didn't converge.
     if inverse.GetSteps() == inverse.maxsteps:
