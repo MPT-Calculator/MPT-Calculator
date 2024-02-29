@@ -16,7 +16,8 @@ from ngsolve.krylovspace import CGSolver
 
 
 def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv ,inout ,Tolerance ,Maxsteps ,epsi ,Solver
-                 ,N0 ,TotalNOF ,Vectors ,Tensors ,Multi ,BP, Order, num_solver_threads, Integration_Order, Additional_Int_Order, bilinear_bonus_int_order):
+                 ,N0 ,TotalNOF ,Vectors ,Tensors ,Multi ,BP, Order, num_solver_threads, Integration_Order, Additional_Int_Order,
+                 bilinear_bonus_int_order, drop_tol):
     
     
     # Loading in option to use mat method or integral method.
@@ -245,9 +246,10 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
     if Tensors==True and use_mat_method is True:
         U_proxy = sp.eye(fes2.ndof)
         #ReducedSolve=False
+        print(drop_tol)
         At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array = Construct_Matrices(
         Integration_Order, Theta0Sols, bilinear_bonus_int_order, fes2, inout, mesh, mu_inv, sigma, '', u,
-        U_proxy, U_proxy, U_proxy, v, xivec, num_solver_threads, ReducedSolve=False)
+        U_proxy, U_proxy, U_proxy, v, xivec, num_solver_threads, drop_tol, ReducedSolve=False)
 	
         del U_proxy
 	

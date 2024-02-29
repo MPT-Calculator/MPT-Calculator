@@ -8,7 +8,7 @@ sys.path.insert(0,"Settings")
 from Settings import PrerunCheckSettings
 
 
-def MPT_Preallocation(Array, Object, PODArray, curve, inorout, mur, sig, Order, Order_L2, sweepname, NumSolverThreads):
+def MPT_Preallocation(Array, Object, PODArray, curve, inorout, mur, sig, Order, Order_L2, sweepname, NumSolverThreads, drop_tol):
     """
     James Elgy - 2023
     Function to gereate and preallocate arrays, NGSolve meshes and NGSolve coefficient functions based on desired input.
@@ -24,6 +24,8 @@ def MPT_Preallocation(Array, Object, PODArray, curve, inorout, mur, sig, Order, 
     inorout: dict containing 1 for inside object, 0 for air region. e.g. {'sphere': 1, 'air': 0}
     mur: dictionary containing relative permeability for each region . e.g. {'shell': 0, 'core': 10', 'air' :1}
     sig: dictionary containing conductivity for each region . e.g. {'shell': 1e6, 'core': 6e6', 'air' :0}
+    drop_tol - float - Tolerance for dropping near 0 values in assembled matrices including interior
+
 
     Returns
     -------
@@ -87,7 +89,7 @@ def MPT_Preallocation(Array, Object, PODArray, curve, inorout, mur, sig, Order, 
     # Running pre-sweep checks for integration order and mesh consistency.
     run, bilinear_tol, max_iter = PrerunCheckSettings()
     if run is True:
-        bilinear_bonus_int_order = BilinearForms_Check(mesh, Order, mu_inv, sigma, inout, bilinear_tol, max_iter, curve, 2+L2Order, sweepname, NumSolverThreads)
+        bilinear_bonus_int_order = BilinearForms_Check(mesh, Order, mu_inv, sigma, inout, bilinear_tol, max_iter, curve, 2+L2Order, sweepname, NumSolverThreads, drop_tol )
         # check_mesh_volumes(mesh, inout, True, Object, max([2*Order+2, 3*(curve-1)]), curve)
 
     else:

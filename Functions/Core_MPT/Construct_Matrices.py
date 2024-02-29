@@ -1,5 +1,9 @@
 # James Elgy - 02/06/2023
 
+"""
+Paul Ledger edit 28/02/2024 added drop_tol and symmetric_storage=True to reduce memory useage when creating large matrices
+built using interior dofs
+"""
 import numpy as np
 from matplotlib import pyplot as plt
 from ngsolve import *
@@ -7,7 +11,7 @@ import scipy.sparse as sp
 import gc
 
 def Construct_Matrices(Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, inout, mesh, mu_inv, sigma, sweepname,
-                       u, u1Truncated, u2Truncated, u3Truncated, v, xivec, NumSolverThreads, ReducedSolve=True ):
+                       u, u1Truncated, u2Truncated, u3Truncated, v, xivec, NumSolverThreads, drop_tol, ReducedSolve=True ):
     obtain_orders_iteratively = False
     tol_bilinear = 1e-10
 
@@ -18,14 +22,14 @@ def Construct_Matrices(Integration_Order, Theta0Sol, bilinear_bonus_int_order, f
         # For the K bilinear forms, and also later bilinear and linear forms, we specify an integration order specific
         # to the postprocessing. See comment in main.py on the topic.
         u, v = fes2.TnT()
-        K = BilinearForm(fes2, symmetric=True)
+        K = BilinearForm(fes2, symmetric=True, delete_zero_elements =drop_tol,keep_internal=False, symmetric_storage=True)
         K += SymbolicBFI(inout * mu_inv * curl(u) * Conj(curl(v)), bonus_intorder=bilinear_bonus_int_order)
         K += SymbolicBFI((1 - inout) * curl(u) * Conj(curl(v)), bonus_intorder=bilinear_bonus_int_order)
         with TaskManager():
             K.Assemble()
         rows, cols, vals = K.mat.COO()
         del K
-        Q = sp.csr_matrix((vals, (rows, cols)))
+        Qsym = sp.csr_matrix((vals, (rows, cols)),shape=(fes2.ndof,fes2.ndof))
         del rows, cols, vals
         gc.collect()
     if obtain_orders_iteratively is True:
@@ -36,7 +40,7 @@ def Construct_Matrices(Integration_Order, Theta0Sol, bilinear_bonus_int_order, f
         ord_array = []
         bonus_intord = 0
         while (rel_diff > tol_bilinear) and (counter < 20):
-            K = BilinearForm(fes2, symmetric=True)
+            K = BilinearForm(fes2, symmetric=True, delete_zero_elements =drop_tol,keep_internal=False, symmetric_storage=True)
             K += SymbolicBFI(inout * mu_inv * curl(u) * Conj(curl(v)), bonus_intorder=bonus_intord)
             K += SymbolicBFI((1 - inout) * curl(u) * Conj(curl(v)), bonus_intorder=bonus_intord)
             with TaskManager():
@@ -69,7 +73,14 @@ def Construct_Matrices(Integration_Order, Theta0Sol, bilinear_bonus_int_order, f
 
         # rows, cols, vals = K.mat.COO()
         del K
-        Q = sp.csr_matrix((vals, (rows, cols)))
+        Qsym = sp.csr_matrix((vals, (rows, cols)),shape=(fes2.ndof,fes2.ndof))
+        del rows, cols, vals
+    Q = Qsym + Qsym.T - sp.diags(Qsym.diagonal())
+    del Qsym
+    #rows,cols = Q.nonzero()
+    #Q[cols,rows] = Q[rows,cols]
+    #del rows,cols
+        
     # For faster computation of tensor coefficients, we multiply with Ui before the loop.
     # This computes MxM 𝐊ᴹᵢⱼ. For each of the combinations ij we store the smaller matrix rather than recompute in
     # each case.
@@ -92,14 +103,21 @@ def Construct_Matrices(Integration_Order, Theta0Sol, bilinear_bonus_int_order, f
     # For 𝐍ᴷ = (𝐍₀)ᴷ then 𝐂 = 𝐂¹ = 𝐂² and 𝐬ᵢ = 𝐭ᵢ. In this way we only need to consider 𝐂 (called A in code), 𝐬
     # (called E in code) and c (called G in code) from paper.
     if obtain_orders_iteratively is False:
-        A = BilinearForm(fes2, symmetric=True)
+        A = BilinearForm(fes2, symmetric=True, delete_zero_elements =drop_tol,keep_internal=False, symmetric_storage=True)
         A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=bilinear_bonus_int_order)
         with TaskManager():
             A.Assemble()
         rows, cols, vals = A.mat.COO()
         del A
-        A_mat = sp.csr_matrix((vals, (rows, cols)))
+        A_matsym = sp.csr_matrix((vals, (rows, cols)),shape=(fes2.ndof,fes2.ndof))
         del rows, cols, vals
+        #print(np.shape(A_matsym))
+        A_mat = A_matsym + A_matsym.T - sp.diags(A_matsym.diagonal())
+        del A_matsym
+        #rows,cols = A_mat.nonzero()
+        #A_mat[cols,rows] = A_mat[rows,cols]
+        #del rows,cols
+        #print(np.shape(A_mat))
         gc.collect()
     else:
         rel_diff = 1
@@ -108,7 +126,7 @@ def Construct_Matrices(Integration_Order, Theta0Sol, bilinear_bonus_int_order, f
         ord_array = []
         bonus_intord = 0
         while (rel_diff > tol_bilinear) and (counter < 20):
-            A = BilinearForm(fes2, symmetric=True)
+            A = BilinearForm(fes2, symmetric=True, delete_zero_elements =drop_tol,keep_internal=False, symmetric_storage=True)
             A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=bonus_intord)
             with TaskManager():
                 A.Assemble()
@@ -137,8 +155,12 @@ def Construct_Matrices(Integration_Order, Theta0Sol, bilinear_bonus_int_order, f
         plt.savefig('Results/' + sweepname + '/Graphs/BilinearForm_Convergence_C.pdf')
 
         del A
-        A_mat = sp.csr_matrix((vals, (rows, cols)))
+        A_matsym = sp.csr_matrix((vals, (rows, cols)))
         del rows, cols, vals
+        A_mat = A_matsym + A_matsym.T - sp.diags(A_matsym.diagonal())
+        #rows,cols = A_mat.nonzero()
+        #A_mat[cols,rows] = A_mat[rows,cols]
+        #del rows,cols
         gc.collect()
     E = np.zeros((3, fes2.ndof), dtype=complex)
     G = np.zeros((3, 3))
