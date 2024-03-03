@@ -37,16 +37,16 @@ def Construct_ROM(Additional_Int_Order, BigProblem, Mu0, Theta0Sol, alpha, epsi,
     u, v = fes2.TnT()
 
     if BigProblem == True:
-        a0 = BilinearForm(fes2, symmetric=True, bonus_intorder=Additional_Int_Order, delete_zero_elements =drop_tol,keep_internal=False)#, symmetric_storage=True)
+        a0 = BilinearForm(fes2, symmetric=True, bonus_intorder=Additional_Int_Order, delete_zero_elements =drop_tol,keep_internal=False, symmetric_storage=True)
     else:
-        a0 = BilinearForm(fes2, symmetric=True, bonus_intorder=Additional_Int_Order, delete_zero_elements =drop_tol,keep_internal=False)#, symmetric_storage=True)
+        a0 = BilinearForm(fes2, symmetric=True, bonus_intorder=Additional_Int_Order, delete_zero_elements =drop_tol,keep_internal=False, symmetric_storage=True)
     a0 += SymbolicBFI((mu_inv) * InnerProduct(curl(u), curl(v)), bonus_intorder=Additional_Int_Order)
     a0 += SymbolicBFI((1j) * (1 - inout) * epsi * InnerProduct(u, v), bonus_intorder=Additional_Int_Order)
 
     if BigProblem == True:
-        a1 = BilinearForm(fes2, symmetric=True, delete_zero_elements =drop_tol,keep_internal=False)#, symmetric_storage=True)
+        a1 = BilinearForm(fes2, symmetric=True, delete_zero_elements =drop_tol,keep_internal=False, symmetric_storage=True)
     else:
-        a1 = BilinearForm(fes2, symmetric=True, delete_zero_elements =drop_tol,keep_internal=False)#, symmetric_storage=True)
+        a1 = BilinearForm(fes2, symmetric=True, delete_zero_elements =drop_tol,keep_internal=False, symmetric_storage=True)
 
     a1 += SymbolicBFI((1j) * inout * nu_no_omega * sigma * InnerProduct(u, v), bonus_intorder=Additional_Int_Order)
     with TaskManager():
