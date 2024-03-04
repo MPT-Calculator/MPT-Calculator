@@ -27,12 +27,13 @@ from Settings import SolverParameters
 
 
 # Function definition for a full order frequency sweep
-def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, Order_L2, sweepname, curve=5, ):
+def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSolverThreads, Integration_Order,
+              Additional_Int_Order, Order_L2, sweepname, drop_tol, curve=5):
 
     print(' Running as full sweep')
 
     EigenValues, Mu0, N0, NumberofFrequencies, _, TensorArray, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_intorder = MPT_Preallocation(
-        Array, Object, [], curve, inorout, mur, sig, Order, Order_L2, sweepname,NumSolverThreads )
+        Array, Object, [], curve, inorout, mur, sig, Order, Order_L2, sweepname,NumSolverThreads, drop_tol )
     # Set up the Solver Parameters
     Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()
 
@@ -78,11 +79,11 @@ def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSol
     if use_integral is True:
         TensorArray, EigenValues = Theta1_Sweep(Array, mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
                                                 Tolerance, Maxsteps, epsi, Solver, N0, NumberofFrequencies, False, True,
-                                                False, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_intorder)
+                                                False, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_intorder, drop_tol)
     else:
         TensorArray, EigenValues = Theta1_Sweep(Array, mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
                                                 Tolerance, Maxsteps, epsi, Solver, N0, NumberofFrequencies, False, True,
-                                                False, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_intorder)
+                                                False, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_intorder, drop_tol)
 
     print(' solved theta1 problems     ')
 

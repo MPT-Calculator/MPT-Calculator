@@ -1,5 +1,7 @@
 import numpy as np
 from ngsolve import *
+import scipy.sparse as sp
+import gc
 
 def Construct_Linear_System(PODErrorBars, a0, a1, cutoff, dom_nrs_metal, fes2, mesh, ndof2, r1, r2, r3, read_vec,
                             u1Truncated, u2Truncated, u3Truncated, write_vec):
@@ -47,15 +49,33 @@ def Construct_Linear_System(PODErrorBars, a0, a1, cutoff, dom_nrs_metal, fes2, m
     R1 = r1.vec.FV().NumPy()
     R2 = r2.vec.FV().NumPy()
     R3 = r3.vec.FV().NumPy()
+
+    rows, cols, vals = a0.mat.COO()
+    A0sym = sp.csr_matrix((vals, (rows, cols)),shape=(ndof2,ndof2))
+    del rows,cols,vals, a0
+    gc.collect()
+    A0 = A0sym + A0sym.T - sp.diags(A0sym.diagonal())
+    del A0sym
+    rows, cols, vals = a1.mat.COO()
+    A1sym = sp.csr_matrix((vals, (rows, cols)),shape=(ndof2,ndof2))
+    del rows,cols,vals, a1
+    gc.collect()
+    A1 = A1sym + A1sym.T - sp.diags(A1sym.diagonal())
+    del A1sym
+
     A0H = np.zeros([ndof2, cutoff], dtype=complex)
     A1H = np.zeros([ndof2, cutoff], dtype=complex)
+    A0H = A0@u1Truncated
+    A1H = A1@u1Truncated
+    
     # E1
-    for i in range(cutoff):
-        read_vec.FV().NumPy()[:] = u1Truncated[:, i]
-        write_vec.data = a0.mat * read_vec
-        A0H[:, i] = write_vec.FV().NumPy()
-        write_vec.data = a1.mat * read_vec
-        A1H[:, i] = write_vec.FV().NumPy()
+    #for i in range(cutoff):
+    #    read_vec.FV().NumPy()[:] = u1Truncated[:, i]
+    #    write_vec.data = a0.mat * read_vec
+    #    A0H[:, i] = write_vec.FV().NumPy()
+    #    write_vec.data = a1.mat * read_vec
+    #    A1H[:, i] = write_vec.FV().NumPy()
+    
     HA0H1 = (np.conjugate(np.transpose(u1Truncated)) @ A0H)
     HA1H1 = (np.conjugate(np.transpose(u1Truncated)) @ A1H)
     HR1 = (np.conjugate(np.transpose(u1Truncated)) @ np.transpose(R1))
@@ -71,12 +91,15 @@ def Construct_Linear_System(PODErrorBars, a0, a1, cutoff, dom_nrs_metal, fes2, m
             ProL.Set(ProH)
             RerrorReduced1[:, i + cutoff + 1] = ProL.vec.FV().NumPy()[:]
     # E2
-    for i in range(cutoff):
-        read_vec.FV().NumPy()[:] = u2Truncated[:, i]
-        write_vec.data = a0.mat * read_vec
-        A0H[:, i] = write_vec.FV().NumPy()
-        write_vec.data = a1.mat * read_vec
-        A1H[:, i] = write_vec.FV().NumPy()
+    #for i in range(cutoff):
+    #    read_vec.FV().NumPy()[:] = u2Truncated[:, i]
+    #    write_vec.data = a0.mat * read_vec
+    #    A0H[:, i] = write_vec.FV().NumPy()
+    #    write_vec.data = a1.mat * read_vec
+    #    A1H[:, i] = write_vec.FV().NumPy()
+    A0H = A0@u2Truncated
+    A1H = A1@u2Truncated
+    
     HA0H2 = (np.conjugate(np.transpose(u2Truncated)) @ A0H)
     HA1H2 = (np.conjugate(np.transpose(u2Truncated)) @ A1H)
     HR2 = (np.conjugate(np.transpose(u2Truncated)) @ np.transpose(R2))
@@ -92,12 +115,14 @@ def Construct_Linear_System(PODErrorBars, a0, a1, cutoff, dom_nrs_metal, fes2, m
             ProL.Set(ProH)
             RerrorReduced2[:, i + cutoff + 1] = ProL.vec.FV().NumPy()[:]
     # E3
-    for i in range(cutoff):
-        read_vec.FV().NumPy()[:] = u3Truncated[:, i]
-        write_vec.data = a0.mat * read_vec
-        A0H[:, i] = write_vec.FV().NumPy()
-        write_vec.data = a1.mat * read_vec
-        A1H[:, i] = write_vec.FV().NumPy()
+    #for i in range(cutoff):
+    #    read_vec.FV().NumPy()[:] = u3Truncated[:, i]
+    #    write_vec.data = a0.mat * read_vec
+    #    A0H[:, i] = write_vec.FV().NumPy()
+    #    write_vec.data = a1.mat * read_vec
+    #    A1H[:, i] = write_vec.FV().NumPy()
+    A0H = A0@u3Truncated
+    A1H = A1@u3Truncated
     HA0H3 = (np.conjugate(np.transpose(u3Truncated)) @ A0H)
     HA1H3 = (np.conjugate(np.transpose(u3Truncated)) @ A1H)
     HR3 = (np.conjugate(np.transpose(u3Truncated)) @ np.transpose(R3))

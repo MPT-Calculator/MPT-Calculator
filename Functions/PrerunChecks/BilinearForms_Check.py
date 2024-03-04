@@ -8,7 +8,7 @@ import warnings
 import os
 import gc
 
-def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max_iter, curve_order, starting_order, sweepname, NumSolverThreads):
+def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max_iter, curve_order, starting_order, sweepname, NumSolverThreads, drop_tol):
     """
     James Elgy - 2023
     Function to compute and check the convergence of the postprocessing bilinear forms.
@@ -22,6 +22,7 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
     bilinearform_tol - float - Tolerance for convergence
     max_iter - int - Maximum number of iterations
     curve_order - int - order of the curved geometry
+    drop_tol - float - Tolerance for dropping near 0 values in assembled matrices including interior
 
     Returns
     -------
@@ -36,6 +37,9 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
     Also update critera to save resources. Rather than checking the norm of the difference of values
     Instead just check the absolute difference of the norms - we only use this for estimating the
     order of integration for computing the MPTs after all
+
+    Use delete_zero_elements =drop_tol to further reduce memory of large K and A containing interiors
+    dofs that are only used when post-processing to compute the MPT and during the POD
     """
 
     print('Running Bilinear Forms Check')
@@ -71,12 +75,13 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
 
     while (rel_diff > bilinearform_tol) and (counter < max_iter):
         print(f'K: Iteration {counter}: bonus_intord = {bonus_intord}')
-        K = BilinearForm(fes2, symmetric=True)
+        K = BilinearForm(fes2, symmetric=True, delete_zero_elements =drop_tol, keep_internal=False, symmetric_storage=True)
         K += SymbolicBFI(inout * mu_inv * curl(u) * (curl(v)), bonus_intorder=bonus_intord)
         K += SymbolicBFI((1 - inout) * curl(u) * (curl(v)), bonus_intorder=bonus_intord)
         #K += SymbolicBFI(epsi * u * v, bonus_intorder=bonus_intord)
         with TaskManager():
             K.Assemble()
+        #print(K.mat.nze)
         
         if counter == 1:  # first iteration
             nvalsold = np.linalg.norm(K.mat.AsVector()[:])
@@ -118,7 +123,7 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
         warnings.warn("K Bilinear Form did not converge. Trying again with linear geometry.")
         if curve_order > 1:
             gc.collect()
-            return BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max_iter, 1, starting_order, sweepname, NumSolverThreads)
+            return BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max_iter, 1, starting_order, sweepname, NumSolverThreads, drop_tol)
             curve_order = 1
             mesh.Curve(1)
         else:
@@ -136,26 +141,16 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
     ord_array = []
     bonus_intord = starting_order
 
-    # Sparsity pattern won't change so we can create A using order 0 and obtain the number of non-zero entries
-    # for preallocation
-    #A = BilinearForm(fes2, symmetric=True)
-    #A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=bonus_intord)
-    #with TaskManager():
-    #    A.Assemble()
 
-    #r, c, s = A.mat.COO()
-    #nz=len(s)
-    #del A, r, c, s
-    #rows = np.zeros(nz)
-    #cols = np.zeros(nz)
-    #vals = np.zeros(nz)
 
     while (rel_diff > bilinearform_tol) and (counter < max_iter):
         print(f'C: Iteration {counter}: bonus_intord = {bonus_intord}')
-        A = BilinearForm(fes2, symmetric=True)
+        A = BilinearForm(fes2, symmetric=True, delete_zero_elements =drop_tol, keep_internal=False, symmetric_storage=True)
         A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=bonus_intord)
         with TaskManager():
             A.Assemble()
+        #print(A.mat.nze)
+
 
         #rows[:], cols[:], vals[:] = A.mat.COO()
         #del A
@@ -209,7 +204,7 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
         warnings.warn("C Bilinear Form did not converge. Trying again with linear geometry.")
         if curve_order > 1:
             gc.collect()
-            return BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max_iter, 1, starting_order, sweepname, NumSolverThreads)
+            return BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max_iter, 1, starting_order, sweepname, NumSolverThreads, drop_tol)
             curve_order = 1
             mesh.Curve(1)
         else:

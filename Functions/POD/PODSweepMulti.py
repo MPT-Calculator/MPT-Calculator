@@ -4,6 +4,11 @@ Changed how N0 was calculated for PODSweep to be consistent with PODSweepMulti.
 Changed pool generation to spawn to fix linux bug.
 
 """
+"""
+Paul Ledger (2024 edit)
+Added drop_tol to reduce memory usage when building full matrices including interiors
+"""
+
 #Importing
 import gc
 import os
@@ -56,7 +61,8 @@ import shutil
 
 
 def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, PlotPod, CPUs, sweepname, SavePOD,
-                  PODErrorBars, BigProblem, Integration_Order, Additional_Int_Order, Order_L2,  curve=5, recoverymode=False, NumSolverThreads='default', save_U=False):
+                  PODErrorBars, BigProblem, Integration_Order, Additional_Int_Order, Order_L2, drop_tol,  curve=5, recoverymode=False,
+                  NumSolverThreads='default', save_U=False):
     print('Running as parallel POD')
 
     timing_dictionary = {}
@@ -64,7 +70,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
     timing_dictionary['start_time'] = time.time()
 
     EigenValues, Mu0, N0, NumberofFrequencies, NumberofSnapshots, TensorArray,  inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation(
-        Array, Object, PODArray, curve, inorout, mur, sig, Order, Order_L2, sweepname, NumSolverThreads)
+        Array, Object, PODArray, curve, inorout, mur, sig, Order, Order_L2, sweepname, NumSolverThreads, drop_tol)
     # Set up the Solver Parameters
     Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()
 
@@ -132,11 +138,13 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
             if PlotPod == True:
                 Runlist.append((np.asarray([PODArray[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
                                 Tolerance, Maxsteps, epsi, Solver, N0, NumberofSnapshots, True, True, counter,
-                                BigProblem, Order, NumSolverThreads,Integration_Order, Additional_Int_Order, bilinear_bonus_int_order, 'Theta1_Sweep'))
+                                BigProblem, Order, NumSolverThreads,Integration_Order, Additional_Int_Order,
+                                bilinear_bonus_int_order, drop_tol, 'Theta1_Sweep'))
             else:
                 Runlist.append((np.asarray([PODArray[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
                                 Tolerance, Maxsteps, epsi, Solver, N0, NumberofSnapshots, True, False, counter,
-                                BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_int_order, 'Theta1_Sweep'))
+                                BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_int_order,
+                                drop_tol, 'Theta1_Sweep'))
 
         # Run on the multiple cores
         multiprocessing.freeze_support()
@@ -216,7 +224,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
     # Create the ROM
 
     a0, a1, r1, r2, r3, read_vec, u, v, write_vec = Construct_ROM(Additional_Int_Order, BigProblem, Mu0, Theta0Sol,
-                                                                  alpha, epsi, fes, fes2, inout, mu_inv, sigma, xivec)
+                                                                  alpha, epsi, fes, fes2, inout, mu_inv, sigma, xivec, NumSolverThreads, drop_tol)
 
     if PODErrorBars is True:
         HA0H1, HA0H2, HA0H3, HA1H1, HA1H2, HA1H3, HR1, HR2, HR3, ProL, RerrorReduced1, RerrorReduced2, RerrorReduced3, fes0, ndof0 = Construct_Linear_System(
@@ -395,7 +403,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
 
         At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array = Construct_Matrices(
             Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, inout, mesh, mu_inv, sigma, sweepname, u,
-            u1Truncated, u2Truncated, u3Truncated, v, xivec,NumSolverThreads, ReducedSolve=True)
+            u1Truncated, u2Truncated, u3Truncated, v, xivec,NumSolverThreads, drop_tol, ReducedSolve=True)
 
         timing_dictionary['BuildSystemMatrices'] = time.time()
 

@@ -29,13 +29,14 @@ from Settings import SolverParameters
 
 
 # Function definition for a full order frequency sweep in parallel
-def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProblem, NumSolverThreads,Integration_Order, Additional_Int_Order, Order_L2, sweepname, curve=5):
+def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProblem, NumSolverThreads,Integration_Order, Additional_Int_Order, Order_L2,
+                   sweepname, drop_tol, curve=5):
 
     print(' Running as parallel full sweep')
 
 
     EigenValues, Mu0, N0, NumberofFrequencies, _, TensorArray, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation(
-        Array, Object, [], curve, inorout, mur, sig, Order, Order_L2, sweepname,NumSolverThreads )
+        Array, Object, [], curve, inorout, mur, sig, Order, Order_L2, sweepname,NumSolverThreads, drop_tol )
     # Set up the Solver Parameters
     Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()
 
@@ -88,7 +89,8 @@ def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProb
     counter = manager.Value('i', 0)
     for i in range(len(Array)):
         Runlist.append((np.asarray([Array[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout, Tolerance,
-                        Maxsteps, epsi, Solver, N0, NumberofFrequencies, vectors, tensors, counter, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_int_order, 'Theta1_Sweep'))
+                        Maxsteps, epsi, Solver, N0, NumberofFrequencies, vectors, tensors, counter, False, Order, NumSolverThreads, Integration_Order,
+                        Additional_Int_Order, bilinear_bonus_int_order, drop_tol, 'Theta1_Sweep'))
 
 
     tqdm.tqdm.set_lock(multiprocessing.RLock())

@@ -57,7 +57,8 @@ from ..POD.calc_error_certificates import *
 
 
 def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PlotPod, sweepname, SavePOD,
-             PODErrorBars, BigProblem, Integration_Order, Additional_Int_Order, curve=5,  use_parallel=False, cpus='default', save_U=False):
+             PODErrorBars, BigProblem, Integration_Order, Additional_Int_Order, drop_tol, curve=5,  use_parallel=False,
+                      cpus='default', save_U=False):
     """
     James Elgy - 2022
     Iterative version of the existing POD method where additional snapshots are placed in regions of high uncertainty.
@@ -88,6 +89,8 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
                       calculating POD tensors.
     use_parallel=False: (bool) option to run through using a parallel implementation.
     use_parallel=False: (bool) option o run through using a parallel implementation.
+    drop_tol - float - Tolerance for dropping near 0 values in assembled matrices including interior
+
 
     Returns
     -------
@@ -108,6 +111,10 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
     PODTensors_orig: (numpyarray) Nx9 array of tensor coefficients for the original snapshot distribution.
     """
 
+    """
+    Paul Ledger (2024 edit)
+    Added drop_tol to reduce memory usage when building full matrices including interiors
+    """
 
     timing_dictionary = {}
     timing_dictionary['StartTime'] = time.time()
@@ -124,7 +131,7 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
     CPUs = cpus
 
     EigenValues, Mu0, N0, NumberofFrequencies, NumberofSnapshots, TensorArray,  inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation(
-        Array, Object, PODArray, curve, inorout, mur, sig, Order, 0, sweepnamem, NumSolverThreads )
+        Array, Object, PODArray, curve, inorout, mur, sig, Order, 0, sweepnamem, NumSolverThreads, drop_tol )
 
     # Updating PODErrorBars so that the function will always compute error certificates. We do it here so that the user
     # has the option not to show them in the final output plots.
@@ -248,9 +255,13 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
         counter = manager.Value('i', 0)
         for i in range(len(PODArray)):
             if PlotPod == True:
-                Runlist.append((np.asarray([PODArray[i]]),mesh,fes,fes2,Theta0Sol,xivec,alpha,sigma,mu_inv,inout,Tolerance,Maxsteps,epsi,Solver,N0,NumberofSnapshots,True,True,counter,BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_int_order, 'Theta1_Sweep'))
+                Runlist.append((np.asarray([PODArray[i]]),mesh,fes,fes2,Theta0Sol,xivec,alpha,sigma,mu_inv,inout,Tolerance,Maxsteps,epsi,Solver,
+                                N0,NumberofSnapshots,True,True,counter,BigProblem, Order, NumSolverThreads, Integration_Order,
+                                Additional_Int_Order, bilinear_bonus_int_order, drop_tol, 'Theta1_Sweep'))
             else:
-                Runlist.append((np.asarray([PODArray[i]]),mesh,fes,fes2,Theta0Sol,xivec,alpha,sigma,mu_inv,inout,Tolerance,Maxsteps,epsi,Solver,N0,NumberofSnapshots,True,False,counter,BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_int_order, 'Theta1_Sweep'))
+                Runlist.append((np.asarray([PODArray[i]]),mesh,fes,fes2,Theta0Sol,xivec,alpha,sigma,mu_inv,inout,Tolerance,Maxsteps,epsi,Solver,
+                                N0,NumberofSnapshots,True,False,counter,BigProblem, Order, NumSolverThreads, Integration_Order,
+                                Additional_Int_Order, bilinear_bonus_int_order,drop_tol, 'Theta1_Sweep'))
 
         #Run on the multiple cores
         multiprocessing.freeze_support()
@@ -394,7 +405,7 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
 
         a0, a1, r1, r2, r3, read_vec, u, v, write_vec = Construct_ROM(Additional_Int_Order, BigProblem, Mu0, Theta0Sol,
                                                                       alpha, epsi, fes, fes2, inout, mu_inv, sigma,
-                                                                      xivec)
+                                                                      xivec, NumSolverThreads, drop_tol)
 
         if PODErrorBars is True:
             HA0H1, HA0H2, HA0H3, HA1H1, HA1H2, HA1H3, HR1, HR2, HR3, ProL, RerrorReduced1, RerrorReduced2, RerrorReduced3, fes0, ndof0 = Construct_Linear_System(
@@ -543,7 +554,7 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
 
             At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array = Construct_Matrices(
                 Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, inout, mesh, mu_inv, sigma, sweepname, u,
-                u1Truncated, u2Truncated, u3Truncated, v, xivec, NumSolverThreads, ReducedSolve=True)
+                u1Truncated, u2Truncated, u3Truncated, v, xivec, NumSolverThreads,drop_tol, ReducedSolve=True)
 
             timing_dictionary['BuildSystemMatrices'] = time.time()
 

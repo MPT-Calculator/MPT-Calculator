@@ -39,7 +39,14 @@ def DefaultSettings():
     NumSolverThreads = 'default'
     # (int)
 
-    return CPUs,BigProblem,PODPoints,PODTol,OldMesh, OldPOD, NumSolverThreads
+    # The tolerance to be used for dropping near zero values when creating large matrices (including interior dofs)
+    # for MPT and POD calculations
+    drop_tol = 1e-12 # None
+    # A smaller value will reduce the sparsity and increase the memory requirements. If set too small
+    # this may lead to excessive matrix fill in and large memory useage at high p especially if prismatic layers
+    # are used. Using drop_tol = None no values will be dropped.
+
+    return CPUs,BigProblem,PODPoints,PODTol,OldMesh, OldPOD, NumSolverThreads, drop_tol
 
 def AdditionalOutputs():
     #Plot the POD points
@@ -94,7 +101,9 @@ def PrerunCheckSettings():
 #Function definition to set up default settings
 def SaverSettings():
     #Place to save the results to
-    FolderName = 'Default'
+    FolderName = "Default" 
+    #"/home/paul/Coding/PaulResults/PaulMPTResults/Results/" 
+    
     #(string) This defines the folder (and potentially subfolders) the
     #data will be saved in (if "Default" then a predetermined the data
     #will be saved in a predetermined folder structure)
