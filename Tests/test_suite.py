@@ -2,11 +2,19 @@ from pathlib import Path
 import sys
 import os
 from matplotlib import pyplot as plt
-
+import inspect
 import numpy as np
-from main import main
-
 import pytest
+try:
+    from main import main
+except:
+    currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    parentdir = os.path.dirname(currentdir)
+    sys.path.insert(0, parentdir)
+    os.chdir(parentdir)
+    from main import main
+
+
 
 def test_sphere():
     
@@ -123,8 +131,8 @@ def test_dualbar():
     test_results = main(geometry=geometry, order=3, use_OCC=True, use_POD=True, alpha=1e-3)
     test_tensors = test_results['TensorArray'] 
     
-    validation_filename = r'Tests\Validation_Standards\OCC_dualbar\al_0.001_mu_1,1_sig_1e6,1e8\1e1-1e8_40_el_78714_ord_3_POD_13_1e-6\Data'
-    valdiation_tensors = np.genfromtxt(validation_filename + '\\Tensors.csv', dtype=complex, delimiter=', ')
+    validation_filename = r'Tests/Validation_Standards/OCC_dualbar/al_0.001_mu_1,1_sig_1e6,1e8/1e1-1e8_40_el_78714_ord_3_POD_13_1e-6/Data'
+    valdiation_tensors = np.genfromtxt(validation_filename + '/Tensors.csv', dtype=complex, delimiter=', ')
     
     rel_err = np.zeros(len(test_tensors), dtype=complex)
     for ind in range(len(test_tensors)):
@@ -177,8 +185,8 @@ def test_key():
     test_results = main(geometry=geometry, order=3, use_OCC=True, use_POD=True, alpha=1e-3)
     test_tensors = test_results['TensorArray'] 
     
-    validation_filename = r'Tests\Validation_Standards\OCC_key_4\al_0.001_mu_141.3135696662735_sig_1.5e7\1e1-1e8_40_el_39128_ord_3_POD_13_1e-6\Data'
-    valdiation_tensors = np.genfromtxt(validation_filename + '\\Tensors.csv', dtype=complex, delimiter=', ')
+    validation_filename = r'Tests/Validation_Standards/OCC_key_4/al_0.001_mu_141.3135696662735_sig_1.5e7/1e1-1e8_40_el_39128_ord_3_POD_13_1e-6/Data'
+    valdiation_tensors = np.genfromtxt(validation_filename + '/Tensors.csv', dtype=complex, delimiter=', ')
     
     rel_err = np.zeros(len(test_tensors), dtype=complex)
     for ind in range(len(test_tensors)):
@@ -231,8 +239,8 @@ def test_tetra():
     test_results = main(geometry=geometry, order=3, use_OCC=True, use_POD=True, alpha=1e-2)
     test_tensors = test_results['TensorArray'] 
     
-    validation_filename = r'Tests\Validation_Standards\OCC_step_tetra_z5\al_0.01_mu_8_sig_1e6\1e1-1e8_40_el_10240_ord_3_POD_13_1e-6\Data'
-    valdiation_tensors = np.genfromtxt(validation_filename + '\\Tensors.csv', dtype=complex, delimiter=', ')
+    validation_filename = r'Tests/Validation_Standards/OCC_step_tetra_z5/al_0.01_mu_8_sig_1e6/1e1-1e8_40_el_10240_ord_3_POD_13_1e-6/Data'
+    valdiation_tensors = np.genfromtxt(validation_filename + '/Tensors.csv', dtype=complex, delimiter=', ')
     
     rel_err = np.zeros(len(test_tensors), dtype=complex)
     for ind in range(len(test_tensors)):
