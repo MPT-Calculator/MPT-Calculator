@@ -77,7 +77,7 @@ def test_magnetic_disk():
     test_results = main(geometry=geometry, order=3, use_OCC=True, use_POD=True, alpha=1e-3)
     test_tensors = test_results['TensorArray'] 
     
-    validation_filename = r'Tests/Validation_Standards/OCC_thin_disc_magnetic_32/al_0.001_mu_32_sig_1e6\1e1-1e8_40_el_27743_ord_3_POD_13_1e-6/Data'
+    validation_filename = r'Tests/Validation_Standards/OCC_thin_disc_magnetic_32/al_0.001_mu_32_sig_1e6/1e1-1e8_40_el_27743_ord_3_POD_13_1e-6/Data'
     valdiation_tensors = np.genfromtxt(validation_filename + '/Tensors.csv', dtype=complex, delimiter=', ')
     
     rel_err = np.zeros(len(test_tensors), dtype=complex)
