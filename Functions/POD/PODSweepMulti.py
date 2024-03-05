@@ -14,6 +14,7 @@ import gc
 import os
 from contextlib import contextmanager
 import sys
+import csv
 import time
 import math
 import multiprocessing as multiprocessing
@@ -83,7 +84,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
                                                                    Tolerance, alpha, epsi, inout, mesh, mu_inv,
                                                                    recoverymode, sweepname)
 
-    if recoverymode is False:
+    if save_U is True and recoverymode is False:
         np.save('Results/' + sweepname + '/Data/Theta0', Theta0Sol)
 
     Theta0Sol = Theta0_Postprocessing(Additional_Int_Order, Theta0Sol, fes)
@@ -133,18 +134,24 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         Runlist = []
         manager = multiprocessing.Manager()
         counter = manager.Value('i', 0)
-
+        
+        # If we want to compute the tensors for the full order sweep using efficient mat method,
+        # We do the post processing only once. For this reason, we only need the Theta1Sols matrix.
+        # To do this without large changes to the code, we temporarily set ComputeTensors=False and then
+        # Reset it later.
+        
+        if (PlotPod is False) or (use_integral is False): 
+            ComputeTensors = False
+        else:
+            ComputeTensors = True
+        
+        
         for i in range(len(PODArray)):
-            if PlotPod == True:
-                Runlist.append((np.asarray([PODArray[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
-                                Tolerance, Maxsteps, epsi, Solver, N0, NumberofSnapshots, True, True, counter,
-                                BigProblem, Order, NumSolverThreads,Integration_Order, Additional_Int_Order,
-                                bilinear_bonus_int_order, drop_tol, 'Theta1_Sweep'))
-            else:
-                Runlist.append((np.asarray([PODArray[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
-                                Tolerance, Maxsteps, epsi, Solver, N0, NumberofSnapshots, True, False, counter,
-                                BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_int_order,
-                                drop_tol, 'Theta1_Sweep'))
+            Runlist.append((np.asarray([PODArray[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
+                            Tolerance, Maxsteps, epsi, Solver, N0, NumberofSnapshots, True, ComputeTensors, counter,
+                            BigProblem, Order, NumSolverThreads,Integration_Order, Additional_Int_Order,
+                            bilinear_bonus_int_order, drop_tol, 'Theta1_Sweep'))
+
 
         # Run on the multiple cores
         multiprocessing.freeze_support()
@@ -174,15 +181,43 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
             PODEigenValues = np.zeros([NumberofSnapshots, 3], dtype=complex)
 
         for i in range(len(Outputs)):
-            if PlotPod is True:
+            if ComputeTensors is True:
                 PODEigenValues[i, :] = Outputs[i][1][0]
                 PODTensors[i, :] = Outputs[i][0][0]
                 for j in range(ndof2):
                     Theta1Sols[j,i,:] = Outputs[i][2][j][0]
             else:
                 for j in range(ndof2):
-                    Theta1Sols[j, i, :] = Outputs[i][0][j][0]
+                    # Theta1Sols[j, i, :] = Outputs[i][0][j][0]
+                    Theta1Sols[j,i,:] = Outputs[i][j][0][:]
 
+        if use_integral is False and PlotPod is True:
+            
+            # Test and trial functions
+            u, v = fes2.TnT()
+            U_proxy = sp.eye(fes2.ndof)
+            #ReducedSolve=False
+            print(drop_tol)
+            At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array = Construct_Matrices(
+            Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, inout, mesh, mu_inv, sigma, '', u,
+            U_proxy, U_proxy, U_proxy, v, xivec, NumSolverThreads, drop_tol, ReducedSolve=False)
+        
+            del U_proxy
+        
+            PODTensors, _ = Theta1_Lower_Sweep_Mat_Method(PODArray, Q_array, c1_array, c5_array, c7, c8_array, At0_array, UAt0_conj,
+                                UAt0U_array, T_array, EU_array_conj, UH_array, Theta1Sols, [], '',
+                                fes2.ndof,
+                                alpha, False)
+        
+            del At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array
+            
+            for k in range(PODTensors.shape[0]):
+                R = PODTensors[k,:].reshape(3,3).real
+                I = PODTensors[k,:].reshape(3,3).imag
+                PODEigenValues[k, :] = np.sort(np.linalg.eigvals(N0 + R)) + 1j * np.sort(np.linalg.eigvals(I))
+            
+                PODTensors[k,:] = PODTensors[k,:] + N0.reshape(1,9)
+        
         timing_dictionary['Theta1'] = time.time()
 
         ########################################################################
@@ -468,6 +503,12 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
     print(' frequency sweep complete')
     timing_dictionary['Tensors'] = time.time()
     np.save('Results/' + sweepname + f'/Data/Timings_cpus={CPUs}.npy', timing_dictionary)
+    
+    #Backup output of timings to csv.
+    with open('Results/' + sweepname + f'/Data/Timings_cpus={CPUs}.csv','w', newline='') as fp:
+        writer = csv.DictWriter(fp, fieldnames=timing_dictionary.keys())
+        writer.writeheader()
+        writer.writerow(timing_dictionary)
 
   # Computing additional terms for testing commutator
     compute_additional_terms = True
