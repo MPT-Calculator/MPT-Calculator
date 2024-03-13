@@ -47,7 +47,9 @@ from ..Core_MPT.Theta0_Postprocessing import *
 from ..Core_MPT.Construct_Matrices import *
 from ..POD.Truncated_SVD import *
 from ..POD.Constuct_ROM import *
-from ..POD.Construct_Linear_System import *
+from ..POD.Construct_Linear_System2 import *
+from ..Core_MPT.Mat_Method_Calc_Real_Part import *
+from ..Core_MPT.Mat_Method_Calc_Imag_Part import *
 
 #from ..Core_MPT.test_reg import *
 
@@ -200,7 +202,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
             print(drop_tol)
             At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array = Construct_Matrices(
             Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, inout, mesh, mu_inv, sigma, '', u,
-            U_proxy, U_proxy, U_proxy, v, xivec, NumSolverThreads, drop_tol, ReducedSolve=False)
+            U_proxy, U_proxy, U_proxy, v, xivec, NumSolverThreads, drop_tol,  ReducedSolve=False)
         
             del U_proxy
         
@@ -258,17 +260,21 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
     ########################################################################
     # Create the ROM
 
-    a0, a1, r1, r2, r3, read_vec, u, v, write_vec = Construct_ROM(Additional_Int_Order, BigProblem, Mu0, Theta0Sol,
-                                                                  alpha, epsi, fes, fes2, inout, mu_inv, sigma, xivec, NumSolverThreads, drop_tol)
+    # a0, a1, r1, r2, r3, read_vec, u, v, write_vec = Construct_ROM(Additional_Int_Order, BigProblem, Mu0, Theta0Sol,
+    #                                                               alpha, epsi, fes, fes2, inout, mu_inv, sigma, xivec, NumSolverThreads, drop_tol)
 
     if PODErrorBars is True:
-        HA0H1, HA0H2, HA0H3, HA1H1, HA1H2, HA1H3, HR1, HR2, HR3, ProL, RerrorReduced1, RerrorReduced2, RerrorReduced3, fes0, ndof0 = Construct_Linear_System(
-            PODErrorBars, a0, a1, cutoff, dom_nrs_metal, fes2, mesh, ndof2, r1, r2, r3, read_vec, u1Truncated, u2Truncated,
-            u3Truncated, write_vec)
+        HA0H1, HA0H2, HA0H3, HA1H1, HA1H2, HA1H3, HR1, HR2, HR3, ProL, RerrorReduced1, RerrorReduced2, RerrorReduced3, fes0, ndof0 = Construct_Linear_System(Additional_Int_Order, BigProblem, Mu0, Theta0Sol, alpha, epsi, fes, fes2, inout, mu_inv, sigma,
+                  xivec, NumSolverThreads, drop_tol, u1Truncated, u2Truncated, u3Truncated, dom_nrs_metal, PODErrorBars
+                  )
     else:
-        HA0H1, HA0H2, HA0H3, HA1H1, HA1H2, HA1H3, HR1, HR2, HR3, _, _, _, _, _, _ = Construct_Linear_System(
-            PODErrorBars, a0, a1, cutoff, dom_nrs_metal, fes2, mesh, ndof2, r1, r2, r3, read_vec, u1Truncated, u2Truncated,
-            u3Truncated, write_vec)
+        
+        HA0H1, HA0H2, HA0H3, HA1H1, HA1H2, HA1H3, HR1, HR2, HR3, _, _, _, _, _, _ = Construct_Linear_System(Additional_Int_Order, BigProblem, Mu0, Theta0Sol, alpha, epsi, fes, fes2, inout, mu_inv, sigma,
+                  xivec, NumSolverThreads, drop_tol, u1Truncated, u2Truncated, u3Truncated, dom_nrs_metal, PODErrorBars)
+        
+        # HA0H1, HA0H2, HA0H3, HA1H1, HA1H2, HA1H3, HR1, HR2, HR3, _, _, _, _, _, _ = Construct_Linear_System(
+        #     PODErrorBars, a0, a1, cutoff, dom_nrs_metal, fes2, mesh, ndof2, r1, r2, r3, read_vec, u1Truncated, u2Truncated,
+        #     u3Truncated, write_vec)
 
     # Clear the variables
     A0H, A1H = None, None
@@ -511,7 +517,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         writer.writerow(timing_dictionary)
 
   # Computing additional terms for testing commutator
-    compute_additional_terms = True
+    compute_additional_terms = False
     if compute_additional_terms is True:
         Theta1Sols = np.zeros((ndof, len(Array),3), dtype=complex)
     
@@ -539,7 +545,28 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         # shutil.copy('Z_tilde_upper_bound.csv', f'Results/{sweepname}/Data/Z_tilde_upper_bound.csv')
 
 
-
+    real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Lower_Sols)),
+            u1Truncated, u2Truncated, u3Truncated, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=True)
+    
+    imag_part = Mat_Method_Calc_Imag_Part(Array,
+                                          Integration_Order,
+                                          Theta0Sol,
+                                          bilinear_bonus_int_order,
+                                          fes2,
+                                          mesh,
+                                          inout,
+                                          mu_inv,
+                                          alpha, 
+                                          np.squeeze(np.asarray(Lower_Sols)),
+                                          sigma,
+                                          u1Truncated,
+                                          u2Truncated,
+                                          u3Truncated,
+                                          xivec, 
+                                          NumSolverThreads,
+                                          drop_tol,
+                                          BigProblem,
+                                          ReducedSolve=True)
 
     if PlotPod == True:
         if PODErrorBars == True:
