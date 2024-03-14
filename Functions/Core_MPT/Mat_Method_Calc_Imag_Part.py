@@ -22,6 +22,45 @@ def Mat_Method_Calc_Imag_Part(Array: np.ndarray,
                               BigProblem: bool,
                               ReducedSolve=True) -> np.ndarray:
     
+    """
+    James Elgy - 2024.
+    Function to compute the imag tensor coefficients (I)_ij efficiently using the faster matrix method.
+    
+    1) Computes the bilinear form A
+    2) Computes matrices E, G, and H.
+    2) If reduced solve is True, reduce A to size MxM and E and H to size 3xM.
+    4) Compute additional matrices and vectors (𝐨ⱼ)ᵀ (̅𝐂²)ᴹ,  (𝐨ⱼ)ᵀ (𝐂²)ᴹ,  𝐨ⱼᵀ 𝐂⁽¹⁾ 𝐨ᵢ, 𝐬ᵢᵀ 𝐨ⱼ, 𝐬ⱼᵀ 𝐨ᵢ, and (𝐭ᴹ)ᵀ.
+    3) For each frequency, compute conj(q_i)^T A_ij (q_j)
+    4) Scale and compute (I)_ij
+    
+    If BigProblem is True, then a slower but more memory efficient implementation is used using A.Apply().
+    
+    Args:
+        Array (np.ndarray): Array of frequencies to consider.
+        Integration order (int): order to use for integration in Integrate function.
+        Theta0Sol (np.ndarray): ndof x 3 array of theta0 solutions.
+        bilinear_bonus_int_order (int): Integration order for the bilinear forms
+        fes2 (comp.HCurl): HCurl finite element space for the Theta1 problem.
+        mesh (comp.Mesh): ngsolve mesh.
+        inout (fem.CoefficientFunction): material coefficient function. 1 inside objects, 0 outside
+        alpha (float): object size scaling
+        Sols (np.ndarray): Ndof x nfreqs x 3 vector of solution coefficients.
+        sigma (comp.GridFunction): Grid Function for sigma. Note that for material discontinuities aligning with vertices no interpolation is done
+        u1Truncated (_type_): Ndof x M complex left singular matrix for e_1. If ReducedSolve is False, then replace U with sparse identity of size Ndof.
+        u2Truncated (_type_): Ndof x M complex left singular mactrix for e_2. If ReducedSolve is False, then replace U with sparse identity of size Ndof.
+        u3Truncated (_type_): Ndof x M complex left singular matrix for e_3. If ReducedSolve is False, then replace U with sparse identity of size Ndof.
+        xivec (list): 3x3 list of direction vectors
+        NumSolverThreads (int | str): Multithreading threads. If using all threads use 'default'.
+        drop_tol (float | None): During assembly entries < drop_tol are assumed to be 0. Use None to include all entries.
+        BigProblem (bool): if True then the code does not assemble the system matrix entirely. Slower but more memory efficient.
+        ReducedSolve (bool, optional): If True, the size of the multiplications are reduced to size M. Use with POD. Defaults to True.
+
+    Returns:
+        np.ndarray: Nfreq x 9 array of imag tensor coeffcients.
+    """
+    
+    if NumSolverThreads != 'default':
+        Se
     
     if NumSolverThreads != 'default':
         SetNumThreads(NumSolverThreads)
@@ -246,12 +285,12 @@ def Mat_Method_Calc_Imag_Part(Array: np.ndarray,
     # We can now iterate through frequency and compute the tensor coefficients.
     
     # Computing Tensor Coefficients:
-    I = np.zeros([3, 3])
+    
     imag_part = np.zeros((Sols.shape[1], 9))
     
     # For each frequency pre and post multiply Q with the solution vector for i=0:3, j=0:i+1.
     for k, omega in enumerate(Array):
-        
+        I = np.zeros([3, 3])
         if ReducedSolve is True or BigProblem is False:
             for i in range(3):
                 gi = np.squeeze(Sols[:,k,i])

@@ -442,20 +442,36 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
 
     else:
 
-        At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array = Construct_Matrices(
-            Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, inout, mesh, mu_inv, sigma, sweepname, u,
-            u1Truncated, u2Truncated, u3Truncated, v, xivec,NumSolverThreads, drop_tol, ReducedSolve=True)
+        # At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array = Construct_Matrices(
+        #     Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, inout, mesh, mu_inv, sigma, sweepname, u,
+        #     u1Truncated, u2Truncated, u3Truncated, v, xivec,NumSolverThreads, drop_tol, ReducedSolve=True)
 
-        timing_dictionary['BuildSystemMatrices'] = time.time()
+        # timing_dictionary['BuildSystemMatrices'] = time.time()
 
-        runlist = []
-        for i in range(Tensor_CPUs):
-            runlist.append((Core_Distribution[i], Q_array, c1_array, c5_array, c7, c8_array, At0_array, UAt0_conj,
-                            UAt0U_array, T_array, EU_array_conj, UH_array, Lower_Sols[i], G_Store, cutoff, fes2.ndof,
-                            alpha, False))
+        # runlist = []
+        # for i in range(Tensor_CPUs):
+        #     runlist.append((Core_Distribution[i], Q_array, c1_array, c5_array, c7, c8_array, At0_array, UAt0_conj,
+        #                     UAt0U_array, T_array, EU_array_conj, UH_array, Lower_Sols[i], G_Store, cutoff, fes2.ndof,
+        #                     alpha, False))
 
-        with multiprocessing.get_context('spawn').Pool(Tensor_CPUs) as pool:
-            Outputs = pool.starmap(Theta1_Lower_Sweep_Mat_Method, runlist)
+        # with multiprocessing.get_context('spawn').Pool(Tensor_CPUs) as pool:
+        #     Outputs = pool.starmap(Theta1_Lower_Sweep_Mat_Method, runlist)
+        
+        real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Lower_Sols)),
+            u1Truncated, u2Truncated, u3Truncated, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=True)
+
+        imag_part = Mat_Method_Calc_Imag_Part(Array, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha, np.squeeze(np.asarray(Lower_Sols)),
+            sigma, u1Truncated, u2Truncated, u3Truncated, xivec,  NumSolverThreads, drop_tol, BigProblem, ReducedSolve=True)
+        
+        for Num in range(len(Array)):
+            TensorArray[Num, :] = real_part[Num,:] + N0.flatten()
+            TensorArray[Num, :] += 1j * imag_part[Num,:]
+
+            R = TensorArray[Num, :].real.reshape(3, 3)
+            I = TensorArray[Num, :].imag.reshape(3, 3)
+            EigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
+            
+        
 
     try:
         pool.terminate()
@@ -479,21 +495,21 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
                     TensorArray[Num, :] = Output[0][j]
                     EigenValues[Num, :] = Output[1][j]
 
-    else:
-        for i, Output in enumerate(Outputs):
-            for j, Num in enumerate(Count_Distribution[i]):
-                if PODErrorBars == True:
-                    TensorArray[Num, :] = Output[0][j]
-                    TensorArray[Num, :] = Output[0][j] + N0.flatten()
-                    R = TensorArray[Num, :].real.reshape(3, 3)
-                    I = TensorArray[Num, :].imag.reshape(3, 3)
-                    EigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
-                    # ErrorTensors[Num, :] = Output[2][j]
-                else:
-                    TensorArray[Num, :] = Output[0][j] + N0.flatten()
-                    R = TensorArray[Num, :].real.reshape(3, 3)
-                    I = TensorArray[Num, :].imag.reshape(3, 3)
-                    EigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
+    # else:
+    #     for i, Output in enumerate(Outputs):
+    #         for j, Num in enumerate(Count_Distribution[i]):
+    #             if PODErrorBars == True:
+    #                 TensorArray[Num, :] = Output[0][j]
+    #                 TensorArray[Num, :] = Output[0][j] + N0.flatten()
+    #                 R = TensorArray[Num, :].real.reshape(3, 3)
+    #                 I = TensorArray[Num, :].imag.reshape(3, 3)
+    #                 EigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
+    #                 # ErrorTensors[Num, :] = Output[2][j]
+    #             else:
+    #                 TensorArray[Num, :] = Output[0][j] + N0.flatten()
+    #                 R = TensorArray[Num, :].real.reshape(3, 3)
+    #                 I = TensorArray[Num, :].imag.reshape(3, 3)
+    #                 EigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
 
     print(' reduced order systems solved')
 
@@ -522,7 +538,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
             u1Truncated, u2Truncated, u3Truncated, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=True)
     
     imag_part = Mat_Method_Calc_Imag_Part(Array, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha, np.squeeze(np.asarray(Lower_Sols)),
-            sigma, u1Truncated, u2Truncated, u3Truncated, xivec, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=True)
+            sigma, u1Truncated, u2Truncated, u3Truncated, xivec,  NumSolverThreads, drop_tol, BigProblem, ReducedSolve=True)
 
     if PlotPod == True:
         if PODErrorBars == True:
