@@ -516,57 +516,13 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         writer.writeheader()
         writer.writerow(timing_dictionary)
 
-  # Computing additional terms for testing commutator
-    compute_additional_terms = False
-    if compute_additional_terms is True:
-        Theta1Sols = np.zeros((ndof, len(Array),3), dtype=complex)
-    
-        Theta1Sols[:,:,0] = u1Truncated @ (g[:,:,0])
-        Theta1Sols[:,:,1] = u2Truncated @ (g[:,:,1])
-        Theta1Sols[:,:,2] = u3Truncated @ (g[:,:,2])
-    
-        #term1, term2, term3, term4, Z_upper_bound, Z_tilde_upper_bound = test_reg(Theta0Sol, fes2, Theta1Sols, 6, xivec, inout, epsi, alpha, Array, TensorArray, Integration_Order,
-        #                                                        mu_inv, sigma, N0)
-        # term1_sym = np.zeros(term1.shape, dtype=complex)
-        # term2_sym = np.zeros(term2.shape, dtype=complex)
-        # term3_sym = np.zeros(term3.shape, dtype=complex)
-        # for k in range(len(PODArray)):
-        #     term1_sym[k,:,:] = -(np.squeeze(term1[k,:,:]) + np.transpose(np.squeeze(term1[k, :, :])))/2
-        #     term2_sym[k,:,:] = (np.squeeze(term2[k,:,:]) + np.transpose(np.squeeze(term2[k, :, :])))/2
-        #     term3_sym[k,:,:] = -(np.squeeze(term3[k,:,:]) + np.transpose(np.squeeze(term3[k, :, :])))/2
-            #PODTensors[k,:] = PODTensors[k, :] + term1_sym[k,:,:].ravel() + term2_sym[k,:,:].ravel() + term3_sym[k,:,:].ravel() 
-            #PODTensors = np.asarray(PODTensors)
-        
-        # np.savetxt('Z_upper_bound.csv', Z_upper_bound)
-        # np.savetxt('Z_tilde_upper_bound.csv', Z_tilde_upper_bound)
-        # shutil.copy('sum_reg_terms_real.csv', f'Results/{sweepname}/Data/sum_reg_terms_real.csv')
-        # shutil.copy('sum_reg_terms_imag.csv', f'Results/{sweepname}/Data/sum_reg_terms_imag.csv')
-        # shutil.copy('Z_upper_bound.csv', f'Results/{sweepname}/Data/Z_upper_bound.csv')
-        # shutil.copy('Z_tilde_upper_bound.csv', f'Results/{sweepname}/Data/Z_tilde_upper_bound.csv')
 
 
     real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Lower_Sols)),
             u1Truncated, u2Truncated, u3Truncated, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=True)
     
-    imag_part = Mat_Method_Calc_Imag_Part(Array,
-                                          Integration_Order,
-                                          Theta0Sol,
-                                          bilinear_bonus_int_order,
-                                          fes2,
-                                          mesh,
-                                          inout,
-                                          mu_inv,
-                                          alpha, 
-                                          np.squeeze(np.asarray(Lower_Sols)),
-                                          sigma,
-                                          u1Truncated,
-                                          u2Truncated,
-                                          u3Truncated,
-                                          xivec, 
-                                          NumSolverThreads,
-                                          drop_tol,
-                                          BigProblem,
-                                          ReducedSolve=True)
+    imag_part = Mat_Method_Calc_Imag_Part(Array, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha, np.squeeze(np.asarray(Lower_Sols)),
+            sigma, u1Truncated, u2Truncated, u3Truncated, xivec, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=True)
 
     if PlotPod == True:
         if PODErrorBars == True:

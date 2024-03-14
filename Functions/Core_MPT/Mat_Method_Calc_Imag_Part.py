@@ -10,7 +10,6 @@ def Mat_Method_Calc_Imag_Part(Array: np.ndarray,
                               fes2: comp.HCurl,
                               mesh: comp.Mesh,
                               inout: fem.CoefficientFunction,
-                              mu_inv: comp.GridFunction,
                               alpha: float,
                               Sols: np.ndarray,
                               sigma: comp.GridFunction,
@@ -75,17 +74,23 @@ def Mat_Method_Calc_Imag_Part(Array: np.ndarray,
         read_vec.FV().NumPy()[:] = Theta0Sol[:, 0]
         with TaskManager():
             A.Apply(read_vec, write_vec)
-        A_mat_t0_1 = write_vec.FV().NumPy()
+        A_mat_t0_1[:] = write_vec.FV().NumPy()
+        
+        read_vec = GridFunction(fes2).vec.CreateVector()
+        write_vec = GridFunction(fes2).vec.CreateVector()
         
         read_vec.FV().NumPy()[:] = Theta0Sol[:, 1]
         with TaskManager():
             A.Apply(read_vec, write_vec)
-        A_mat_t0_2 = write_vec.FV().NumPy()
+        A_mat_t0_2[:] = write_vec.FV().NumPy()
+        
+        read_vec = GridFunction(fes2).vec.CreateVector()
+        write_vec = GridFunction(fes2).vec.CreateVector()
         
         read_vec.FV().NumPy()[:] = Theta0Sol[:, 2]
         with TaskManager():
             A.Apply(read_vec, write_vec)
-        A_mat_t0_3 = write_vec.FV().NumPy()
+        A_mat_t0_3[:] = write_vec.FV().NumPy()
     
     
     # if ReducedSolve is False then the A matrix is not shrunk and there is no point in multiplying it with anything.
@@ -125,8 +130,8 @@ def Mat_Method_Calc_Imag_Part(Array: np.ndarray,
             with TaskManager():
                 A.Apply(read_vec, write_vec)
             TU2[:, i] = write_vec.FV().NumPy()
-            T22 = np.conj(np.transpose(u2Truncated)) @ TU2
-            T32 = np.conj(np.transpose(u3Truncated)) @ TU2
+        T22 = np.conj(np.transpose(u2Truncated)) @ TU2
+        T32 = np.conj(np.transpose(u3Truncated)) @ TU2
         del TU2
         
         # Same as before.
@@ -136,7 +141,7 @@ def Mat_Method_Calc_Imag_Part(Array: np.ndarray,
             with TaskManager():
                 A.Apply(read_vec, write_vec)
             TU3[:, i] = write_vec.FV().NumPy()
-            T33 = np.conj(np.transpose(u3Truncated)) @ TU3
+        T33 = np.conj(np.transpose(u3Truncated)) @ TU3
         del TU3
         
     # At this stage, all the work relating to the large bilinear form A has been completed. All the remaining matrix multiplications
