@@ -21,6 +21,8 @@ from ..Core_MPT.MPT_Preallocation import *
 from ..Core_MPT.Solve_Theta_0_Problem import *
 from ..Core_MPT.Calculate_N0 import *
 from ..Core_MPT.Theta0_Postprocessing import *
+from ..Core_MPT.Mat_Method_Calc_Imag_Part import *
+from ..Core_MPT.Mat_Method_Calc_Real_Part import *
 
 sys.path.insert(0, "Settings")
 from Settings import SolverParameters
@@ -81,10 +83,29 @@ def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSol
                                                 Tolerance, Maxsteps, epsi, Solver, N0, NumberofFrequencies, False, True,
                                                 False, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_intorder, drop_tol)
     else:
-        TensorArray, EigenValues = Theta1_Sweep(Array, mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
-                                                Tolerance, Maxsteps, epsi, Solver, N0, NumberofFrequencies, False, True,
+        Theta1Sols = Theta1_Sweep(Array, mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
+                                                Tolerance, Maxsteps, epsi, Solver, N0, NumberofFrequencies, True, False,
                                                 False, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_intorder, drop_tol)
 
+
+        
+        U_proxy = sp.eye(fes2.ndof)
+
+        real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_intorder, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Theta1Sols)),
+            U_proxy, U_proxy, U_proxy, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
+
+        imag_part = Mat_Method_Calc_Imag_Part(Array, Integration_Order, Theta0Sol, bilinear_bonus_intorder, fes2, mesh, inout, alpha, np.squeeze(np.asarray(Theta1Sols)),
+            sigma, U_proxy, U_proxy, U_proxy, xivec,  NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
+        
+        for Num in range(len(Array)):
+            TensorArray[Num, :] = real_part[Num,:] + N0.flatten()
+            TensorArray[Num, :] += 1j * imag_part[Num,:]
+
+            R = TensorArray[Num, :].real.reshape(3, 3)
+            I = TensorArray[Num, :].imag.reshape(3, 3)
+            EigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
+    
+    
     print(' solved theta1 problems     ')
 
     # if use_integral is False:

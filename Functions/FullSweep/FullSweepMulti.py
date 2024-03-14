@@ -22,6 +22,8 @@ from ..Core_MPT.MPT_Preallocation import *
 from ..Core_MPT.Solve_Theta_0_Problem import *
 from ..Core_MPT.Calculate_N0 import *
 from ..Core_MPT.Theta0_Postprocessing import *
+from ..Core_MPT.Mat_Method_Calc_Imag_Part import *
+from ..Core_MPT.Mat_Method_Calc_Real_Part import *
 
 sys.path.insert(0, "Settings")
 from Settings import SolverParameters
@@ -80,8 +82,13 @@ def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProb
         vectors = False
         tensors = True
     else:
-        vectors = False
-        tensors = True
+        vectors = True
+        tensors = False
+                # Unpack the results
+        if BigProblem == True:
+            Theta1Sols = np.zeros([ndof2, len(Array), 3], dtype=np.complex64)
+        else:
+            Theta1Sols = np.zeros([ndof2, len(Array), 3], dtype=complex)
 
     # Create the inputs
     Runlist = []
@@ -106,8 +113,31 @@ def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProb
     # Unpack the results
     
     for i in range(len(Outputs)):
-        EigenValues[i,:] = Outputs[i][1][0]
-        TensorArray[i,:] = Outputs[i][0][0]
+        if vectors is False:
+            EigenValues[i,:] = Outputs[i][1][0]
+            TensorArray[i,:] = Outputs[i][0][0]
+        else:
+            for j in range(ndof2):
+                Theta1Sols[j,i,:] = Outputs[i][j][0][:]
+
+            
+            
+            U_proxy = sp.eye(fes2.ndof)
+            real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Theta1Sols)),
+                U_proxy, U_proxy, U_proxy, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
+
+            imag_part = Mat_Method_Calc_Imag_Part(Array, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha, 
+                np.squeeze(np.asarray(Theta1Sols)), sigma, U_proxy, U_proxy, U_proxy, xivec,  NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
+            
+            for Num in range(len(Array)):
+                TensorArray[Num, :] = real_part[Num,:] + N0.flatten()
+                TensorArray[Num, :] += 1j * imag_part[Num,:]
+
+                R = TensorArray[Num, :].real.reshape(3, 3)
+                I = TensorArray[Num, :].imag.reshape(3, 3)
+                EigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
+        
+        
 
     print("Frequency Sweep complete")
 
