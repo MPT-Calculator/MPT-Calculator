@@ -76,6 +76,8 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         Array, Object, PODArray, curve, inorout, mur, sig, Order, Order_L2, sweepname, NumSolverThreads, drop_tol)
     # Set up the Solver Parameters
     Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()
+    
+    timing_dictionary['Preallocation'] = time.time()
 
     #########################################################################
     # Theta0
@@ -220,11 +222,14 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
             
             #     PODTensors[k,:] = PODTensors[k,:] + N0.reshape(1,9)
             
+            
             real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Theta1Sols)),
                 U_proxy, U_proxy, U_proxy, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
-
+            timing_dictionary['POD_Real'] = time.time()
             imag_part = Mat_Method_Calc_Imag_Part(PODArray, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha, 
                 np.squeeze(np.asarray(Theta1Sols)), sigma, U_proxy, U_proxy, U_proxy, xivec,  NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
+            timing_dictionary['POD_Imag'] = time.time()
+            
             
             for Num in range(len(PODArray)):
                 PODTensors[Num, :] = real_part[Num,:] + N0.flatten()
@@ -431,7 +436,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
             TempArray[:, j, :] = g[:, Sim, :]
         Lower_Sols.append(TempArray)
 
-    timing_dictionary['AssignedCores'] = time.time()
+    # timing_dictionary['AssignedCores'] = time.time()
 
 
     # Depending on if the user has specified using the slower integral method. This is known to produce the correct
@@ -474,8 +479,13 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Lower_Sols)),
             u1Truncated, u2Truncated, u3Truncated, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=True)
 
+        timing_dictionary['Real_Part'] = time.time()
+    
         imag_part = Mat_Method_Calc_Imag_Part(Array, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha, np.squeeze(np.asarray(Lower_Sols)),
             sigma, u1Truncated, u2Truncated, u3Truncated, xivec,  NumSolverThreads, drop_tol, BigProblem, ReducedSolve=True)
+        
+        timing_dictionary['Imag_Part'] = time.time()
+
         
         for Num in range(len(Array)):
             TensorArray[Num, :] = real_part[Num,:] + N0.flatten()
@@ -548,11 +558,11 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
 
 
 
-    real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Lower_Sols)),
-            u1Truncated, u2Truncated, u3Truncated, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=True)
+    # real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Lower_Sols)),
+    #         u1Truncated, u2Truncated, u3Truncated, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=True)
     
-    imag_part = Mat_Method_Calc_Imag_Part(Array, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha, np.squeeze(np.asarray(Lower_Sols)),
-            sigma, u1Truncated, u2Truncated, u3Truncated, xivec,  NumSolverThreads, drop_tol, BigProblem, ReducedSolve=True)
+    # imag_part = Mat_Method_Calc_Imag_Part(Array, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha, np.squeeze(np.asarray(Lower_Sols)),
+    #         sigma, u1Truncated, u2Truncated, u3Truncated, xivec,  NumSolverThreads, drop_tol, BigProblem, ReducedSolve=True)
 
     if PlotPod == True:
         if PODErrorBars == True:

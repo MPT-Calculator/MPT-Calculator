@@ -121,21 +121,21 @@ def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProb
                 Theta1Sols[j,i,:] = Outputs[i][j][0][:]
 
             
-            
-            U_proxy = sp.eye(fes2.ndof)
-            real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Theta1Sols)),
-                U_proxy, U_proxy, U_proxy, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
+    
+    U_proxy = sp.eye(fes2.ndof)
+    real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Theta1Sols)),
+        U_proxy, U_proxy, U_proxy, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
 
-            imag_part = Mat_Method_Calc_Imag_Part(Array, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha, 
-                np.squeeze(np.asarray(Theta1Sols)), sigma, U_proxy, U_proxy, U_proxy, xivec,  NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
-            
-            for Num in range(len(Array)):
-                TensorArray[Num, :] = real_part[Num,:] + N0.flatten()
-                TensorArray[Num, :] += 1j * imag_part[Num,:]
+    imag_part = Mat_Method_Calc_Imag_Part(Array, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha, 
+        np.squeeze(np.asarray(Theta1Sols)), sigma, U_proxy, U_proxy, U_proxy, xivec,  NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
+    
+    for Num in range(len(Array)):
+        TensorArray[Num, :] = real_part[Num,:] + N0.flatten()
+        TensorArray[Num, :] += 1j * imag_part[Num,:]
 
-                R = TensorArray[Num, :].real.reshape(3, 3)
-                I = TensorArray[Num, :].imag.reshape(3, 3)
-                EigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
+        R = TensorArray[Num, :].real.reshape(3, 3)
+        I = TensorArray[Num, :].imag.reshape(3, 3)
+        EigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
         
         
 

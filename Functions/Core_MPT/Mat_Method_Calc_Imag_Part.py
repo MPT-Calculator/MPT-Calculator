@@ -58,21 +58,21 @@ def Mat_Method_Calc_Imag_Part(Array: np.ndarray,
     Returns:
         np.ndarray: Nfreq x 9 array of imag tensor coeffcients.
     """
-    
-    if NumSolverThreads != 'default':
-        Se
+
     
     if NumSolverThreads != 'default':
         SetNumThreads(NumSolverThreads)
     
     u, v = fes2.TnT()
     ndof2 = fes2.ndof
-    cutoff = u1Truncated.shape[1]
     
-    A = BilinearForm(fes2, symmetric=True, delete_zero_elements =drop_tol,keep_internal=False, symmetric_storage=True)
+    if ReducedSolve is True:
+        cutoff = u1Truncated.shape[1]
+    
+    A = BilinearForm(fes2, symmetric=True, delete_zero_elements =drop_tol,keep_internal=False, symmetric_storage=True, nonassemble = BigProblem)
     A += SymbolicBFI(sigma * inout * (v * u), bonus_intorder=bilinear_bonus_int_order)
     
-    if BigProblem is False or ReducedSolve is False:
+    if BigProblem is False:
         with TaskManager():
             A.Assemble()
         rows, cols, vals = A.mat.COO()
@@ -146,42 +146,43 @@ def Mat_Method_Calc_Imag_Part(Array: np.ndarray,
             T11 = T22 = T33 = T21 = T31 = T32 = A_mat
             
     else:
-        # Reducing size of K matrix
-        TU1 = np.zeros([ndof2, cutoff], dtype=complex)
-        read_vec = GridFunction(fes2).vec.CreateVector()
-        write_vec = GridFunction(fes2).vec.CreateVector()
-        
-        # For each column in u1Truncated, post multiply with K. We then premultiply by appropriate vector to reduce size to MxM.
-        for i in range(cutoff):
-            read_vec.FV().NumPy()[:] = u1Truncated[:, i]
-            with TaskManager():
-                A.Apply(read_vec, write_vec)
-            TU1[:, i] = write_vec.FV().NumPy()
-        T11 = np.conj(np.transpose(u1Truncated)) @ TU1
-        T21 = np.conj(np.transpose(u2Truncated)) @ TU1
-        T31 = np.conj(np.transpose(u3Truncated)) @ TU1
-        del TU1
-        
-        # Same as before
-        TU2 = np.zeros([ndof2, cutoff], dtype=complex)
-        for i in range(cutoff):
-            read_vec.FV().NumPy()[:] = u2Truncated[:, i]
-            with TaskManager():
-                A.Apply(read_vec, write_vec)
-            TU2[:, i] = write_vec.FV().NumPy()
-        T22 = np.conj(np.transpose(u2Truncated)) @ TU2
-        T32 = np.conj(np.transpose(u3Truncated)) @ TU2
-        del TU2
-        
-        # Same as before.
-        TU3 = np.zeros([ndof2, cutoff], dtype=complex)
-        for i in range(cutoff):
-            read_vec.FV().NumPy()[:] = u3Truncated[:, i]
-            with TaskManager():
-                A.Apply(read_vec, write_vec)
-            TU3[:, i] = write_vec.FV().NumPy()
-        T33 = np.conj(np.transpose(u3Truncated)) @ TU3
-        del TU3
+        if ReducedSolve is True:
+            # Reducing size of K matrix
+            TU1 = np.zeros([ndof2, cutoff], dtype=complex)
+            read_vec = GridFunction(fes2).vec.CreateVector()
+            write_vec = GridFunction(fes2).vec.CreateVector()
+            
+            # For each column in u1Truncated, post multiply with K. We then premultiply by appropriate vector to reduce size to MxM.
+            for i in range(cutoff):
+                read_vec.FV().NumPy()[:] = u1Truncated[:, i]
+                with TaskManager():
+                    A.Apply(read_vec, write_vec)
+                TU1[:, i] = write_vec.FV().NumPy()
+            T11 = np.conj(np.transpose(u1Truncated)) @ TU1
+            T21 = np.conj(np.transpose(u2Truncated)) @ TU1
+            T31 = np.conj(np.transpose(u3Truncated)) @ TU1
+            del TU1
+            
+            # Same as before
+            TU2 = np.zeros([ndof2, cutoff], dtype=complex)
+            for i in range(cutoff):
+                read_vec.FV().NumPy()[:] = u2Truncated[:, i]
+                with TaskManager():
+                    A.Apply(read_vec, write_vec)
+                TU2[:, i] = write_vec.FV().NumPy()
+            T22 = np.conj(np.transpose(u2Truncated)) @ TU2
+            T32 = np.conj(np.transpose(u3Truncated)) @ TU2
+            del TU2
+            
+            # Same as before.
+            TU3 = np.zeros([ndof2, cutoff], dtype=complex)
+            for i in range(cutoff):
+                read_vec.FV().NumPy()[:] = u3Truncated[:, i]
+                with TaskManager():
+                    A.Apply(read_vec, write_vec)
+                TU3[:, i] = write_vec.FV().NumPy()
+            T33 = np.conj(np.transpose(u3Truncated)) @ TU3
+            del TU3
         
     # At this stage, all the work relating to the large bilinear form A has been completed. All the remaining matrix multiplications
     # concern smaller matrices and so BigProblem is no longer considered.
@@ -290,6 +291,9 @@ def Mat_Method_Calc_Imag_Part(Array: np.ndarray,
     
     # For each frequency pre and post multiply Q with the solution vector for i=0:3, j=0:i+1.
     for k, omega in enumerate(Array):
+        
+        print(f'{k} / {len(Array)}', end='\r')
+        
         I = np.zeros([3, 3])
         if ReducedSolve is True or BigProblem is False:
             for i in range(3):
@@ -317,7 +321,7 @@ def Mat_Method_Calc_Imag_Part(Array: np.ndarray,
                     I[i,j] = np.real((alpha ** 3 / 4) * omega * 4*np.pi*1e-7 * alpha ** 2 * (c1 + c7[i, j] + p1 + p2 + p3 + p4))
         
         # If we don't reduce the size of the matrix and we still want to save memory, then we can use K.Apply here as well.
-        if ReducedSolve is False and BigProblem is True:
+        elif BigProblem is True:
             
             for i in range(3):
                 gi = np.squeeze(Sols[:,k,i])
@@ -325,7 +329,7 @@ def Mat_Method_Calc_Imag_Part(Array: np.ndarray,
                     gj = np.squeeze(Sols[:, k, j])
                     UH = locals()[f'UH_{i+1}{j+1}']
                     EU = locals()[f'EU_{i+1}{j+1}']
-                    T = locals()[f'T{i+1}{j+1}']
+                    # T = locals()[f'T{i+1}{j+1}']
                     c1 = locals()[f'c1_{i+1}{j+1}']
                     c8 = locals()[f'c8_{i+1}{j+1}']
                     c5 = locals()[f'c5_{i+1}{j+1}']
@@ -334,7 +338,7 @@ def Mat_Method_Calc_Imag_Part(Array: np.ndarray,
                     
                     read_vec.FV().NumPy()[:] = gj
                     with TaskManager():
-                        T.Apply(read_vec, write_vec)
+                        A.Apply(read_vec, write_vec)
                     p1 = np.conj(gi) @ write_vec.FV().NumPy()[:]
                     
                     # Calc Imag Part:
