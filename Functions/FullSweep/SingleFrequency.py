@@ -23,9 +23,12 @@ from ..Core_MPT.MPT_Preallocation import *
 from ..Core_MPT.Solve_Theta_0_Problem import *
 from ..Core_MPT.Calculate_N0 import *
 from ..Core_MPT.Theta0_Postprocessing import *
+from ..Core_MPT.Mat_Method_Calc_Imag_Part import *
+from ..Core_MPT.Mat_Method_Calc_Real_Part import *
+
 
 sys.path.insert(0, "Settings")
-from Settings import SolverParameters
+from Settings import SolverParameters, DefaultSettings
 import gc
 
 from Functions.Helper_Functions.count_prismatic_elements import count_prismatic_elements
@@ -39,6 +42,7 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
                                                                                                               num_solver_threads, drop_tol)
     # Set up the Solver Parameters
     Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()
+    _,BigProblem,_,_,_, _, _, _tol = DefaultSettings()
 
     # Set up how the tensors will be stored
     N0 = np.zeros([3, 3])
@@ -176,27 +180,20 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
         Theta1Sols[:, 0, :] = np.asarray(np.squeeze(Theta1Sol))
         print(' Computing coefficients')
 
-        # I'm aware that pre and post multiplying by identity of size ndof2 is slower than using K and A matrices outright,
-        # however this allows us to reuse the Construct_Matrices function rather than add (significantly) more code.
-        identity1 = sp.identity(ndof2)
-        # Cteate the inputs
-        Runlist = []
+        U_proxy = sp.identity(ndof2)
 
-        for i in range(CPUs):
-            Runlist.append((np.asarray([Omega]), mesh, fes, fes2, Theta1Sols, identity1, identity1, identity1,
-                            Theta0Sol, xivec, alpha, sigma, mu_inv, inout, N0, 1, [],
-                            False, 0, 0, Order, Integration_Order, bilinear_bonus_int_order, use_integral))
-
-        # Run on the multiple cores
-        # Edit James Elgy: changed how pool was generated to 'spawn': see
-        # https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
-        with multiprocessing.get_context('spawn').Pool(CPUs) as pool:
-            Outputs = pool.starmap(Theta1_Lower_Sweep, Runlist)
-
-        for i, Output in enumerate(Outputs):
-            for j, Num in enumerate([Omega]):
-                MPT = Output[0][j]
-                EigenValues = Output[1][j]
+        Array = np.asarray([Omega])
+            
+        real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Theta1Sols)),
+            U_proxy, U_proxy, U_proxy, num_solver_threads, drop_tol, BigProblem, ReducedSolve=False)
+        imag_part = Mat_Method_Calc_Imag_Part(Array, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha, 
+            np.squeeze(np.asarray(Theta1Sols)), sigma, U_proxy, U_proxy, U_proxy, xivec,  num_solver_threads, drop_tol, BigProblem, ReducedSolve=False)
+    
+        R = real_part[Num,:] + N0.flatten()
+        R = R.reshape(3,3)
+        I = imag_part.reshape(3,3)
+        MPT = R + 1j*I
+        EigenValues = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
 
     # del Theta1i, Theta1j, Theta0i, Theta0j, fes, fes2, Theta0Sol, Theta1Sol
     gc.collect()
