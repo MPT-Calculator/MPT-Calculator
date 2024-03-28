@@ -184,12 +184,12 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
 
         Array = np.asarray([Omega])
             
-        real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Theta1Sols)),
+        real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, (np.asarray(Theta1Sols)),
             U_proxy, U_proxy, U_proxy, num_solver_threads, drop_tol, BigProblem, ReducedSolve=False)
         imag_part = Mat_Method_Calc_Imag_Part(Array, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha, 
-            np.squeeze(np.asarray(Theta1Sols)), sigma, U_proxy, U_proxy, U_proxy, xivec,  num_solver_threads, drop_tol, BigProblem, ReducedSolve=False)
+            (np.asarray(Theta1Sols)), sigma, U_proxy, U_proxy, U_proxy, xivec,  num_solver_threads, drop_tol, BigProblem, ReducedSolve=False)
     
-        R = real_part[Num,:] + N0.flatten()
+        R = real_part + N0.flatten()
         R = R.reshape(3,3)
         I = imag_part.reshape(3,3)
         MPT = R + 1j*I
