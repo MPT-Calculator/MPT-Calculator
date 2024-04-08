@@ -125,13 +125,13 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
     Object = Object[:-4] + ".vol"
     # Set up the Solver Parameters
     Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()
-    CPUs,BigProblem,PODPoints,PODTol,OldMesh, OldPOD, NumSolverThreads = DefaultSettings()
+    CPUs,BigProblem,PODPoints,PODTol,OldMesh, OldPOD, NumSolverThreads, drop_tol = DefaultSettings()
     _, PODErrorBars, _, _, _, _ = AdditionalOutputs()
 
     CPUs = cpus
 
     EigenValues, Mu0, N0, NumberofFrequencies, NumberofSnapshots, TensorArray,  inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation(
-        Array, Object, PODArray, curve, inorout, mur, sig, Order, 0, sweepnamem, NumSolverThreads, drop_tol )
+        Array, Object, PODArray, curve, inorout, mur, sig, Order, 0, sweepname, NumSolverThreads, drop_tol )
 
     # Updating PODErrorBars so that the function will always compute error certificates. We do it here so that the user
     # has the option not to show them in the final output plots.
@@ -862,12 +862,12 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
                     Runlist.append((np.asarray([Omega_Max[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
                                     Tolerance, Maxsteps, epsi, Solver, N0, len(Omega_Max), True, True, counter,
                                     BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order,
-                                    bilinear_bonus_int_order, 'Theta1_Sweep'))
+                                    bilinear_bonus_int_order, drop_tol, 'Theta1_Sweep'))
                 else:
                     Runlist.append((np.asarray([Omega_Max[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
                                     Tolerance, Maxsteps, epsi, Solver, N0, len(Omega_Max), True, False, counter,
                                     BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order,
-                                    bilinear_bonus_int_order, 'Theta1_Sweep'))
+                                    bilinear_bonus_int_order, drop_tol, 'Theta1_Sweep'))
 
             # Run on the multiple cores
             tqdm.tqdm.set_lock(multiprocessing.RLock())
