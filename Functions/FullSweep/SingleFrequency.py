@@ -108,6 +108,16 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
         return Theta0Sol, Theta1Sol
 
     # Create the VTK output if required
+    # Observations on outputting VTK files.
+    # 1) Outputting VTK files for a large number of subdivisions can take a very long time (>1hr) to write the file.
+    # 2) The VTK files are outputted using double precision. While double precision is probably not needed for most visalisation tasks,
+    #    it is still much more common than single precisions. We have decided to leave the default precision as double in order to avoid
+    #    any potential compatability issues.
+    # 3) For large files, there seems to be an issue with NGSolve outputting .vtu files, wherein some data is missing. This issue is fixed
+    #    by writing .vtk files (optional "legacy=True" argument in VTKOutput function), but this leads to much larger files and isn't necessary
+    #    in most cases.
+    # 4) NGSolve has added more documentation on vtk outputs: https://docu.ngsolve.org/latest/i-tutorials/appendix-vtk/vtk.html
+        
     if VTK == True:
         print(' creating vtk output', end='\r')
         ThetaE1 = GridFunction(fes2)
