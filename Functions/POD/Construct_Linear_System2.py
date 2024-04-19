@@ -259,19 +259,19 @@ def Construct_Linear_System(Additional_Int_Order, BigProblem, Mu0, Theta0Sol, al
             for i in range(cutoff):
                 ProH.vec.FV().NumPy()[:] = A1H[:, i]
                 ProL.Set(ProH)
-                RerrorReduced1[:, i + 1] = ProL.vec.FV().NumPy()[:]
+                RerrorReduced1[:, i + cutoff + 1] = ProL.vec.FV().NumPy()[:]
                 
             A1H = A1 @ u2Truncated
             for i in range(cutoff):
                 ProH.vec.FV().NumPy()[:] = A1H[:, i]
                 ProL.Set(ProH)
-                RerrorReduced2[:, i + 1] = ProL.vec.FV().NumPy()[:]
+                RerrorReduced2[:, i + cutoff + 1] = ProL.vec.FV().NumPy()[:]
                 
             A1H = A1 @ u3Truncated
             for i in range(cutoff):
                 ProH.vec.FV().NumPy()[:] = A1H[:, i]
                 ProL.Set(ProH)
-                RerrorReduced3[:, i + 1] = ProL.vec.FV().NumPy()[:]
+                RerrorReduced3[:, i + cutoff + 1] = ProL.vec.FV().NumPy()[:]
             del A1H
             
         HA1H1 = np.conjugate(np.transpose(u1Truncated)) @ A1 @u1Truncated
