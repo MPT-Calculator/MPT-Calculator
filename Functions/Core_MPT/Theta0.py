@@ -11,11 +11,29 @@ import warnings
 # Function definition to solve the Theta0 problem
 # Output -The solution to the theta0 problem as a (NGSolve) gridfunction
 def Theta0(fes, Order, alpha, mu_inv, inout, e, Tolerance, Maxsteps, epsi, simnumber, Solver, Additional_Int_Order, use_longdouble=True):
-    # print the progress
-    # try:
-    #     print(' solving theta0 %d/3' % (simnumber), end='\r', flush=True)
-    # except:
-    #     print(' solving the theta0 problem', end='\r', flush=True)
+    """
+    B.A. Wilson, J.Elgy, P.D. Ledger.
+    Function to compute theta 0 solution vectors.
+    Note: previously this function also computed N0, and there are some leftover arguments.
+
+    Args:
+        fes (comp.HCurl): HCurl finite element space for the Theta0 problem.
+        Order (int): order of finite element space. Currently not used
+        alpha (float): object size scaling. Currently not used
+        mu_inv (comp.GridFunction): Grid Function for mu**(-1). Note that for material discontinuities aligning with vertices no interpolation is done
+        inout (comp.CoefficientFunction): 1 inside object 0 outside.
+        e (list): direction vector
+        Tolerance (float): Iterative solver tolerance
+        Maxsteps (int): Max iterations for the interative solver
+        epsi (float): Small regularisation term
+        simnumber (int): i = 1, 2, or 3. Currently not used
+        Solver (str): preconditioner. BDDC or local
+        Additional_Int_Order (int): additional orders to be considered when assembling linear and bilinear forms. For use with curved elements adn prisms.
+        use_longdouble (bool, optional): option to store data using longdouble format. Currently not used. Defaults to True.
+
+    Returns:
+        np.ndarray: Theta0 solution vector
+    """
 
     Theta = GridFunction(fes)
     Theta.Set((0, 0, 0), BND)
@@ -44,8 +62,6 @@ def Theta0(fes, Order, alpha, mu_inv, inout, e, Tolerance, Maxsteps, epsi, simnu
     res.data = f.vec - a.mat * Theta.vec
     inverse = CGSolver(a.mat, c.mat, precision=Tolerance, maxsteps=Maxsteps, printrates=True)
     Theta.vec.data += inverse * res
-    #Theta.vec.data += a.inner_solve * f.vec
-    #Theta.vec.data += a.harmonic_extension * Theta.vec
     Theta.vec.data += a.harmonic_extension * Theta.vec
     Theta.vec.data += a.inner_solve * f.vec
     

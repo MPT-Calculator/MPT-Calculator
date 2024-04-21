@@ -2,6 +2,9 @@
 James Elgy - 2022
 Module for the calculation of the MPT for multiple permeabilities.
 
+This module acompanys the paper https://link.springer.com/article/10.1007/s00366-023-01868-x and will not be updated / changed.
+You are welcome to use the module, but in general I would recommend using the main MPT-Calulator library.
+
 """
 import os
 import sys

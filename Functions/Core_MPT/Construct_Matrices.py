@@ -12,6 +12,37 @@ import gc
 
 def Construct_Matrices(Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, inout, mesh, mu_inv, sigma, sweepname,
                        u, u1Truncated, u2Truncated, u3Truncated, v, xivec, NumSolverThreads, drop_tol, ReducedSolve=True ):
+    """
+    James Elgy 2023
+
+    Function to compute matrices for use in faster mat method.
+    
+    Args:
+        Integration_Order (int): order of integration to be used when computing tensors.
+        Theta0Sol (np.ndarray): ndof x 3 array of theta0 solutions.
+        bilinear_bonus_int_order (int) integration order to be used when computing tensors using faster mat method. Note can be different to Integration_Order.
+        fes2 (comp.HCurl): HCurl finite element space for the Theta1 problem.
+        inout (comp.CoefficientFunction): _description_
+        mesh (comp.Mesh): ngsolve mesh.
+        mu_inv (comp.GridFunction): Grid Function for mu**(-1). Note that for material discontinuities aligning with vertices no interpolation is done
+        sigma (comp.GridFunction): Grid Function for sigma. Note that for material discontinuities aligning with vertices no interpolation is done
+        sweepname (str): filename in save path
+        u (_type_): ngsolve test function. Currently not needed
+        u1Truncated (np.ndarray): ndof x K left singular matrix for i=1
+        u2Truncated (np.ndarray): ndof x K left singular matrix for i=2
+        u3Truncated (np.ndarray): ndof x K left singular matrix for i=3
+        v (_type_): ngsolve trial function. Currently not needed
+        xivec (list | np.ndarray): 3x3 list of direction vectors
+        num_solver_threads (int | str): Number of parallel threads to use in iterative solver. If 'default' use all threads.
+        drop_tol (float | None): Tolerance below which entries in the sparse matrices are assumed to be 0.
+        ReducedSolve (bool, optional): flag to reduce size of matrices. Defaults to True.
+
+    Returns:
+        _type_: _description_
+        At0_array, EU_array_conj, Q_array, T_array, UAt0U_array, UAt0_conj, UH_array, c1_array, c5_array, c7, c8_array
+    """
+    
+    
     obtain_orders_iteratively = False
     tol_bilinear = 1e-10
 

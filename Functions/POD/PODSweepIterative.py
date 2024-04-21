@@ -48,9 +48,11 @@ from ..Core_MPT.Theta0_Postprocessing import *
 from ..Core_MPT.Construct_Matrices import *
 from ..POD.Truncated_SVD import *
 from ..POD.Constuct_ROM import *
-from ..POD.Construct_Linear_System import *
+from ..POD.Construct_Linear_System2 import *
 from ..Core_MPT.MPT_Preallocation import *
 from ..POD.calc_error_certificates import *
+from ..Core_MPT.Mat_Method_Calc_Real_Part import *
+from ..Core_MPT.Mat_Method_Calc_Imag_Part import *
 
 # from ngsolve import ngsglobals
 # ngsglobals.msg_level = 3
@@ -207,100 +209,108 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
 
     # Define the vectors for the right hand side
     xivec = [CoefficientFunction((0, -z, y)), CoefficientFunction((z, 0, -x)), CoefficientFunction((-y, x, 0))]
+    Theta1_CPUs = min(NumberofSnapshots, multiprocessing.cpu_count(), CPUs)
+    Core_Distribution = []
+    Count_Distribution = []
+    for i in range(Theta1_CPUs):
+        Core_Distribution.append([])
+        Count_Distribution.append([])
 
+    # Distribute between the cores
+    CoreNumber = 0
+    count = 1
+    for i, Omega in enumerate(PODArray):
+        Core_Distribution[CoreNumber].append(Omega)
+        Count_Distribution[CoreNumber].append(i)
+        if CoreNumber == CPUs - 1 and count == 1:
+            count = -1
+        elif CoreNumber == 0 and count == -1:
+            count = 1
+        else:
+            CoreNumber += count
+
+    # Create the inputs
+    Runlist = []
+    manager = multiprocessing.Manager()
+    counter = manager.Value('i', 0)
+    
+    # If we want to compute the tensors for the full order sweep using efficient mat method,
+    # We do the post processing only once. For this reason, we only need the Theta1Sols matrix.
+    # To do this without large changes to the code, we temporarily set ComputeTensors=False and then
+    # Reset it later.
+    
+    if (PlotPod is False) or (use_integral is False): 
+        ComputeTensors = False
+    else:
+        ComputeTensors = True
+    
+    
+    for i in range(len(PODArray)):
+        Runlist.append((np.asarray([PODArray[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
+                        Tolerance, Maxsteps, epsi, Solver, N0, NumberofSnapshots, True, ComputeTensors, counter,
+                        BigProblem, Order, NumSolverThreads,Integration_Order, Additional_Int_Order,
+                        bilinear_bonus_int_order, drop_tol, 'Theta1_Sweep'))
+
+
+    # Run on the multiple cores
+    multiprocessing.freeze_support()
+    tqdm.tqdm.set_lock(multiprocessing.RLock())
+    if ngsglobals.msg_level != 0:
+        to = os.devnull
+    else:
+        to = os.devnull
+    with supress_stdout(to=to):
+        with multiprocessing.get_context("spawn").Pool(Theta1_CPUs, maxtasksperchild=1, initializer=tqdm.tqdm.set_lock, initargs=(tqdm.tqdm.get_lock(),)) as pool:
+            Outputs = list(tqdm.tqdm(pool.imap(imap_version, Runlist, chunksize=1), total=len(Runlist), desc='Solving Theta1 Snapshots', dynamic_ncols=True,
+                                        position=0, leave=True))
+
+    try:
+        pool.terminate()
+        print('manually closed pool')
+    except:
+        print('Pool has already closed.')
+
+    # Unpack the results
     if BigProblem == True:
         Theta1Sols = np.zeros([ndof2, NumberofSnapshots, 3], dtype=np.complex64)
     else:
         Theta1Sols = np.zeros([ndof2, NumberofSnapshots, 3], dtype=complex)
+    if PlotPod == True:
+        PODTensors = np.zeros([NumberofSnapshots, 9], dtype=complex)
+        PODEigenValues = np.zeros([NumberofSnapshots, 3], dtype=complex)
 
-
-    if use_parallel is False:
-        if PlotPod == True:
-            PODTensors, PODEigenValues, Theta1Sols[:, :, :] = Theta1_Sweep(PODArray, mesh, fes, fes2, Theta0Sol, xivec,
-                                                                           alpha, sigma, mu_inv, inout, Tolerance, Maxsteps,
-                                                                           epsi, Solver, N0, NumberofFrequencies, True,
-                                                                           True, False, BigProblem, Order, NumSolverThreads, Integration_Order,
-                                                                           Additional_Int_Order, bilinear_bonus_int_order)
-        else:
-            Theta1Sols[:, :, :] = Theta1_Sweep(PODArray, mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
-                                               Tolerance, Maxsteps, epsi, Solver, N0, NumberofFrequencies, True, False,
-                                               False, BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order,
-                                               bilinear_bonus_int_order)
-    else:
-        #Work out where to send each frequency
-        Theta1_CPUs = min(NumberofSnapshots,multiprocessing.cpu_count(),CPUs)
-        Core_Distribution = []
-        Count_Distribution = []
-        for i in range(Theta1_CPUs):
-            Core_Distribution.append([])
-            Count_Distribution.append([])
-
-
-        #Distribute between the cores
-        CoreNumber = 0
-        count = 1
-        for i,Omega in enumerate(PODArray):
-            Core_Distribution[CoreNumber].append(Omega)
-            Count_Distribution[CoreNumber].append(i)
-            if CoreNumber == CPUs-1 and count == 1:
-                count = -1
-            elif CoreNumber == 0 and count == -1:
-                count = 1
-            else:
-                CoreNumber +=count
-
-        #Create the inputs
-        Runlist = []
-        manager = multiprocessing.Manager()
-        counter = manager.Value('i', 0)
-        for i in range(len(PODArray)):
-            if PlotPod == True:
-                Runlist.append((np.asarray([PODArray[i]]),mesh,fes,fes2,Theta0Sol,xivec,alpha,sigma,mu_inv,inout,Tolerance,Maxsteps,epsi,Solver,
-                                N0,NumberofSnapshots,True,True,counter,BigProblem, Order, NumSolverThreads, Integration_Order,
-                                Additional_Int_Order, bilinear_bonus_int_order, drop_tol, 'Theta1_Sweep'))
-            else:
-                Runlist.append((np.asarray([PODArray[i]]),mesh,fes,fes2,Theta0Sol,xivec,alpha,sigma,mu_inv,inout,Tolerance,Maxsteps,epsi,Solver,
-                                N0,NumberofSnapshots,True,False,counter,BigProblem, Order, NumSolverThreads, Integration_Order,
-                                Additional_Int_Order, bilinear_bonus_int_order,drop_tol, 'Theta1_Sweep'))
-
-        #Run on the multiple cores
-        multiprocessing.freeze_support()
-        tqdm.tqdm.set_lock(multiprocessing.RLock())
-        if ngsglobals.msg_level != 0:
-            to = sys.stdout
-        else:
-            to = os.devnull
-
-        print('Computing Theta1')
-        with supress_stdout(to=to):
-            with multiprocessing.get_context("spawn").Pool(Theta1_CPUs, maxtasksperchild=1, initializer=tqdm.tqdm.set_lock, initargs=(tqdm.tqdm.get_lock(),)) as pool:
-                    Outputs = list(tqdm.tqdm(pool.imap(imap_version, Runlist), total=len(Runlist), desc='Solving Theta1 Snapshots',dynamic_ncols=True, position=0, leave=True))
-
-        try:
-            pool.terminate()
-            print('manually closed pool')
-        except:
-            print('Pool has already closed.')
-
-        if BigProblem == True:
-            Theta1Sols = np.zeros([ndof2, NumberofSnapshots, 3], dtype=np.complex64)
-        else:
-            Theta1Sols = np.zeros([ndof2, NumberofSnapshots, 3], dtype=complex)
-        if PlotPod == True:
-            PODTensors = np.zeros([NumberofSnapshots, 9], dtype=complex)
-            PODEigenValues = np.zeros([NumberofSnapshots, 3], dtype=complex)
-
-        # print(Theta1Sols.shape)
-        # print(np.asarray(Outputs).shape)
-        for i in range(len(Outputs)):
+    for i in range(len(Outputs)):
+        if ComputeTensors is True:
             PODEigenValues[i, :] = Outputs[i][1][0]
             PODTensors[i, :] = Outputs[i][0][0]
             for j in range(ndof2):
                 Theta1Sols[j,i,:] = Outputs[i][2][j][0]
+        else:
+            for j in range(ndof2):
+                Theta1Sols[j,i,:] = Outputs[i][j][0][:]
 
+    if use_integral is False and PlotPod is True: # Efficiently compute POD snapshot tensor coefficients
+        
+        U_proxy = sp.eye(fes2.ndof) # For full solve we use a sparse identity inorder to not rewrite loads of code.
 
-    print(' solved theta1 problems     ')
-    del Outputs
+        
+        real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Theta1Sols)),
+            U_proxy, U_proxy, U_proxy, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
+        timing_dictionary['POD_Real'] = time.time()
+        
+        imag_part = Mat_Method_Calc_Imag_Part(PODArray, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha, 
+            np.squeeze(np.asarray(Theta1Sols)), sigma, U_proxy, U_proxy, U_proxy, xivec,  NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
+        timing_dictionary['POD_Imag'] = time.time()
+        
+        
+        for Num in range(len(PODArray)):
+            PODTensors[Num, :] = real_part[Num,:] + N0.flatten()
+            PODTensors[Num, :] += 1j * imag_part[Num,:]
+
+            R = PODTensors[Num, :].real.reshape(3, 3)
+            I = PODTensors[Num, :].imag.reshape(3, 3)
+            PODEigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
+        
     timing_dictionary['Theta1'] = time.time()
 
 
@@ -407,17 +417,8 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
                                                                       alpha, epsi, fes, fes2, inout, mu_inv, sigma,
                                                                       xivec, NumSolverThreads, drop_tol)
 
-        if PODErrorBars is True:
-            HA0H1, HA0H2, HA0H3, HA1H1, HA1H2, HA1H3, HR1, HR2, HR3, ProL, RerrorReduced1, RerrorReduced2, RerrorReduced3, fes0, ndof0 = Construct_Linear_System(
-                PODErrorBars, a0, a1, cutoff, dom_nrs_metal, fes2, mesh, ndof2, r1, r2, r3, read_vec, u1Truncated,
-                u2Truncated,
-                u3Truncated, write_vec)
-        else:
-            HA0H1, HA0H2, HA0H3, HA1H1, HA1H2, HA1H3, HR1, HR2, HR3, _, _, _, _, _, _ = Construct_Linear_System(
-                PODErrorBars, a0, a1, cutoff, dom_nrs_metal, fes2, mesh, ndof2, r1, r2, r3, read_vec, u1Truncated,
-                u2Truncated,
-                u3Truncated, write_vec)
-
+        HA0H1, HA0H2, HA0H3, HA1H1, HA1H2, HA1H3, HR1, HR2, HR3, ProL, RerrorReduced1, RerrorReduced2, RerrorReduced3, fes0, ndof0 = Construct_Linear_System(Additional_Int_Order, BigProblem, Mu0, Theta0Sol, alpha, epsi, fes, fes2, inout, mu_inv, sigma,
+                  xivec, NumSolverThreads, drop_tol, u1Truncated, u2Truncated, u3Truncated, dom_nrs_metal, PODErrorBars)
         ########################################################################
         # Sort out the error bounds
         if PODErrorBars == True:

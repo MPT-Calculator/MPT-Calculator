@@ -36,6 +36,31 @@ from Functions.Helper_Functions.count_prismatic_elements import count_prismatic_
 
 def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine, Integration_Order, Additional_Int_Order, Order_L2, sweepname, drop_tol,
                     curve=5, theta_solutions_only=False, num_solver_threads='default'):
+    """_summary_
+
+    Args:
+        Object (_type_): _description_
+        Order (_type_): _description_
+        alpha (_type_): _description_
+        inorout (_type_): _description_
+        mur (_type_): _description_
+        sig (_type_): _description_
+        Omega (_type_): _description_
+        CPUs (_type_): _description_
+        VTK (_type_): _description_
+        Refine (_type_): _description_
+        Integration_Order (_type_): _description_
+        Additional_Int_Order (_type_): _description_
+        Order_L2 (_type_): _description_
+        sweepname (_type_): _description_
+        drop_tol (_type_): _description_
+        curve (int, optional): _description_. Defaults to 5.
+        theta_solutions_only (bool, optional): _description_. Defaults to False.
+        num_solver_threads (str, optional): _description_. Defaults to 'default'.
+
+    Returns:
+        _type_: _description_
+    """
 
     _, Mu0, _, _, _, _, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation([Omega], Object, [], curve, inorout,
                                                                                                               mur, sig, Order, 0, sweepname,
@@ -88,11 +113,11 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
         if CPUs < 3:
             NewInput = (
             fes, fes2, Theta0Sol[:, i], xivec[i], Order, alpha, nu, sigma, mu_inv, inout, Tolerance, Maxsteps, epsi, Omega,
-            i + 1, 3, Solver, num_solver_threads, Additional_Int_Order, 'Theta1')
+            i + 1, 3, Solver, num_solver_threads, Additional_Int_Order, drop_tol, 'Theta1')
         else:
             NewInput = (
             fes, fes2, Theta0Sol[:, i], xivec[i], Order, alpha, nu, sigma, mu_inv, inout, Tolerance, Maxsteps, epsi, Omega,
-            "No Print", 3, Solver, num_solver_threads, Additional_Int_Order, 'Theta1')
+            "No Print", 3, Solver, num_solver_threads, Additional_Int_Order, drop_tol, 'Theta1')
         Runlist.append(NewInput)
 
     # Run on the multiple cores

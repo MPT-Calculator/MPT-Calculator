@@ -4,11 +4,12 @@ from contextlib import contextmanager
 @contextmanager
 def supress_stdout(to=os.devnull):
     """
-    import os
+    James Elgy 2023
+    context manager to supress print outputs
 
-    with stdout_redirected(to=filename):
-        print("from Python")
-        os.system("echo non-Python applications are also supported")
+    Args:
+        to (str, optional): file to write stout to. Defaults to os.devnull.
+
     """
 
     # Checks if code is run through pytest session. If so, print statements are handled as normal rather than redirected.

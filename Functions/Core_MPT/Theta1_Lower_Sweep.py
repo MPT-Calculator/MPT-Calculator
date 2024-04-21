@@ -9,6 +9,11 @@ from matplotlib import pyplot as plt
 def Theta1_Lower_Sweep(Array, mesh, fes, fes2, Sols, u1Truncated, u2Truncated, u3Truncated, Theta0Sols, xivec, alpha,
                        sigma, mu_inv, inout, N0, TotalNOF, counter, PODErrorBars, alphaLB, G_Store, Order, Integration_Order, Additional_Int_Order,
                        use_integral):
+    """
+    B.A. Wilson, J.Elgy, P.D. Ledger.
+    Function to compute approximate tensor coefficients based on the smaller Sols array that are solutions to the smaller ROM linear system.
+    
+    """
     # Setup variables
     Mu0 = 4 * np.pi * 10 ** (-7)
     nu_no_omega = Mu0 * (alpha ** 2)

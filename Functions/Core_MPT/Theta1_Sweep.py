@@ -15,15 +15,66 @@ from ngsolve.krylovspace import CGSolver
 
 
 
-def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv ,inout ,Tolerance ,Maxsteps ,epsi ,Solver
-                 ,N0 ,TotalNOF ,Vectors ,Tensors ,Multi ,BP, Order, num_solver_threads, Integration_Order, Additional_Int_Order,
+def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv ,inout ,Tolerance ,Maxsteps ,epsi ,Solver,
+                 N0 ,TotalNOF ,Vectors ,Tensors ,Multi ,BP, Order, num_solver_threads, Integration_Order, Additional_Int_Order,
                  bilinear_bonus_int_order, drop_tol):
     
+    """
+    B.A. Wilson, J.Elgy, P.D. Ledger 2020 - 2024
+
+    Function to compute Theta^(1) for each frequency in Array.
+    
+    1) Preallocation
+    2) Assemble frequency independent linear form for i=1,2,3.
+    3) Assemble frequency dependent bilinear form.
+    4) Assign preconditioner.
+    5) Solve for i=1,2,3
+    6) If Tensors == True and use_mat_method is False, compute tensor coefficients.
+    7) Increment frequency and goto 3).
+    
+    Args:
+        Array (list | np.ndarray): list of N frequencies (rad/s) to condider.
+        mesh (comp.Mesh): ngsolve mesh.
+        fes (comp.HCurl): HCurl finite element space for the Theta0 problem.
+        fes2 (comp.HCurl): HCurl finite element space for the Theta1 problem.
+        Theta0Sols (np.ndarray): ndof x 3 array of theta0 solutions.
+        xivec (list): 3x3 list of direction vectors
+        alpha (float): object size scaling
+        sigma (comp.GridFunction): Grid Function for sigma. Note that for material discontinuities aligning with vertices no interpolation is done
+        mu_inv (comp.GridFunction): Grid Function for mu**(-1). Note that for material discontinuities aligning with vertices no interpolation is done
+        Tolerance (float): Iterative solver tolerance
+        Maxsteps (int): Max iterations for the interative solver
+        epsi (float): Small regularisation term
+        Solver (str): preconditioner. BDDC or local
+        N0 (np.ndarray): 3x3 N0 tensor
+        TotalNOF (int): total number of frequencies used.
+        Vectors (bool): flag to return Theta1 solution vector
+        Tensors (bool): flag to compute tensor coefficients.
+        Multi (bool): flag that function is running in multiprocessing mode. Used for printing progress bar
+        BP (bool): big problem flag. If true, use singles.
+        Order (int): order of finite element space.
+        num_solver_threads (int | str): Number of parallel threads to use in iterative solver. If 'default' use all threads.
+        Integration_Order (int): order of integration to be used when computing tensors.
+        Additional_Int_Order (int): additional orders to be considered when assembling linear and bilinear forms. For use with curved elements adn prisms.
+        bilinear_bonus_int_order (int) integration order to be used when computing tensors using faster mat method. Note can be different to Integration_Order.
+        drop_tol (float | None): Tolerance below which entries in the sparse matrices are assumed to be 0.
+        
+    Returns:
+        if Tensors == True and Vectors == True:
+            TensorArray (np.ndarray): Nx9 complex tensor coefficients
+            EigenValues (np.ndarray): Nx3 complex eigenvalues
+            Theta1Sols (np.ndarray): ndofx3 complex solution vectors for i=1,2,3
+        elif Tensors == True:
+            TensorArray (np.ndarray): Nx9 complex tensor coefficients
+            EigenValues (np.ndarray): Nx3 complex eigenvalues
+        else:
+            Theta1Sols (np.ndarray): ndofx3 complex solution vectors for i=1,2,3
+
+    """
     
     # Loading in option to use mat method or integral method.
     _, _, _, _, _, use_integral = SolverParameters()
     use_mat_method = not use_integral
-    #use_mat_method = False
     
     if use_mat_method is True:
         temp_vectors = Vectors
@@ -35,11 +86,6 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
     Mu0 = 4* np.pi * 10 ** (-7)
     nu_no_omega = Mu0 * (alpha ** 2)
     NOF = len(Array)
-
-    # EDIT JAMES 26 Sept 2023:
-    # Scaling epsi by 1/nu. This is so that the contributions to the bilinear form scale with omega in the same way.
-    #epsi_r = epsi / (nu_no_omega * 10)
-
 
     # Setup where to store tensors
     if Tensors == True:
@@ -119,7 +165,6 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
             a.Assemble()
         if Solver == "local":
             c = Preconditioner(a, "local")  # Apply the local preconditioner
-        # with TaskManager():
         c.Update()
         print("Built A and C")
 
@@ -142,8 +187,6 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
         with TaskManager():
             res.data -= a.mat * Theta1.vec
             Theta1.vec.data += inverse * res
-            #Theta1.vec.data += a.inner_solve * ftemp.data
-            #Theta1.vec.data += a.harmonic_extension * Theta1.vec
             Theta1.vec.data += a.harmonic_extension * Theta1.vec
             Theta1.vec.data += a.inner_solve * ftemp.data
             
@@ -159,8 +202,6 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
         with TaskManager():
             res.data -= a.mat * Theta2.vec
             Theta2.vec.data += inverse * res
-            #Theta2.vec.data += a.inner_solve * ftemp.data
-            #Theta2.vec.data += a.harmonic_extension * Theta2.vec
             Theta2.vec.data += a.harmonic_extension * Theta2.vec
             Theta2.vec.data += a.inner_solve * ftemp.data
         
@@ -173,8 +214,6 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
         with TaskManager():
             res.data -= a.mat * Theta3.vec
             Theta3.vec.data += inverse * res
-            #Theta3.vec.data += a.inner_solve * ftemp.data
-            #Theta3.vec.data += a.harmonic_extension * Theta3.vec
             Theta3.vec.data += a.harmonic_extension * Theta3.vec
             Theta3.vec.data += a.inner_solve * ftemp.data
             

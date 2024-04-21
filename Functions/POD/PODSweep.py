@@ -53,7 +53,6 @@ from Settings import SolverParameters, DefaultSettings, IterativePODParameters
 
 # Importing matplotlib for plotting comparisons
 import matplotlib
-# matplotlib.use('Qt5Agg')
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import time
@@ -186,17 +185,11 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
     
     if PODErrorBars is True:
         HA0H1, HA0H2, HA0H3, HA1H1, HA1H2, HA1H3, HR1, HR2, HR3, ProL, RerrorReduced1, RerrorReduced2, RerrorReduced3, fes0, ndof0 = Construct_Linear_System(Additional_Int_Order, BigProblem, Mu0, Theta0Sol, alpha, epsi, fes, fes2, inout, mu_inv, sigma,
-                  xivec, NumSolverThreads, drop_tol, u1Truncated, u2Truncated, u3Truncated, dom_nrs_metal, PODErrorBars
-                  )
+                  xivec, NumSolverThreads, drop_tol, u1Truncated, u2Truncated, u3Truncated, dom_nrs_metal, PODErrorBars)
     else:
-        
         HA0H1, HA0H2, HA0H3, HA1H1, HA1H2, HA1H3, HR1, HR2, HR3, _, _, _, _, _, _ = Construct_Linear_System(Additional_Int_Order, BigProblem, Mu0, Theta0Sol, alpha, epsi, fes, fes2, inout, mu_inv, sigma,
                   xivec, NumSolverThreads, drop_tol, u1Truncated, u2Truncated, u3Truncated, dom_nrs_metal, PODErrorBars)
         
-        # HA0H1, HA0H2, HA0H3, HA1H1, HA1H2, HA1H3, HR1, HR2, HR3, _, _, _, _, _, _ = Construct_Linear_System(
-        #     PODErrorBars, a0, a1, cutoff, dom_nrs_metal, fes2, mesh, ndof2, r1, r2, r3, read_vec, u1Truncated, u2Truncated,
-        #     u3Truncated, write_vec)
-
     # Clear the variables
     A0H, A1H = None, None
     a0, a1 = None, None
@@ -243,19 +236,6 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
             ErrorGFU.vec.data += inverse * ProL.vec
             MR3[:, i] = ErrorGFU.vec.FV().NumPy()
 
-        # G_Store = np.zeros([2 * cutoff + 1, 2 * cutoff + 1, 6], dtype=complex)
-        # G_Store[:, :, 0] = np.transpose(np.conjugate(RerrorReduced1)) @ MR1
-        # G_Store[:, :, 1] = np.transpose(np.conjugate(RerrorReduced2)) @ MR2
-        # G_Store[:, :, 2] = np.transpose(np.conjugate(RerrorReduced3)) @ MR3
-        # G_Store[:, :, 3] = np.transpose(np.conjugate(RerrorReduced1)) @ MR2
-        # G_Store[:, :, 4] = np.transpose(np.conjugate(RerrorReduced1)) @ MR3
-        # G_Store[:, :, 5] = np.transpose(np.conjugate(RerrorReduced2)) @ MR3
-        #
-        # # Clear the variables
-        # RerrorReduced1, RerrorReduced2, RerrorReduced3 = None, None, None
-        # MR1, MR2, MR3 = None, None, None
-        # fes0, m, c, inverse = None, None, None, None
-
         fes3 = HCurl(mesh, order=Order, dirichlet="outer", gradientdomains=dom_nrs_metal)
         ndof3 = fes3.ndof
         Omega = Array[0]
@@ -291,7 +271,6 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
             evals, evecs = solvers.PINVIT(amax.mat, m.mat, pre=projpre, num=1, maxit=50, printrates=False)
 
         alphaLB = evals[0]
-        # print(f'alphaLB = {alphaLB}')
 
     else:
         alphaLB, G_Store = False, False
@@ -338,7 +317,6 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
     # Distribute the lower dimensional solutions
     Lower_Sols = []
     for i in range(Tensor_CPUs):
-        # TempArray = np.zeros([cutoff, len(Count_Distribution[i]), 3], dtype=complex)
         TempArray = np.zeros([cutoff, len(Count_Distribution[i]), 3], dtype=complex)
         for j, Sim in enumerate(Count_Distribution[i]):
             TempArray[:, j, :] = g[:, Sim, :]
