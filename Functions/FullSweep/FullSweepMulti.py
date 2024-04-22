@@ -33,6 +33,41 @@ from Settings import SolverParameters
 # Function definition for a full order frequency sweep in parallel
 def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProblem, NumSolverThreads,Integration_Order, Additional_Int_Order, Order_L2,
                    sweepname, drop_tol, curve=5):
+    """
+    B.A. Wilson, J.Elgy, P.D.Ledger 2020-2024
+    Function to compute MPT for an array of frequencies in parallel.
+    
+    1) Preallocate mesh, finite element spaces, material properties and assign bonus integration orders.
+    2) Compute theta0 and N0
+    3) Compute theta1 for each frequency in Array.
+    4) Compute tensor coefficients. 
+
+
+    Args:
+        Object (str): Geometry file name
+        Order (int): order of finite element space.
+        alpha (float): object size scaling
+        inorout (dict): dictionary of material names that is 1 inside object and 0 outside
+        mur (dict): dictionary of mur in each region
+        sig (dict): dictionary of sigma in each region
+        Array (list | np.ndarray): list of N frequencies (rad/s) to condider.
+        CPUs (int): number of CPU cores for parallel processing
+        BigProblem (bool): flag that problem is large. Will run in a slower but more memory efficient mode.
+        NumSolverThreads (str | int): Number of parallel threads to use in iterative solver. If 'default' use all threads.
+        Integration_Order (int): order of integration to be used when computing tensors.
+        Additional_Int_Order (int): additional orders to be considered when assembling linear and bilinear forms. For use with curved elements adn prisms.
+        Order_L2 (int): Order of L2 projection of material coefficient functions onto the mesh to acount for material discontinuities that don't align with mesh.
+        sweepname (str): Name of the simulation to be run.
+        drop_tol (float | None): Tolerance below which entries in the sparse matrices are assumed to be 0.
+        curve (int, optional): Order of polynomial used to approximate curved surfaces. Defaults to 5.
+
+    Returns:
+        TensorArray (np.ndarray): Nx9 complex tensor coefficients
+        EigenValues (np.ndarray): Nx3 complex eigenvalues
+        N0 (np.ndarray): 3x3 N0 tensor,
+        numelements (int): nnumber of elements in mesh
+        (ndof, ndof2) (tuple): ndof in fes1 and fes2.
+    """
 
     print(' Running as parallel full sweep')
 
@@ -140,58 +175,6 @@ def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProb
         
 
     print("Frequency Sweep complete")
-
-    # if use_integral is False:
-    #     Theta1Sols = np.zeros((ndof2, NumberofFrequencies, 3), dtype=complex)
-    #     for i in range(len(Outputs)):
-    #         Theta1Sols[:, i, :] = np.asarray(np.squeeze(Outputs[i]))
-
-    #     print(' Computing coefficients')
-
-    #     Core_Distribution = []
-    #     Count_Distribution = []
-    #     for i in range(CPUs):
-    #         Core_Distribution.append([])
-    #         Count_Distribution.append([])
-    #     # Distribute frequencies between the cores
-    #     CoreNumber = 0
-    #     for i, Omega in enumerate(Array):
-    #         Core_Distribution[CoreNumber].append(Omega)
-    #         Count_Distribution[CoreNumber].append(i)
-    #         if CoreNumber == CPUs - 1:
-    #             CoreNumber = 0
-    #         else:
-    #             CoreNumber += 1
-    #     # Distribute the lower dimensional solutions
-    #     Sols = []
-    #     for i in range(CPUs):
-    #         TempArray = np.zeros([ndof2, len(Count_Distribution[i]), 3], dtype=complex)
-    #         for j, Sim in enumerate(Count_Distribution[i]):
-    #             TempArray[:, j, :] = Theta1Sols[:, Sim, :]
-    #         Sols.append(TempArray)
-
-        # # I'm aware that pre and post multiplying by identity of size ndof2 is slower than using K and A matrices outright,
-        # # however this allows us to reuse the Construct_Matrices function rather than add (significantly) more code.
-        # identity1 = sp.identity(ndof2)
-        # # Cteate the inputs
-        # Runlist = []
-        # manager = multiprocessing.Manager()
-        # counter = manager.Value('i', 0)
-        # for i in range(CPUs):
-        #     Runlist.append((Core_Distribution[i], mesh, fes, fes2, Sols[i], identity1, identity1, identity1,
-        #                     Theta0Sol, xivec, alpha, sigma, mu_inv, inout, N0, NumberofFrequencies, counter,
-        #                     False, 0, 0, Order, Integration_Order, bilinear_bonus_int_order, use_integral))
-
-        # # Run on the multiple cores
-        # # Edit James Elgy: changed how pool was generated to 'spawn': see
-        # # https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
-        # with multiprocessing.get_context('spawn').Pool(CPUs) as pool:
-        #     Outputs = pool.starmap(Theta1_Lower_Sweep, Runlist)
-
-        # for i, Output in enumerate(Outputs):
-        #     for j, Num in enumerate(Count_Distribution[i]):
-        #         TensorArray[Num, :] = Output[0][j]
-        #         EigenValues[Num, :] = Output[1][j]
 
 
     return TensorArray, EigenValues, N0, numelements, (ndof, ndof2)

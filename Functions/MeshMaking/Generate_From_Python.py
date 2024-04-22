@@ -8,6 +8,20 @@ def Generate_From_Python(OCC_file, alpha):
     James Elgy - 2022
     Function to generate from python script using OCC geometry.
     Function also generates associated .geo file in order to comply with the rest of MPT-Calculator.
+    
+    In MPT-Calculator, we require that OCC geometries are defined in a .py python file (See examples in OCC_Geometry folder).
+    The script is then run using runpy in a fresh module namespace.
+    All valid python is enabled, and this may be a security concern for some users.
+    
+    Args:
+        OCC_file (str): OCC file name. E.g. OCC_Sphere.py
+        alpha (float): object scaling.
+    
+    Returns:
+        alpha (float): Alpha may be updated as part of the OCC script. We therefore return alpha here.
+    
+    
+    
     """
 
     alpha_orig = alpha

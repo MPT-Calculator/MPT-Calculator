@@ -16,6 +16,27 @@ from .DictionaryList import *
 
 def SingleSave(Geometry, Omega, MPT, EigenValues, N0, elements, alpha, Order, MeshSize, mur, sig, EddyCurrentTest,
                invariants):
+    """
+    B.A. Wilson, P.D. Ledger, J.Elgy 2020-2023
+    save data and make folder structure for single frequency solve. 
+
+    Args:
+        Geometry (str): geometry file name. E.g. 'sphere'
+        Omega (float): _frequency of simulation
+        MPT (np.ndarray): 3x3 complex MPT coefficients.
+        EigenValues (list): 3 complex eigenvalues
+        N0 (np.ndarray): 3x3 N0 coefficients
+        elements (int: total number of elements in mesh
+        alpha (float): object size scaling
+        Order (int): order of finite element space.
+        MeshSize (float): No longer used. Originally this was max element size.
+        mur (dict): dictionary of mur in each region
+        sig (dict): dictionary of sigma in each region
+        EddyCurrentTest (float | None): max frequency for eddy current regime, or None if not calculated.
+        invariants (np.ndarray): Nx3 MPT Tensor invarients.
+    """
+    
+    
     # Find how the user wants the data to be saved
     # FolderStructure = SaverSettings()
 

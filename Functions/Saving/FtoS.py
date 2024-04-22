@@ -11,6 +11,14 @@ from ngsolve import Mesh
 
 # Function to edit floats to a nice format
 def FtoS(value):
+    """B.A. Wilson, P.D. Ledger.
+    Converts float to formatted string
+    Args:
+        value (float): float in question
+
+    Returns:
+        str: formatted string.
+    """
     if value == 0:
         newvalue = "0"
     elif value == 1:

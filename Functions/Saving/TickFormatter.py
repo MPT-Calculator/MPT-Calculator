@@ -12,6 +12,18 @@ from PlotterSettings import PlotterSettings
 
 #Function definition to edit the tick values to a nice format
 def TickFormatter(value,tick_number):
+    """
+    B.A. Wilson, P.D. Ledger.
+    Function to format tick labels for neat plotting
+
+    Args:
+        value (float): value at tick
+        tick_number (int): No longer used. Originally for even distribution of ticks.
+
+    Returns:
+        _type_: _description_
+    """
+    
     if value==0:
         newvalue = "0"
     elif value==1:

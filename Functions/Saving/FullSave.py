@@ -19,6 +19,31 @@ from .DictionaryList import *
 
 def FullSave(Geometry, Array, TensorArray, EigenValues, N0, Pod, PODArray, PODTol, elements, alpha, Order, MeshSize,
              mur, sig, ErrorTensors, EddyCurrentTest, invariants):
+    """
+    B.A. Wilson, J.Elgy, P.D. Ledger.2020-2023.
+    Save data and make folder structure.
+
+    Args:
+        Geometry (str): geometry file name. E.g. 'sphere'
+        Array (list): array of frequencies in sweep
+        TensorArray (np.ndarray): Nx9 complex tensor coefficients.
+        EigenValues (np.ndarray): Nx3 complex eigenvalues
+        N0 (np.ndarray): 3x3 N0 coefficient
+        Pod (bool): bool for if sweep used POD
+        PODArray (list | np.ndarray): list of K frequencies (rad/s) for POD snapshots.
+        PODTol (float): Tolerance for truncated SVD
+        elements (int): number of elements in mesh
+        alpha (float): object size scaling
+        Order (int): order of finite element space.
+        MeshSize (float): No longer used. Originally this was max element size.
+        mur (dict): dictionary of mur in each region
+        sig (dict): dictionary of sigma in each region
+        ErrorTensors (np.ndarray): Nx6 array of error certificates. Note that errors are symmetric so we only store upper trianglar part.
+        EddyCurrentTest (float | None): max frequency for eddy current regime, or None if not calculated.
+        invariants (np.ndarray): Nx3 MPT Tensor invarients.
+    """
+    
+    
     # Find how the user wants the data to be saved
     # FolderStructure = SaverSettings()
 

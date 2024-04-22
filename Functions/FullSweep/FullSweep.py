@@ -31,6 +31,41 @@ from Settings import SolverParameters
 # Function definition for a full order frequency sweep
 def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSolverThreads, Integration_Order,
               Additional_Int_Order, Order_L2, sweepname, drop_tol, curve=5):
+    """
+    B.A. Wilson, J.Elgy, P.D.Ledger 2020-2024
+    Function to compute MPT for an array of frequencies.
+    
+    1) Preallocate mesh, finite element spaces, material properties and assign bonus integration orders.
+    2) Compute theta0 and N0
+    3) Compute theta1 for each frequency in Array.
+    4) Compute tensor coefficients. 
+
+    Args:
+        Object (str): Geometry file name
+        Order (int): order of finite element space.
+        alpha (float): object size scaling
+        inorout (dict): dictionary of material names that is 1 inside object and 0 outside
+        mur (dict): dictionary of mur in each region
+        sig (dict): dictionary of sigma in each region
+        Array (list | np.ndarray): list of N frequencies (rad/s) to condider.
+        BigProblem (bool): flag that problem is large. Will run in a slower but more memory efficient mode.
+        NumSolverThreads (str | int): Number of parallel threads to use in iterative solver. If 'default' use all threads.
+        Integration_Order (int): order of integration to be used when computing tensors.
+        Additional_Int_Order (int): additional orders to be considered when assembling linear and bilinear forms. For use with curved elements adn prisms.
+        Order_L2 (int): Order of L2 projection of material coefficient functions onto the mesh to acount for material discontinuities that don't align with mesh.
+        sweepname (str): Name of the simulation to be run.
+        drop_tol (float | None): Tolerance below which entries in the sparse matrices are assumed to be 0.
+        curve (int, optional): Order of polynomial used to approximate curved surfaces. Defaults to 5.
+
+    Returns:
+        TensorArray (np.ndarray): Nx9 complex tensor coefficients
+        EigenValues (np.ndarray): Nx3 complex eigenvalues
+        N0 (np.ndarray): 3x3 N0 tensor,
+        numelements (int): nnumber of elements in mesh
+        (ndof, ndof2) (tuple): ndof in fes1 and fes2.
+    """
+    
+    
 
     print(' Running as full sweep')
 

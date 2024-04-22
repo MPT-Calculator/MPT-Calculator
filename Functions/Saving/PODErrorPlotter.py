@@ -16,6 +16,24 @@ from PlotterSettings import PlotterSettings
 
 
 def PODErrorPlotter(savename, Array, PODArray, Values, PODValues, Errors, EddyCurrentTest):
+    """
+    B.A. Wilson, P.D. Ledger, J. Elgy 2020-2022.
+    Function to plot and save POD tensors and errors as function of frequency.
+
+    Args:
+        savename (str): path to save figures
+        Array (list): frequency array
+        PODArray (list): POD frequency array
+        Values (np.ndarray): Nx6 list of complex tensor coefficients to plot. Note that MPT is symmetric so we only need upper triangular part.
+        PODValues (np.ndarray): Kx6 list of POD complex tensor coefficients to plot. Note that MPT is symmetric so we only need upper triangular part.
+        Errors (np.ndarray): Nx6 list of error coefficients to plot. Note that MPT is symmetric so we only need upper triangular part.
+        EddyCurrentTest (float | None): if using eddy current test, max frequency, else None
+
+    Returns:
+        bool: plot figure or not.
+    """
+    
+    
     # Create a way to reference xkcd colours
     PYCOL = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22',
              '#17becf']

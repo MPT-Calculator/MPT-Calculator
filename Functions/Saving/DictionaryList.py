@@ -12,6 +12,18 @@ from .FtoS import *
 
 
 def DictionaryList(Dictionary, Float):
+    """
+    B.A. Wilson, P.D. Ledger
+    prints formatted list of dictionary keys
+
+    Args:
+        Dictionary (dict): dictionary in question
+        Float (bool): bool to print param value
+
+    Returns:
+        str: formatted string
+    """
+    
     ParameterList = []
     for key in Dictionary:
         if key != "air":

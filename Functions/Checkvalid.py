@@ -29,6 +29,29 @@ def myinout(index,n,ntags):
 
 
 def Checkvalid(Object,Order,alpha,inorout,mur,sig,cond,ntags,tags, curve_degree, Integration_Order, Additional_Int_Order):
+    """
+    B.A Wilson, P.D. Ledger, J.Elgy 2020-2023
+    Function to roughly approximate the max frequency at which the eddy current model is valid. 
+
+    Args:
+        Object (str): Geometry file name
+        Order (int): order of finite element space.
+        alpha (float): object size scaling
+        inorout (dict): dictionary of material names that is 1 inside object and 0 outside
+        mur (dict): dictionary of mur in each region
+        sig (dict): dictionary of sigma in each region
+        cond (dict): dictionary of conductors
+        ntags (int): total number of segments
+        tags (list): list of names for each section of the mesh
+        curve_degree (int):  Order of polynomial used to approximate curved surfaces.
+        Integration_Order (int): order of integration to be used when computing tensors.
+        Additional_Int_Order (int): additional orders to be considered when assembling linear and bilinear forms. For use with curved elements adn prisms.
+    
+    Returns:
+        max frequency (float)
+    
+    """
+    
     Object = Object[:-4]+".vol"
     #Set order Ordercheck to be of low order to speed up computation.
     Ordercheck = 1

@@ -1,6 +1,9 @@
 """
 James Elgy 2021
 module to use mpt eigenvalue data over a range of frequencies and permeabilities to perform curve fitting.
+
+This module acompanys the paper https://link.springer.com/article/10.1007/s00366-023-01868-x and will not be updated / changed.
+You are welcome to use the module, but in general I would recommend using the main MPT-Calulator library.
 """
 
 import numpy as np

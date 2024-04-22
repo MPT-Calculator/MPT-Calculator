@@ -19,6 +19,34 @@ from .DictionaryList import *
 
 def PODSave(Geometry, Array, TensorArray, EigenValues, N0, PODTensors, PODEigenValues, PODArray, PODTol, elements,
             alpha, Order, MeshSize, mur, sig, ErrorTensors, EddyCurrentTest, invariants, using_iterative_POD=False):
+    """_summary_
+    B.A. Wilson, J.Elgy, P.D. Ledger.2020-2023.
+    Save data and make folder structure with POD tensors and Eigenvalues.
+
+    Args:
+        Geometry (str): geometry file name. E.g. 'sphere'
+        Array (list): array of frequencies in sweep
+        TensorArray (np.ndarray): Nx9 complex tensor coefficients.
+        EigenValues (np.ndarray): Nx3 complex eigenvalues
+        N0 (np.ndarray): 3x3 N0 coefficient
+        PODTensors (np.ndarray): Kx9 POD tensor coefficients.
+        PODEigenValues (np.ndarray): Kx3 POD eigenvalues.
+        PODArray (list | np.ndarray): list of K frequencies (rad/s) for POD snapshots.
+        PODTol (float): Tolerance for truncated SVD
+        elements (int): number of elements in mesh
+        alpha (float): object size scaling
+        Order (int): order of finite element space.
+        MeshSize (float): No longer used. Originally this was max element size.
+        mur (dict): dictionary of mur in each region
+        sig (dict): dictionary of sigma in each region
+        ErrorTensors (np.ndarray): Nx6 array of error certificates. Note that errors are symmetric so we only store upper trianglar part.
+        EddyCurrentTest (float | None): max frequency for eddy current regime, or None if not calculated.
+        invariants (np.ndarray): Nx3 MPT Tensor invarients.
+        using_iterative_POD (bool, optional): flag that the sweep was run using the iterative POD mode. Defaults to False.
+    """
+    
+    
+    
     # Find how the user wants the data to be saved
     # FolderStructure = SaverSettings()
 

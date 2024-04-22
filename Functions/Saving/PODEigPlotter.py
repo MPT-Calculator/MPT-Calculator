@@ -16,6 +16,23 @@ from PlotterSettings import PlotterSettings
 
 
 def PODEigPlotter(savename, Array, PODArray, EigenValues, PODEigenValues, EddyCurrentTest):
+    """
+    B.A. Wilson, P.D. Ledger, J. Elgy 2020-2022.
+    Function to plot and save eigenvalues as function of frequency with POD snapshots.
+
+    Args:
+        savename (str): path to save figures
+        Array (list): frequency array
+        PODArray (list): POD frequency array
+        EigenValues (np.ndarray): Nx3 list of complex eigenvalues
+        EigenValues (np.ndarray): Kx3 list of complex POD eigenvalues
+        EddyCurrentTest (float | None): if using eddy current test, max frequency, else None
+
+    Returns:
+        bool: plot figure or not.
+    """
+    
+    
     # Create a way to reference xkcd colours
     PYCOL = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22',
              '#17becf']

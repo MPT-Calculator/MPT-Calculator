@@ -36,30 +36,44 @@ from Functions.Helper_Functions.count_prismatic_elements import count_prismatic_
 
 def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine, Integration_Order, Additional_Int_Order, Order_L2, sweepname, drop_tol,
                     curve=5, theta_solutions_only=False, num_solver_threads='default'):
-    """_summary_
+    """
+    B.A. Wilson, J.Elgy, P.D.Ledger 2020-2024
+    Function to compute MPT for single frequency.
+    optionally, export vtk file of field plots.
+    
+    1) Preallocate mesh, finite element spaces, material properties and assign bonus integration orders.
+    2) Compute theta0 and N0
+    3) Compute theta1 for specific frequency.
+    4) Compute tensor coefficients. 
+    5) Optionally export vtk file.
+    
 
     Args:
-        Object (_type_): _description_
-        Order (_type_): _description_
-        alpha (_type_): _description_
-        inorout (_type_): _description_
-        mur (_type_): _description_
-        sig (_type_): _description_
-        Omega (_type_): _description_
-        CPUs (_type_): _description_
-        VTK (_type_): _description_
-        Refine (_type_): _description_
-        Integration_Order (_type_): _description_
-        Additional_Int_Order (_type_): _description_
-        Order_L2 (_type_): _description_
-        sweepname (_type_): _description_
-        drop_tol (_type_): _description_
-        curve (int, optional): _description_. Defaults to 5.
-        theta_solutions_only (bool, optional): _description_. Defaults to False.
-        num_solver_threads (str, optional): _description_. Defaults to 'default'.
+        Object (str): Geometry file name
+        Order (int): order of finite element space.
+        alpha (float): object size scaling
+        inorout (dict): dictionary of material names that is 1 inside object and 0 outside
+        mur (dict): dictionary of mur in each region
+        sig (dict): dictionary of sigma in each region
+        Omega (float): frequency (rad/s)
+        CPUs (int): Number of CPU cores to use in parallel execution.
+        VTK (bool): option to export field plots as vtk files.
+        Refine (bool): option to refine vtk output file. Note that this can result in a large file
+        Integration_Order (int): order of integration to be used when computing tensors.
+        Additional_Int_Order (int): additional orders to be considered when assembling linear and bilinear forms. For use with curved elements adn prisms.
+        Order_L2 (int): Order of L2 projection of material coefficient functions onto the mesh to acount for material discontinuities that don't align with mesh.
+        sweepname (str): Name of the simulation to be run.
+        drop_tol (float | None): Tolerance below which entries in the sparse matrices are assumed to be 0.
+        curve (int, optional): Order of polynomial used to approximate curved surfaces. Defaults to 5.
+        theta_solutions_only (bool, optional): Only export theta1 solutions. Defaults to False.
+        num_solver_threads (str | int, optional): Number of parallel threads to use in iterative solver. If 'default' use all threads. Defaults to 'default'.
 
     Returns:
-        _type_: _description_
+        MPT (np.ndarray): 3x3 complex MPT coeffiicents
+        EigenValues (np.ndarray) complex eigenvalues of MPT.
+        N0 (np.ndarray): 3x3 N0 tensor coefficients
+        numelements (int): total number of elements in the mesh
+        (ndof, ndof2) (tuple): number of degrees of freedom for fes1 and fes2. 
     """
 
     _, Mu0, _, _, _, _, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation([Omega], Object, [], curve, inorout,

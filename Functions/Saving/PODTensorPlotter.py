@@ -16,6 +16,23 @@ from PlotterSettings import PlotterSettings
 
 
 def PODTensorPlotter(savename, Array, PODArray, Values, PODValues, EddyCurrentTest):
+    """_summary_
+    B.A. Wilson, J.Elgy, P.D. Ledger.
+    Function to plot tensor coefficients with POD snapshots.
+
+    Args:
+        savename (str): path to save figure.
+        Array (list): frequency array
+        PDOArray (list): K POD frequency snapshots
+        Values (np.ndarray): Nx6 complex tensor coefficients
+        PODValues (np.ndarray): Kx6 POD complex tensor coefficients
+        EddyCurrentTest (float | None): if using eddy current test, max frequency, else None
+
+    Returns:
+        bool: plot figure or not.
+    """
+    
+    
     # Create a way to reference xkcd colours
     PYCOL = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22',
              '#17becf']

@@ -14,7 +14,20 @@ except:
     os.chdir(parentdir)
     from main import main
 
+"""
+James Elgy 2023-2024
 
+This testing module provides some simple checks to make sure that any changes to MPT-Calculator still produce consistent results.
+Each test first generates a MPT spectral signature. This signature is then compared with results for the same object and discretisation generated
+using the previous release of MPT-Calculator.
+
+Note that this does not make any claim that the results are "accurate", only that they are consistent with the previous version of the software.
+Plots of the difference at each frequency are then saved to the Test_Results subdirectory.
+
+In our testing, we use pytest as the testing library, with documentation avaliable at https://docs.pytest.org/en/8.0.x/contents.html#
+
+
+"""
 
 def test_sphere():
     
