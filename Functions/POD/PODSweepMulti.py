@@ -47,7 +47,7 @@ from ..Core_MPT.Theta0_Postprocessing import *
 from ..Core_MPT.Construct_Matrices import *
 from ..POD.Truncated_SVD import *
 from ..POD.Constuct_ROM import *
-from ..POD.Construct_Linear_System2 import *
+from ..POD.Construct_Linear_System import *
 from ..Core_MPT.Mat_Method_Calc_Real_Part import *
 from ..Core_MPT.Mat_Method_Calc_Imag_Part import *
 
