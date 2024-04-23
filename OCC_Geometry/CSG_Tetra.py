@@ -4,8 +4,8 @@ from netgen.csg import *
 from netgen.occ import *
 
 """
-James Elgy - 2023:
-Two joined tetrahedra for Netgen OCC geometry loaded from existing step geometry.
+James Elgy - 2024:
+Example of loading a CSG geometry (defined in a geo file) into the python interface.
 """
 
 material_name = ['tetra']
@@ -21,21 +21,14 @@ number_of_layers = 3
 
 geo = CSGeometry(r'GeoFiles/Tetra.geo')
 
-# geo.GetSolids()[0].mat('air')
-# geo.GetSolids()[1].mat('default')
-# geo.GetSolids()[2].mat('default')
-
 
 nmesh = geo.GenerateMesh(meshsize.coarse, optsteps3d=5, grading=0.6)
 nmesh.SetMaterial(1, 'air')
 nmesh.SetMaterial(2, 'tetra')
-# nmesh.SetMaterial(3, 'tetra')
 
-nmesh.SetBCName(6, 'outer')
-
-
-#print(help(geo))
-
+# Setting boundary condition name for outer boundary
+for i in range(6):
+    nmesh.SetBCName(i, 'outer')
 
 # Applying Boundary Layers:
 mu0 = 4 * 3.14159 * 1e-7
@@ -44,6 +37,5 @@ layer_thicknesses = [(2**n)*tau for n in range(number_of_layers)]
 
 nmesh.BoundaryLayer(boundary=".*", thickness=layer_thicknesses, material=boundary_layer_material, domains=boundary_layer_material, outside=False)
 
-#print(layer_thicknesses)
 
 nmesh.Save(r'VolFiles/CSG_Tetra.vol')
