@@ -13,7 +13,7 @@ def DefaultSettings():
     #(int)
 
     #Is it a big problem (more memory efficiency but slower)
-    BigProblem = True
+    BigProblem = False
     #(boolean)
 
     #How many snapshots should be taken
