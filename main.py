@@ -579,6 +579,5 @@ def save_all_figures(path, format='png', suffix='', prefix=''):
 
 if __name__ == '__main__':
 
-    geometry = 'OCC_sphere.py'
-    output = main(use_POD=True, use_iterative_POD=True, use_OCC=True, geometry=geometry, order=3, N_POD_points=13)
+    output = main()
 
