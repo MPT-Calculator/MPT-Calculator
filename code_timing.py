@@ -138,7 +138,6 @@ if __name__ == '__main__':
     mem, timings, function_call_time, time_array, ret = measure_memory_usage(n_cpus=1, order=0)
     Datadir = 'Results/' + ret['SweepName'] + '/Data/'
     
-    # Datadir = r'/home/james/Desktop/MPT-Calculator-Testing-Branch/MPT-Calculator/Results/OCC_Gun_modelv2_30/al_0.01_mu_1,100_sig_3.5e7,4.5e6/1e1-1e8_40_el_32925_ord_5_POD_13_1e-6/Data/'
     plot_times(Datadir, 1)
     plt.show()
 
