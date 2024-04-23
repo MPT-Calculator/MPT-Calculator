@@ -1,10 +1,18 @@
 Changelog for MPT-Calculator:
 
+April 2024:
+- Reduced memory usage for computing tensor coefficients. 
+- Added script to measure memory usage as function of time. This can be used to profile MPT-Calculator.
+- Added a suite of test objects that can be used to check that MPT-Calculator is producing consistent results with the previous version.
+- Small bug fixes and improvements to code quality.
+- Improvements to docstrings.
+- Added an example for loading CSG gemometries (geofiles) into the python interface.
+
 June 2023:
 - Refactored repeated code for PODSweep, PODSweepMulti, FullSweep, FullSweepMulti, PODSweepIterative to make maintaining the codebase easier and the different modes more reliable.
 - Introduced pre-run checks for the required integration order. Can be toggled via Settings.py
 - Introduced L2 projection of piecewise constant material properties. Gives same results, but more easily generalisable in the future.
-- Swapped POD snapshot postprocessing over to the faster integral method. More accurate and faster.
+- Swapped POD snapshot postprocessing over to the faster matrix method. More accurate and faster.
 
 
 March 2023:
