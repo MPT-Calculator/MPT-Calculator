@@ -26,6 +26,8 @@ Plots of the difference at each frequency are then saved to the Test_Results sub
 
 In our testing, we use pytest as the testing library, with documentation avaliable at https://docs.pytest.org/en/8.0.x/contents.html#
 
+To run, open terminal/command line and type "pytest -s test_suite.py"
+
 
 """
 
