@@ -2,7 +2,7 @@ import os
 import sys
 from math import floor, log10
 import numpy as np
-from shutil import copyfile, copytree
+from shutil import copyfile, copytree, make_archive, rmtree
 from zipfile import *
 
 import netgen.meshing as ngmeshing
@@ -67,7 +67,7 @@ def FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol, 
         sweepname = FolderStructure
 
     if Single == True:
-        subfolders = ["Data", "Input_files"]
+        subfolders = ["Data", "Input_files", "Functions"]
     else:
         subfolders = ["Data", "Graphs", "Functions", "Input_files"]
 
@@ -90,9 +90,11 @@ def FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol, 
     #     copyfile("GeoFiles/" + Geometry, "Results/vtk_output/" + objname + "/om_" + stromega + "/" + Geometry)
 
     # Copy the files required to be able to edit the graphs
+    copytree("Functions", "Results/" + sweepname +"/Functions", dirs_exist_ok=True)
+    make_archive("Results/" + sweepname +"/Functions", 'zip', "Functions")
+    rmtree("Results/" + sweepname +"/Functions")
     if Single != True:
         copyfile("Settings/PlotterSettings.py", "Results/" + sweepname + "/PlotterSettings.py")
-        copytree("Functions", "Results/" + sweepname +"/Functions", dirs_exist_ok=True)
         if Pod == True:
             if ErrorTensors == True:
                 copyfile("Functions/PlotEditorWithErrorBars.py", "Results/" + sweepname + "/PlotEditorWithErrorBars.py")
