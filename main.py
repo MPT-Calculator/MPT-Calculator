@@ -325,11 +325,11 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
                                                 using_interative_POD=True)
                         # Copying files from temporary storage in sweepname_temp to ideal storage in sweepname
                         for item in ['Errors', 'Tensors', 'PODTensors', 'PODEigenValues', 'PODArray', 'FrequencyArray']:
-                            for iterations in range(1,len(Error_Array)):
+                            for iterations in range(1,len(Error_Array)+1):
                                 os.replace('Results/' + sweepname_temp + f'/Data/{item}_iter{iterations}.npy', 'Results/' + sweepname + f'/Data/{item}_iter{iterations}.npy')
 
                         for item in ['Imag_Tensor_Coeffs', 'Real_Tensor_Coeffs', 'SVD_Decay']:
-                            for iterations in range(1,len(Error_Array)):
+                            for iterations in range(1,len(Error_Array)+1):
                                 os.replace('Results/' + sweepname_temp + f'/Graphs/{item}_iter{iterations}.pdf', 'Results/' + sweepname + f'/Graphs/{item}_iter{iterations}.pdf')
 
                     else:
@@ -354,12 +354,12 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
                                                 using_iterative_POD=True)
 
                         for item in ['Errors', 'Tensors', 'PODTensors', 'PODEigenValues', 'PODArray', 'FrequencyArray']:
-                            for iterations in range(1,len(Error_Array)):
+                            for iterations in range(1,len(Error_Array)+1):
                                 os.replace('Results/' + sweepname_temp + f'/Data/{item}_iter{iterations}.npy',
                                            'Results/' + sweepname_temp + f'/Data/{item}_iter{iterations}.npy')
 
                         for item in ['Imag_Tensor_Coeffs', 'Real_Tensor_Coeffs', 'SVD_Decay']:
-                            for iterations in range(1,len(Error_Array)):
+                            for iterations in range(1,len(Error_Array)+1):
                                 os.replace('Results/' + sweepname_temp + f'/Graphs/{item}_iter{iterations}.pdf',
                                            'Results/' + sweepname_temp + f'/Graphs/{item}_iter{iterations}.pdf')
 
@@ -382,11 +382,11 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
                                                     using_interative_POD=True)
 
                             for item in ['Errors', 'Tensors', 'PODTensors', 'PODEigenValues', 'PODArray', 'FrequencyArray']:
-                                for iterations in range(1,len(Error_Array)):
+                                for iterations in range(1,len(Error_Array)+1):
                                     os.replace('Results/' + sweepname_temp + f'/Data/{item}_iter{iterations}.npy', 'Results/' + sweepname + f'/Data/{item}_iter{iterations}.npy')
 
                             for item in ['Imag_Tensor_Coeffs', 'Real_Tensor_Coeffs', 'SVD_Decay']:
-                                for iterations in range(1,len(Error_Array)):
+                                for iterations in range(1,len(Error_Array)+1):
                                     os.replace('Results/' + sweepname_temp + f'/Graphs/{item}_iter{iterations}.pdf', 'Results/' + sweepname + f'/Graphs/{item}_iter{iterations}.pdf')
 
                         else:
@@ -413,11 +413,11 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
                                                     using_iterative_POD=True)
 
                             for item in ['Errors', 'Tensors', 'PODTensors', 'PODEigenValues', 'PODArray', 'FrequencyArray']:
-                                for iterations in range(1,len(Error_Array)):
+                                for iterations in range(1,len(Error_Array)+1):
                                     os.replace('Results/' + sweepname_temp + f'/Data/{item}_iter{iterations}.npy', 'Results/' + sweepname + f'/Data/{item}_iter{iterations}.npy')
 
                             for item in ['Imag_Tensor_Coeffs', 'Real_Tensor_Coeffs', 'SVD_Decay']:
-                                for iterations in range(1,len(Error_Array)):
+                                for iterations in range(1,len(Error_Array)+1):
                                     os.replace('Results/' + sweepname_temp + f'/Graphs/{item}_iter{iterations}.pdf', 'Results/' + sweepname + f'/Graphs/{item}_iter{iterations}.pdf')
 
                         else:
@@ -469,6 +469,12 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
                 TensorArray, EigenValues, N0, elements, ndofs = FullSweep(Geometry,Order,alpha,inorout,mur,sig,Array,BigProblem, NumSolverThreads, Integration_Order,
                                                                           Additional_Int_Order, Order_L2, sweepname, drop_tol, curve=curve_degree)
 
+    # Copying convergence plot for iterative POD over to new directory.
+    if use_iterative_POD is True:
+        os.replace('Results/' + sweepname_temp + f'/Graphs/Convergence.pdf',
+                   'Results/' + sweepname + f'/Graphs/Convergence.pdf')
+
+    
 
     # Constructing invariants:
     # Here we construct the tensor invariants and store them as a Nx3 complex array. Invariants are ordered as
@@ -579,5 +585,5 @@ def save_all_figures(path, format='png', suffix='', prefix=''):
 
 if __name__ == '__main__':
 
-    output = main()
+    output = main(use_iterative_POD=True, use_POD=True)
 
