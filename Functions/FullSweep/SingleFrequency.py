@@ -127,11 +127,11 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
         if CPUs < 3:
             NewInput = (
             fes, fes2, Theta0Sol[:, i], xivec[i], Order, alpha, nu, sigma, mu_inv, inout, Tolerance, Maxsteps, epsi, Omega,
-            i + 1, 3, Solver, num_solver_threads, Additional_Int_Order, drop_tol, 'Theta1')
+            i + 1, 3, Solver, num_solver_threads, Additional_Int_Order, 'Theta1')
         else:
             NewInput = (
             fes, fes2, Theta0Sol[:, i], xivec[i], Order, alpha, nu, sigma, mu_inv, inout, Tolerance, Maxsteps, epsi, Omega,
-            "No Print", 3, Solver, num_solver_threads, Additional_Int_Order, drop_tol, 'Theta1')
+            "No Print", 3, Solver, num_solver_threads, Additional_Int_Order, 'Theta1')
         Runlist.append(NewInput)
 
     # Run on the multiple cores
