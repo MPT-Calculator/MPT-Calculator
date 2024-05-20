@@ -585,5 +585,5 @@ def save_all_figures(path, format='png', suffix='', prefix=''):
 
 if __name__ == '__main__':
 
-    output = main(use_iterative_POD=True, use_POD=True)
+    output = main()
 
