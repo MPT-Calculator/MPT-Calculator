@@ -162,4 +162,3 @@ cython_debug/
 
 # For MPT-Calculator, we don't want to accedentally publish the results.
 Results/
-VolFiles/
