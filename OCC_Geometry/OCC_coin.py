@@ -2,11 +2,15 @@ from netgen.occ import *
 from ngsolve import *
 # from netgen.webgui import Draw as DrawGeo
 import numpy as np
+from netgen.meshing import BoundaryLayerParameters
 
 
 """
 James Elgy - 2023
 OCC file for constructing a british £1 coin. The coin is modelled as a regular dodecagonal prism, which a seperate central cylinder
+
+Paul Ledger - 2025 
+Added new boundary layer capability
 """
 
 sigma = [5.26E+06, 1.63E+07, 1E6]
@@ -46,14 +50,17 @@ box = Box(Pnt(-1000, -1000, -1000), Pnt(1000,1000,1000))
 box.mat('air')
 box.bc('outer')
 box.maxh = 1000
+box=box-coin
 
 joined_object = Glue([coin, box])
 geo = OCCGeometry(joined_object)
-nmesh = geo.GenerateMesh()
 
-# Adding thin nickel coating of 50 microns.
-nmesh.BoundaryLayer(boundary=".*", thickness=[5e-5], material=material_name[2],
-                           domains=material_name[1], outside=False)
+
+# Added 50 micron thickness of Nickle
+#Updated boundary layer treatment
+B=BoundaryLayerParameters(boundary=".*", thickness=[5e-5], new_material=material_name[2],
+                           domain=material_name[1], outside=False)
+nmesh = geo.GenerateMesh(boundary_layers=[B])
 
 from ngsolve import *
 Mesh = Mesh(nmesh)

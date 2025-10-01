@@ -1,4 +1,10 @@
 from netgen.occ import *
+from netgen.meshing import BoundaryLayerParameters
+
+"""
+Paul Ledger - 2025 
+Added new boundary layer capability
+"""
 
 material_name = ['tetra']
 sigma = [1 * 10**6]
@@ -16,13 +22,15 @@ box = Box(Pnt(-1000, -1000, -1000), Pnt(1000,1000,1000))
 box.mat('air')
 box.bc('outer')
 box.maxh=1000
+box=box-tetra
 
 joined_object = Glue([box, tetra])
-nmesh = OCCGeometry(joined_object).GenerateMesh(meshsize.coarse)
 
 delta = (2/(1e8*4*3.14159*1e-7*sigma[0]*mur[0]))**(0.5) / 0.001
-nmesh.BoundaryLayer(boundary=".*", thickness=[delta, 2*delta], material=material_name[0],
-                           domains=material_name[0], outside=False)
 
+B = BoundaryLayerParameters(boundary=".*", thickness=[delta, 2*delta], new_material=material_name[0],
+                           domain=material_name[0], outside=False)
+
+nmesh = OCCGeometry(joined_object).GenerateMesh(meshsize.coarse,boundary_layers=[B])
 
 nmesh.Save(r'VolFiles/OCC_test_step_tetra_z5.vol')

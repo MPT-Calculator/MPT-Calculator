@@ -1,9 +1,13 @@
 from netgen.occ import *
 from ngsolve import *
+from netgen.meshing import BoundaryLayerParameters
 
 """
 James Elgy - 2022:
 Cylinder example for Netgen OCC geometry mesh generation.
+
+Paul Ledger - 2025 
+Added new boundary layer capability
 """
 
 
@@ -41,6 +45,8 @@ box.bc('outer')
 cylinder.maxh = 1
 box.maxh = 1000
 
+box=box-cylinder
+
 # Joining the two meshes:
 # Glue joins two OCC objects together without interior elemements
 joined_object = Glue([cylinder, box])
@@ -54,8 +60,10 @@ mu0 = 4 * 3.14159 * 1e-7
 tau = (2/(max_target_frequency * sigma[0] * mu0 * mur[0]))**0.5 / alpha
 layer_thicknesses = [(2**n)*tau for n in range(number_of_layers)]
 
-nmesh.BoundaryLayer(boundary=".*", thickness=layer_thicknesses, material=boundary_layer_material,
-                           domains=boundary_layer_material, outside=False)
+B = BoundaryLayerParameters(boundary=".*", thickness=layer_thicknesses, new_material=boundary_layer_material,
+                           domain=boundary_layer_material, outside=False, disable_curving=False) 
+
+nmesh = geo.GenerateMesh(boundary_layers=[B])
 
 nmesh.Save(r'VolFiles/OCC_test_thin_disc_magnetic_32.vol')
 

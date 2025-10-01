@@ -4,6 +4,7 @@ import sys
 import time
 import math
 import multiprocessing as multiprocessing
+#multiprocessing.set_start_method("spawn", force=True) # ADDED LINE
 import tqdm
 
 import cmath
@@ -63,6 +64,8 @@ def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSol
         N0 (np.ndarray): 3x3 N0 tensor,
         numelements (int): nnumber of elements in mesh
         (ndof, ndof2) (tuple): ndof in fes1 and fes2.
+    
+    P.D.Ledger edit 2025 added multiprocessing.set_start_method("spawn", force=True) for python >=3.11
     """
     
     

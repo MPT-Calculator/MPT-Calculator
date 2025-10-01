@@ -8,5 +8,5 @@ solid tetra = polyhedron (0.000,0.000,0.000; 7.00,0.000,0.000; 5.5,4.6,0.000; 3.
 solid object= tetra;
 solid outside=box and not object ;
 
-tlo outside -col=[0,0,1] -transparent;#air
+tlo outside -col=[0,0,1] -transparent ;#air
 tlo object -col=[1,0,0] ;#tetra -mur=10 -sig=5.96E+06

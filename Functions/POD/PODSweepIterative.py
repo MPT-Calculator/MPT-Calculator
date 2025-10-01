@@ -4,6 +4,7 @@ Edit 06 Aug 2022: James Elgy
 Changed how N0 was calculated for PODSweep to be consistent with PODSweepMulti.
 Changed pool generation to spawn to fix linux bug.
 
+P.D. Ledger 2025 added multiprocessing.set_start_method("spawn", force=True) for python >=3.11
 """
 #Importing
 
@@ -12,6 +13,7 @@ import sys
 import time
 import math
 import multiprocessing as multiprocessing
+#multiprocessing.set_start_method("spawn", force=True) # ADDED LINE
 import warnings
 from warnings import warn
 import tqdm

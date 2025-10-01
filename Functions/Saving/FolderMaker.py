@@ -13,6 +13,10 @@ from Settings import SaverSettings
 from .FtoS import *
 from .DictionaryList import *
 
+"""
+Paul Ledger - 2025 
+Updated to send full geometry details to results folder
+"""
 
 def FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol, alpha, Order, MeshSize, mur, sig,
                 ErrorTensors, VTK, using_OCC, using_interative_POD=False):
@@ -120,6 +124,36 @@ def FolderMaker(Geometry, Single, Array, Omega, Pod, PlotPod, PODArray, PODTol, 
     if using_OCC is True:
         copyfile('OCC_Geometry/' + Geometry[:-4] + '.py',
                  "Results/" + sweepname + "/Input_files/" + Geometry[:-4] + '.py')
+
+# James Edit May 2025. Adding code to search .py file for "CSGeometry"
+        word1 = 'CSGeometry('
+        word2 = 'CSGeometry()'
+        with open('OCC_Geometry/' + Geometry[:-4] + '.py') as file:
+            lines = file.readlines()
+            for line_number, line in enumerate(lines):
+                # check if string present in a file
+                if line.lstrip() in ['\n', '\r\n', '']:
+                    pass # Line is empty. Ignore.
+                elif line.lstrip()[0] == '#':
+                    pass # line is comment. Ignore.
+                elif (word1 in line) and (word2 not in line):
+                    print('Geometry has been loaded from .geo file. Copying to results directory')
+                    filename_string = line[line.find("(")+1:line.find(")")] # Finding file path in the CSGeometry function call.
+                    filename_sanitised = filename_string.replace('"', "'") # Accounting for different users using ' or ".
+                    indices = []
+                    # Finding file path and obtaining as clean string.
+                    for n, char in enumerate(filename_sanitised):
+                        if char == "'":
+                            indices += [n] # Find values between left " and right " to create python readable file path.
+                    filename = rf'{filename_sanitised[indices[0]+1:indices[1]]}'
+                    filename = filename.encode('unicode_escape').decode()
+                    geofile_name = os.path.split(filename)[-1] # obtaining only the last part of the path.
+                    print(f'Geo File name = {geofile_name}')
+                    copyfile(filename, "Results/" + sweepname + "/Input_files/" + geofile_name) # copyinh file.
+                    
+                else:
+                    pass # Normal line. Ignore.
+
 
 
     # Copying across the folder structure to the desired directory:

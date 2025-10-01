@@ -21,6 +21,7 @@ box = Box(Pnt(-1000, -1000, -1000), Pnt(1000,1000,1000))
 box.mat('air')
 box.bc('outer')
 box.maxh=1000
+box=box-cube
 
 joined_object = Glue([box, cube])
 nmesh = OCCGeometry(joined_object).GenerateMesh(meshsize.coarse)

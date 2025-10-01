@@ -33,6 +33,7 @@ box.bc('outer')
 # Setting maxh:
 sphere.maxh = 0.2
 box.maxh = 1000
+box=box-sphere
 
 # Joining the two meshes:
 # Glue joins two OCC objects together without interior elemements

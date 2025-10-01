@@ -166,12 +166,12 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
         if Solver == "local":
             c = Preconditioner(a, "local")  # Apply the local preconditioner
         c.Update()
-        print("Built A and C")
+        #print("Built A and C")
 
         # Calculate the inverse operator
         with TaskManager():
             inverse = CGSolver(a.mat, c.mat, tol=Tolerance, maxiter=Maxsteps)
-        print("Built inverse operator")
+        #print("Built inverse operator")
 
         # Solve in each direction
 
@@ -192,7 +192,7 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
             
 
 
-        print("Solevd e1")
+        #print("Solevd e1")
 
         # e2
         res.data.FV().NumPy()[:] = f2.vec.FV().NumPy() * Omega
@@ -205,7 +205,7 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
             Theta2.vec.data += a.harmonic_extension * Theta2.vec
             Theta2.vec.data += a.inner_solve * ftemp.data
         
-        print("Solevd e2")
+        #print("Solevd e2")
         # e3
         res.data.FV().NumPy()[:] = f3.vec.FV().NumPy() * Omega
         with TaskManager():
@@ -218,12 +218,12 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
             Theta3.vec.data += a.inner_solve * ftemp.data
             
         
-        print("Solevd e3")
+        #print("Solevd e3")
         if Vectors == True:
             Theta1Sols[:, k, 0] = Theta1.vec.FV().NumPy()
             Theta1Sols[:, k, 1] = Theta2.vec.FV().NumPy()
             Theta1Sols[:, k, 2] = Theta3.vec.FV().NumPy()
-        print("Copied solutions")
+        #print("Copied solutions")
 
         if Tensors == True and use_mat_method is False:
             # Calculate upper triangle of tensor
@@ -263,11 +263,11 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
             # Save in arrays
             TensorArray[k, :] = (N0 + R + 1j * I).flatten()
             EigenValues[k, :] = np.sort(np.linalg.eigvals(N0 + R)) + 1j * np.sort(np.linalg.eigvals(I))
-        print("Computed R,I")
+        #print("Computed R,I")
 
         # To reduce memory usage, we delete inverse, a, and c at the end of each iteration.
         del inverse, a, c
-        print("deleted inverse, a,c")
+        #print("deleted inverse, a,c")
     
     del enumerator
     del f1, f2, f3, ftemp

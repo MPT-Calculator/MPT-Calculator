@@ -1,5 +1,16 @@
 Changelog for MPT-Calculator:
 
+Sept 2025:
+- Updated OCC geometries to use new Boundary Layer formulation
+- For CSG Geometries, added new function Add_material to search for existing#subdomains and to update these to -material flags in an appended .geo file to allow backwards comtability for older .geo files and new Boundary Layer formulation
+- Updated numbering of prismatic elements to give correct number of elements (even if prismatic elements appear midway through element list)
+- Ensured that the .geo file containing the geometry for CSG geometries is copied to the results folder
+- Added multiprocessing.set_start_method("spawn", force=True) to PODSweep.py,PODSweepMulti.py, PODIterative.py SingleFrequency.py, FullSweep.py, FullSweepMulti.py etc to ensure code runs for python >=3.11
+- For python13 and NGSolve 6.2.2506, note that use_parallel=False is much more efficient than using multiprocessing
+
+June 2024:
+- Small bug fixes and quality of life improvements
+
 April 2024:
 - Reduced memory usage for computing tensor coefficients. 
 - Added script to measure memory usage as function of time. This can be used to profile MPT-Calculator.

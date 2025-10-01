@@ -37,6 +37,7 @@ outer_box.bc('outer')
 bar1.maxh = 0.12
 bar2.maxh = 0.12
 outer_box.maxh = 100
+outer_box=outer_box-bar1-bar2
 
 # Joining the three meshes:
 # Glue joins two OCC objects together without interior elements.

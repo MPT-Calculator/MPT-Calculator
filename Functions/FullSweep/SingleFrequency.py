@@ -5,6 +5,7 @@ import os
 import sys
 import time
 import multiprocessing as multiprocessing
+#multiprocessing.set_start_method("spawn", force=True) # ADDED LINE
 import tqdm.auto as tqdm
 import cmath
 import numpy as np
@@ -74,6 +75,7 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
         N0 (np.ndarray): 3x3 N0 tensor coefficients
         numelements (int): total number of elements in the mesh
         (ndof, ndof2) (tuple): number of degrees of freedom for fes1 and fes2. 
+    P.D. Ledger added multiprocessing.set_start_method("spawn", force=True) for python >=3.11
     """
 
     _, Mu0, _, _, _, _, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation([Omega], Object, [], curve, inorout,

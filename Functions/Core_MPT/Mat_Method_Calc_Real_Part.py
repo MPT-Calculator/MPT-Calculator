@@ -145,6 +145,7 @@ def Mat_Method_Calc_Real_Part(bilinear_bonus_int_order: int,
 
                     A = np.conj(gi[None, :]) @ Qij @ (gj)[:, None]
                     R[i, j] = (A * (-alpha ** 3) / 4).real
+            #print(A,np.shape(A),alpha,np.shape(alpha))
 
         # If we don't reduce the size of the matrix and we still want to save memory, then we can use K.Apply here as well.
         elif BigProblem is True and ReducedSolve is False:

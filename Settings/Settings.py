@@ -170,10 +170,10 @@ def IterativePODParameters():
     NAdditionalSnapshotsPerIter = 2
 
     # (int) Maximum number of iterations that will run in the iterative process.
-    MaxIter = 20
+    MaxIter = 10 #20
 
     # (float) Stopping tolerance (max(error)/object_volume) for the iterative process.
-    Tol = 1e-3
+    Tol = 1e-2#1e-3
 
     # (bool) Option to also plot out the tensor coefficients and error certificates for each iteration.
     PlotUpdatedPOD = True

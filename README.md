@@ -16,13 +16,13 @@ A hp FEM discretisation of the transmission problems using NGSolve for performin
 
 A Proper Orthogonal Decomposition (POD) reduced order model, which greatly accelerates the computation of the full order model in 2. for computing the MPT over a range of frequencies.
 
-The technical details of the implementation will be described in [6].
+The technical details of the current implementation is described in [9] and builds on the earlier be described in [6].
 
 Plots of the computed tensor coefficients as a function of frequency are created and the output data and plots are automatically stored so that they can be recreated, if desired.
 
 # To get started
 
-Please open the set of Jupyter Tutorials available in the Tutorial folder starting with Tutorials/a_Installation.ipynb, which describes the installation and setup of MPT-Calculator.
+Please open the set of Jupyter Tutorials available in the Tutorial folder starting with Tutorials/a_Installation.ipynb, which describes the installation and setup of MPT-Calculator. A .yml file is available to install all the relevant packages and dependencies
 
 
 # Referencing
@@ -38,6 +38,8 @@ If you use the tool, please refer to it in your work by citing the references
 [7] P.D. Ledger, B.A. Wilson, A.A.S. Amad, W.R.B. Lionheart, Identification of meallic objects using spectral MPT signatures: Object characterisation and invariants. International Journal for Numerical Methods in Engineering. 122(15), 2021. https://onlinelibrary.wiley.com/doi/epdf/10.1002/nme.6688
 
 [8] J. Elgy, P.D. Ledger, J.L. Davidson, T. Ozdeger and A.J. Peyton, Computations and measurement of the magnetic polarizability tensor characterisation of highly conducting and magnetic objects. Engineering Computations, 2023, doi:10.1108/EC-11-2022-0688.
+
+[9] J. Elgy and P.D. Ledger, Efficient computation of magnetic polarizability tensor spectral signatures for object characterisation in metal detection, Engineering Computations. 41(10), 2024, 2472-2503.
 
 as well as those of NGSolve:
 

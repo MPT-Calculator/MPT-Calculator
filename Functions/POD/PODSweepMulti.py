@@ -7,6 +7,8 @@ Changed pool generation to spawn to fix linux bug.
 """
 Paul Ledger (2024 edit)
 Added drop_tol to reduce memory usage when building full matrices including interiors
+Paul Ledger (2025) 
+Added multiprocessing.set_start_method("spawn", force=True) to overcome issues in python >=3.11
 """
 
 #Importing
@@ -18,6 +20,7 @@ import csv
 import time
 import math
 import multiprocessing as multiprocessing
+#multiprocessing.set_start_method("spawn", force=True) # ADDED LINE
 multiprocessing.freeze_support()
 import warnings
 from warnings import warn

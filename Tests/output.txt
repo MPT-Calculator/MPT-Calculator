@@ -1,0 +1,521 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.18, pytest-8.4.2, pluggy-1.6.0
+rootdir: /home/pdl11/Coding/MPT_calculator/Sept2025/MPT-Calculator/Tests
+collected 5 items
+
+test_suite.py Materials = ('mat1', 'air', 'mat1')
+Updated alpha from OCC file. Alpha=0.01
+OCC_test_sphere_prism_32.geo
+[0, 1] 2 ['air', 'mat1']
+Mesh Contains Prisms? True
+N Prisms: 1312, N Tets: 18157
+[0, 1] 2 ['air', 'mat1']
+Running as parallel POD
+ mesh contains 19469 elements
+Running Bilinear Forms Check
+Mesh curve order set to:  5
+K: Iteration 1: bonus_intord = 2
+K: Iteration 2: bonus_intord = 4
+K: Iteration 3: bonus_intord = 6
+K: Iteration 4: bonus_intord = 8
+K: Iteration 5: bonus_intord = 10
+K: Iteration 6: bonus_intord = 12
+K: Iteration 7: bonus_intord = 14
+K Bilinear Form Converged using order 16
+C: Iteration 1: bonus_intord = 2
+C: Iteration 2: bonus_intord = 4
+C: Iteration 3: bonus_intord = 6
+C: Iteration 4: bonus_intord = 8
+C: Iteration 5: bonus_intord = 10
+C: Iteration 6: bonus_intord = 12
+C Bilinear Form Converged using order 14
+Solving Theta0:   0%|          | 0/3 [00:00<?, ?it/s]Solving Theta0: 100%|██████████| 3/3 [00:00<00:00, 98304.00it/s]
+ solved theta0 problems    
+ solving theta1 snapshots
+Solving Theta1 Snapshots:   0%|          | 0/13 [00:00<?, ?it/s]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:   8%|▊         | 1/13 [02:58<35:44, 178.71s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  15%|█▌        | 2/13 [03:10<14:45, 80.47s/it] Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  38%|███▊      | 5/13 [05:52<08:12, 61.56s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  46%|████▌     | 6/13 [06:03<05:40, 48.61s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  62%|██████▏   | 8/13 [06:27<02:46, 33.24s/it]Solving Theta1 Snapshots:  69%|██████▉   | 9/13 [09:08<04:11, 62.76s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  77%|███████▋  | 10/13 [09:37<02:43, 54.41s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  85%|████████▍ | 11/13 [09:46<01:25, 42.52s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  92%|█████████▏| 12/13 [09:51<00:32, 32.44s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots: 100%|██████████| 13/13 [10:00<00:00, 25.70s/it]Solving Theta1 Snapshots: 100%|██████████| 13/13 [10:00<00:00, 46.18s/it]
+manually closed pool
+0 / 131 / 132 / 133 / 134 / 135 / 136 / 137 / 138 / 139 / 1310 / 1311 / 1312 / 130 / 131 / 132 / 133 / 134 / 135 / 136 / 137 / 138 / 139 / 1310 / 1311 / 1312 / 13 performing SVD               SVD complete      
+ Number of retained modes = 9
+ creating reduced order model0 / 401 / 402 / 403 / 404 / 405 / 406 / 407 / 408 / 409 / 4010 / 4011 / 4012 / 4013 / 4014 / 4015 / 4016 / 4017 / 4018 / 4019 / 4020 / 4021 / 4022 / 4023 / 4024 / 4025 / 4026 / 4027 / 4028 / 4029 / 4030 / 4031 / 4032 / 4033 / 4034 / 4035 / 4036 / 4037 / 4038 / 4039 / 400 / 401 / 402 / 403 / 404 / 405 / 406 / 407 / 408 / 409 / 4010 / 4011 / 4012 / 4013 / 4014 / 4015 / 4016 / 4017 / 4018 / 4019 / 4020 / 4021 / 4022 / 4023 / 4024 / 4025 / 4026 / 4027 / 4028 / 4029 / 4030 / 4031 / 4032 / 4033 / 4034 / 4035 / 4036 / 4037 / 4038 / 4039 / 40manually closed pool
+ reduced order systems solved
+ frequency sweep complete
+.Updated alpha from OCC file. Alpha=0.001
+OCC_test_thin_disc_magnetic_32.geo
+[0, 1] 2 ['air', 'cylinder']
+Mesh Contains Prisms? True
+N Prisms: 2936, N Tets: 22147
+[0, 1] 2 ['air', 'cylinder']
+Running as parallel POD
+ mesh contains 25083 elements
+Running Bilinear Forms Check
+Mesh curve order set to:  5
+K: Iteration 1: bonus_intord = 2
+K: Iteration 2: bonus_intord = 4
+K: Iteration 3: bonus_intord = 6
+K: Iteration 4: bonus_intord = 8
+K: Iteration 5: bonus_intord = 10
+K: Iteration 6: bonus_intord = 12
+K Bilinear Form Converged using order 14
+C: Iteration 1: bonus_intord = 2
+C: Iteration 2: bonus_intord = 4
+C: Iteration 3: bonus_intord = 6
+C: Iteration 4: bonus_intord = 8
+C: Iteration 5: bonus_intord = 10
+C: Iteration 6: bonus_intord = 12
+C Bilinear Form Converged using order 14
+Solving Theta0:   0%|          | 0/3 [00:00<?, ?it/s]Solving Theta0: 100%|██████████| 3/3 [00:00<00:00, 116508.44it/s]
+ solved theta0 problems    
+ solving theta1 snapshots
+Solving Theta1 Snapshots:   0%|          | 0/13 [00:00<?, ?it/s]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:   8%|▊         | 1/13 [04:14<50:52, 254.39s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  23%|██▎       | 3/13 [04:14<11:00, 66.01s/it] Solving Theta1 Snapshots:  23%|██▎       | 3/13 [04:26<11:00, 66.01s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  38%|███▊      | 5/13 [08:33<13:09, 98.69s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  46%|████▌     | 6/13 [08:37<08:33, 73.29s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  54%|█████▍    | 7/13 [08:38<05:19, 53.25s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  62%|██████▏   | 8/13 [08:48<03:23, 40.75s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  69%|██████▉   | 9/13 [13:44<07:37, 114.44s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  77%|███████▋  | 10/13 [13:47<04:05, 81.86s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  92%|█████████▏| 12/13 [13:50<00:45, 45.31s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots: 100%|██████████| 13/13 [14:14<00:00, 40.23s/it]Solving Theta1 Snapshots: 100%|██████████| 13/13 [14:14<00:00, 65.74s/it]
+manually closed pool
+0 / 131 / 132 / 133 / 134 / 135 / 136 / 137 / 138 / 139 / 1310 / 1311 / 1312 / 130 / 131 / 132 / 133 / 134 / 135 / 136 / 137 / 138 / 139 / 1310 / 1311 / 1312 / 13 performing SVD               SVD complete      
+ Number of retained modes = 9
+ creating reduced order model0 / 401 / 402 / 403 / 404 / 405 / 406 / 407 / 408 / 409 / 4010 / 4011 / 4012 / 4013 / 4014 / 4015 / 4016 / 4017 / 4018 / 4019 / 4020 / 4021 / 4022 / 4023 / 4024 / 4025 / 4026 / 4027 / 4028 / 4029 / 4030 / 4031 / 4032 / 4033 / 4034 / 4035 / 4036 / 4037 / 4038 / 4039 / 400 / 401 / 402 / 403 / 404 / 405 / 406 / 407 / 408 / 409 / 4010 / 4011 / 4012 / 4013 / 4014 / 4015 / 4016 / 4017 / 4018 / 4019 / 4020 / 4021 / 4022 / 4023 / 4024 / 4025 / 4026 / 4027 / 4028 / 4029 / 4030 / 4031 / 4032 / 4033 / 4034 / 4035 / 4036 / 4037 / 4038 / 4039 / 40manually closed pool
+ reduced order systems solved
+ frequency sweep complete
+.Updated alpha from OCC file. Alpha=0.001
+OCC_test_dualbar.geo
+1 air bar2
+[0, 1, 2] 3 ['air', 'bar1', 'bar2']
+Mesh Contains Prisms? False
+N Prisms: 0, N Tets: 57195
+1 air bar2
+[0, 1, 2] 3 ['air', 'bar1', 'bar2']
+Running as parallel POD
+ mesh contains 57195 elements
+Running Bilinear Forms Check
+Mesh curve order set to:  5
+K: Iteration 1: bonus_intord = 2
+K: Iteration 2: bonus_intord = 4
+K Bilinear Form Converged using order 6
+C: Iteration 1: bonus_intord = 2
+C: Iteration 2: bonus_intord = 4
+C Bilinear Form Converged using order 6
+Solving Theta0:   0%|          | 0/3 [00:00<?, ?it/s]Solving Theta0: 100%|██████████| 3/3 [00:00<00:00, 33916.20it/s]
+ solved theta0 problems    
+ solving theta1 snapshots
+Solving Theta1 Snapshots:   0%|          | 0/13 [00:00<?, ?it/s]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:   8%|▊         | 1/13 [03:30<42:05, 210.47s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  15%|█▌        | 2/13 [03:36<16:33, 90.33s/it] Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  23%|██▎       | 3/13 [03:38<08:16, 49.69s/it]Solving Theta1 Snapshots:  31%|███       | 4/13 [03:40<04:40, 31.11s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  38%|███▊      | 5/13 [06:53<11:56, 89.53s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  46%|████▌     | 6/13 [06:57<07:03, 60.50s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  54%|█████▍    | 7/13 [06:58<04:06, 41.02s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  62%|██████▏   | 8/13 [07:11<02:40, 32.01s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  69%|██████▉   | 9/13 [10:24<05:29, 82.28s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  77%|███████▋  | 10/13 [10:45<03:10, 63.47s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots:  92%|█████████▏| 12/13 [10:48<00:34, 34.42s/it]Built A and C
+Built inverse operator
+Solevd e1
+Solevd e2
+Solevd e3
+Copied solutions
+Computed R,I
+deleted inverse, a,c
+Solving Theta1 Snapshots: 100%|██████████| 13/13 [11:04<00:00, 29.69s/it]Solving Theta1 Snapshots: 100%|██████████| 13/13 [11:04<00:00, 51.10s/it]
+manually closed pool
+0 / 131 / 132 / 133 / 134 / 135 / 136 / 137 / 138 / 139 / 1310 / 1311 / 1312 / 130 / 131 / 132 / 133 / 134 / 135 / 136 / 137 / 138 / 139 / 1310 / 1311 / 1312 / 13 performing SVD               SVD complete      
+ Number of retained modes = 13
+ creating reduced order model0 / 401 / 402 / 403 / 404 / 405 / 406 / 407 / 408 / 409 / 4010 / 4011 / 4012 / 4013 / 4014 / 4015 / 4016 / 4017 / 4018 / 4019 / 4020 / 4021 / 4022 / 4023 / 4024 / 4025 / 4026 / 4027 / 4028 / 4029 / 4030 / 4031 / 4032 / 4033 / 4034 / 4035 / 4036 / 4037 / 4038 / 4039 / 400 / 401 / 402 / 403 / 404 / 405 / 406 / 407 / 408 / 409 / 4010 / 4011 / 4012 / 4013 / 4014 / 4015 / 4016 / 4017 / 4018 / 4019 / 4020 / 4021 / 4022 / 4023 / 4024 / 4025 / 4026 / 4027 / 4028 / 4029 / 4030 / 4031 / 4032 / 4033 / 4034 / 4035 / 4036 / 4037 / 4038 / 4039 / 40manually closed pool
+ reduced order systems solved
+ frequency sweep complete
+.Starting geometry healing procedure (tolerance: 0.001)
+-----------------------------------
+
+- repairing faces
+
+- fixing small edges
+
+- fixing spot and strip faces
+
+- sewing faces
+
+- making solids
+-----------------------------------
+Compounds       : 0 (0)
+Composite solids: 0 (0)
+Solids          : 1 (1)
+Shells          : 1 (1)
+Wires           : 7312 (7312)
+Faces           : 7312 (7312)
+Edges           : 10968 (10968)
+Vertices        : 3654 (3654)
+
+Total surface area : 1793.51 (1793.51)
+
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+ ERROR: Problem in Surface mesh generation
+WARNING! NOT ALL FACES HAVE BEEN MESHED
+SURFACE MESHING ERROR OCCURRED IN 80 FACES:

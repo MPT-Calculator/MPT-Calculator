@@ -17,7 +17,8 @@ from warnings import warn
 from shutil import copytree, rmtree
 
 from matplotlib import pyplot as plt
-
+import multiprocessing as multiprocessing
+multiprocessing.set_start_method("spawn", force=True) # Added line only need to call this once
 sys.path.insert(0, "Functions")
 sys.path.insert(0, "Settings")
 from Functions.Helper_Functions.exact_sphere import exact_sphere
@@ -251,7 +252,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
 
     #create the array of points to be used in the sweep
     Array = np.logspace(Start,Finish,Points)
-    if frequency_array != 'default':
+    if 'default' not in frequency_array: #frequency_array != 'default':
         Array = frequency_array
         if len(Array) == 1:
             Single = True

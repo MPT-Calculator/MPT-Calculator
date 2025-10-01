@@ -4,7 +4,8 @@ import os
 from matplotlib import pyplot as plt
 import inspect
 import numpy as np
-import pytest
+from ngsolve import *
+#import pytest
 try:
     from main import main
 except:
@@ -12,7 +13,7 @@ except:
     parentdir = os.path.dirname(currentdir)
     sys.path.insert(0, parentdir)
     os.chdir(parentdir)
-    from main import main
+    from main import *
 
 """
 James Elgy 2023-2024
@@ -26,8 +27,13 @@ Plots of the difference at each frequency are then saved to the Test_Results sub
 
 In our testing, we use pytest as the testing library, with documentation avaliable at https://docs.pytest.org/en/8.0.x/contents.html#
 
-To run, open terminal/command line and type "pytest -s test_suite.py"
+Paul Ledger 2025
 
+Replaced test_key_4 with a version without a boundary layer due to meshing issues in 6.2.2506 of NGSolve (unable to resolve by healing the geometry)
+
+To run complete test suite: python3 -m pytest -s test_suite.py
+
+To single test example (e.g. test_key):  python3 -m pytest -s test_suite.py::test_key
 
 """
 
@@ -35,7 +41,7 @@ def test_sphere():
     
     # Running Sweep and computing error
     geometry = 'OCC_test_sphere_prism_32.py'
-    test_results = main(geometry=geometry, order=3, use_OCC=True, use_POD=True)
+    test_results = main(geometry=geometry, order=3, use_OCC=True, use_POD=True, use_parallel=False, cpus=4)
     test_tensors = test_results['TensorArray'] 
     
     validation_filename = r'Tests/Validation_Standards/OCC_sphere_prism_32/al_0.01_mu_1_sig_1e6/1e1-1e8_40_el_22426_ord_3_POD_13_1e-6/Data'
@@ -89,7 +95,7 @@ def test_magnetic_disk():
     
     # Running Sweep and computing error
     geometry = 'OCC_test_thin_disc_magnetic_32.py'
-    test_results = main(geometry=geometry, order=3, use_OCC=True, use_POD=True, alpha=1e-3)
+    test_results = main(geometry=geometry, order=3, use_OCC=True, use_POD=True, alpha=1e-3, use_parallel=False, cpus=4)
     test_tensors = test_results['TensorArray'] 
     
     validation_filename = r'Tests/Validation_Standards/OCC_thin_disc_magnetic_32/al_0.001_mu_32_sig_1e6/1e1-1e8_40_el_27743_ord_3_POD_13_1e-6/Data'
@@ -143,7 +149,7 @@ def test_dualbar():
     
     # Running Sweep and computing error
     geometry = 'OCC_test_dualbar.py'
-    test_results = main(geometry=geometry, order=3, use_OCC=True, use_POD=True, alpha=1e-3)
+    test_results = main(geometry=geometry, order=3, use_OCC=True, use_POD=True, alpha=1e-3, use_parallel=False, cpus=4)
     test_tensors = test_results['TensorArray'] 
     
     validation_filename = r'Tests/Validation_Standards/OCC_dualbar/al_0.001_mu_1,1_sig_1e6,1e8/1e1-1e8_40_el_78714_ord_3_POD_13_1e-6/Data'
@@ -196,11 +202,14 @@ def test_dualbar():
 def test_key():
     
     # Running Sweep and computing error
-    geometry = 'OCC_test_key_4.py'
-    test_results = main(geometry=geometry, order=3, use_OCC=True, use_POD=True, alpha=1e-3)
+    geometry = 'OCC_test_key_4_nomag.py'
+    # geometry = 'OCC_test_key_4.py'
+    test_results = main(geometry=geometry, order=3, use_OCC=True, use_POD=True, alpha=1e-3, use_parallel=False, cpus=4)
     test_tensors = test_results['TensorArray'] 
     
-    validation_filename = r'Tests/Validation_Standards/OCC_key_4/al_0.001_mu_141.3135696662735_sig_1.5e7/1e1-1e8_40_el_39128_ord_3_POD_13_1e-6/Data'
+    #validation_filename = r'Tests/Validation_Standards/OCC_key_4/al_0.001_mu_141.3135696662735_sig_1.5e7/1e1-1e8_40_el_39128_ord_3_POD_13_1e-6/Data'
+    validation_filename = r'Tests/Validation_Standards/OCC_key_4_nomag/al_0.001_mu_4_sig_1.5e7/1e1-1e8_40_el_124280_ord_3_POD_13_1e-6/Data'
+    
     valdiation_tensors = np.genfromtxt(validation_filename + '/Tensors.csv', dtype=complex, delimiter=', ')
     
     rel_err = np.zeros(len(test_tensors), dtype=complex)
@@ -251,7 +260,7 @@ def test_tetra():
     
     # Running Sweep and computing error
     geometry = 'OCC_test_step_tetra_z5.py'
-    test_results = main(geometry=geometry, order=3, use_OCC=True, use_POD=True, alpha=1e-2)
+    test_results = main(geometry=geometry, order=3, use_OCC=True, use_POD=True, alpha=1e-2, use_parallel=False, cpus=4)
     test_tensors = test_results['TensorArray'] 
     
     validation_filename = r'Tests/Validation_Standards/OCC_step_tetra_z5/al_0.01_mu_8_sig_1e6/1e1-1e8_40_el_10240_ord_3_POD_13_1e-6/Data'

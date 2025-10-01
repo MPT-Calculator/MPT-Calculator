@@ -1,4 +1,10 @@
 from netgen.occ import *
+from netgen.meshing import BoundaryLayerParameters
+
+"""
+Paul Ledger - 2025 
+Added new boundary layer capability
+"""
 
 # Setting mur, sigma, and defining the top level object name:
 material_name = ['cube']
@@ -26,17 +32,17 @@ box = Box(Pnt(-1000, -1000, -1000), Pnt(1000,1000,1000))
 box.mat('air')
 box.bc('outer')
 box.maxh=1000
+box=box-cube
 
 # Here we are joining the two geometries and generating the mesh.
 joined_object = Glue([box, cube])
-nmesh = OCCGeometry(joined_object).GenerateMesh()
 
 # Applying Boundary Layers:
 mu0 = 4 * 3.14159 * 1e-7
 tau = (2/(max_target_frequency * sigma[0] * mu0 * mur[0]))**0.5 / alpha
 layer_thicknesses = [(2**n)*tau for n in range(number_of_layers)]
 
-nmesh.BoundaryLayer(boundary=".*", thickness=layer_thicknesses, material=boundary_layer_material,
-                           domains=boundary_layer_material, outside=False)
-
+B = BoundaryLayerParameters(boundary=".*", thickness=layer_thicknesses, new_material=boundary_layer_material,
+                           domain=boundary_layer_material, outside=False)
+nmesh = OCCGeometry(joined_object).GenerateMesh(boundary_layers=[B])
 nmesh.Save(r'VolFiles/OCC_step_cube_prism.vol')

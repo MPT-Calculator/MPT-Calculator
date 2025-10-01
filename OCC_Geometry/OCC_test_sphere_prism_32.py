@@ -1,4 +1,5 @@
 from netgen.occ import *
+from netgen.meshing import BoundaryLayerParameters
 # from ngsolve import *
 
 """
@@ -13,6 +14,9 @@ netgen. When using the new version, it reports the material as 'default'.
 
 To test this I uninstalled both ngsolve and netgen-mesher and reinstalled both using the command
 pip3 install ngsolve==6.2.2204
+
+Paul Ledger - 2025 
+Added new boundary layer capability
 
 """
 
@@ -53,23 +57,21 @@ box = Box(Pnt(-1000, -1000, -1000), Pnt(1000,1000,1000))
 box.mat('air')
 box.bc('outer')
 box.maxh=1000
+box=box-sphere
 
 # Joining the two meshes:
 # Glue joins two OCC objects together without interior elemements
 joined_object = Glue([sphere, box])
-
-# Generating Mesh:
-nmesh = OCCGeometry(joined_object).GenerateMesh()
-
 
 # Creating Boundary Layer Structure:
 mu0 = 4 * 3.14159 * 1e-7
 tau = (2/(max_target_frequency * sigma[0] * mu0 * mur[0]))**0.5 / alpha
 layer_thicknesses = [(2**n)*tau for n in range(number_of_layers)]
 
-nmesh.BoundaryLayer(boundary=".*", thickness=layer_thicknesses, material=boundary_layer_material,
-                           domains=boundary_layer_material, outside=False)
+B = BoundaryLayerParameters(boundary=".*", thickness=layer_thicknesses, new_material=boundary_layer_material,
+                           domain=boundary_layer_material, outside=False,  disable_curving=False)
 
+nmesh = OCCGeometry(joined_object).GenerateMesh(boundary_layers=[B])
 
 nmesh.Save(r'VolFiles/OCC_test_sphere_prism_32.vol')
 # print(nmesh.GetMaterial(2))
