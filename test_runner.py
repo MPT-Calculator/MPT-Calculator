@@ -6,7 +6,7 @@ from time import time
 
 if __name__ == '__main__':
    start_time = time();
-   geometry = "OCC_sphere.py"#"OCC_sphere_prism_32.py"#"OCC_sphere_32.py"#"OCC_dualbar.py"#"OCC_cylinder.py" #"OCC_coin.py"##"CSG_Tetra.py"# "CSG_Knife_Knife_Santoku_carbonsteel_copper_rivets.py"
+   geometry = "OCC_test_sphere_prism_32.py"#"OCC_sphere.py"#"OCC_sphere_prism_32.py"#"OCC_sphere_32.py"#"OCC_dualbar.py"#"OCC_cylinder.py" #"OCC_coin.py"##"CSG_Tetra.py"# "CSG_Knife_Knife_Santoku_carbonsteel_copper_rivets.py"
    CPUs=[6,6,6,6]
    for order in [0,1,2,3]:
        print("solving order=",order)

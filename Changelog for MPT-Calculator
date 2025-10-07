@@ -1,5 +1,8 @@
 Changelog for MPT-Calculator:
 
+Oct 2025:
+- Updated code_timing.py to read an OCC file, changed np.load statements and removed tag from timing dictionary that was not longer used 
+
 Sept 2025:
 - Updated OCC geometries to use new Boundary Layer formulation
 - For CSG Geometries, added new function Add_material to search for existing#subdomains and to update these to -material flags in an appended .geo file to allow backwards comtability for older .geo files and new Boundary Layer formulation
