@@ -10,7 +10,7 @@ from Settings import PrerunCheckSettings
 
 def MPT_Preallocation(Array, Object, PODArray, curve, inorout, mur, sig, Order, Order_L2, sweepname, NumSolverThreads, drop_tol):
     """
-    James Elgy - 2023
+    James Elgy - 2023, P.D. Ledger 2025
     Function to gereate and preallocate arrays, NGSolve meshes and NGSolve coefficient functions based on desired input.
     This function is the same for all modes of MPT calculator, although PODArray can be substituded for an empty list in
     the case of FullSweep, FullSweepMulti, and SingleSolve.
@@ -32,6 +32,7 @@ def MPT_Preallocation(Array, Object, PODArray, curve, inorout, mur, sig, Order, 
     EigenValues,
     Mu0,
     N0,
+    Minf,
     NumberofFrequencies,
     NumberofSnapshots,
     TensorArray,
@@ -98,9 +99,9 @@ def MPT_Preallocation(Array, Object, PODArray, curve, inorout, mur, sig, Order, 
 
     # Set up how the tensor and eigenvalues will be stored
     N0 = np.zeros([3, 3])
+    Minf = np.zeros([3,3])
     TensorArray = np.zeros([NumberofFrequencies, 9], dtype=complex)
     RealEigenvalues = np.zeros([NumberofFrequencies, 3])
     ImaginaryEigenvalues = np.zeros([NumberofFrequencies, 3])
     EigenValues = np.zeros([NumberofFrequencies, 3], dtype=complex)
-    return EigenValues, Mu0, N0, NumberofFrequencies, NumberofSnapshots, TensorArray, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order
-
+    return EigenValues, Mu0, N0, Minf, NumberofFrequencies, NumberofSnapshots, TensorArray, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order

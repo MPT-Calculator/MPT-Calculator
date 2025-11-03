@@ -9,7 +9,7 @@ from netgen.meshing import BoundaryLayerParameters
 James Elgy - 2023
 OCC file for constructing a british £1 coin. The coin is modelled as a regular dodecagonal prism, which a seperate central cylinder
 
-Paul Ledger - 2025 
+Paul Ledger - 2025
 Added new boundary layer capability
 """
 

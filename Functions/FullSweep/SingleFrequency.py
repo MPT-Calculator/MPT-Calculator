@@ -22,7 +22,9 @@ from ..Saving.FtoS import *
 from ..Saving.DictionaryList import *
 from ..Core_MPT.MPT_Preallocation import *
 from ..Core_MPT.Solve_Theta_0_Problem import *
+from ..Core_MPT.Solve_Theta_inf_Problem import *
 from ..Core_MPT.Calculate_N0 import *
+from ..Core_MPT.Calculate_Minf import *
 from ..Core_MPT.Theta0_Postprocessing import *
 from ..Core_MPT.Mat_Method_Calc_Imag_Part import *
 from ..Core_MPT.Mat_Method_Calc_Real_Part import *
@@ -38,16 +40,16 @@ from Functions.Helper_Functions.count_prismatic_elements import count_prismatic_
 def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine, Integration_Order, Additional_Int_Order, Order_L2, sweepname, drop_tol,
                     curve=5, theta_solutions_only=False, num_solver_threads='default'):
     """
-    B.A. Wilson, J.Elgy, P.D.Ledger 2020-2024
+    B.A. Wilson, J.Elgy, P.D.Ledger 2020-2025
     Function to compute MPT for single frequency.
     optionally, export vtk file of field plots.
-    
+
     1) Preallocate mesh, finite element spaces, material properties and assign bonus integration orders.
     2) Compute theta0 and N0
     3) Compute theta1 for specific frequency.
-    4) Compute tensor coefficients. 
+    4) Compute tensor coefficients.
     5) Optionally export vtk file.
-    
+
 
     Args:
         Object (str): Geometry file name
@@ -73,8 +75,9 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
         MPT (np.ndarray): 3x3 complex MPT coeffiicents
         EigenValues (np.ndarray) complex eigenvalues of MPT.
         N0 (np.ndarray): 3x3 N0 tensor coefficients
+        Minf (np.ndarray): 3x3 Minf tensor coefficients
         numelements (int): total number of elements in the mesh
-        (ndof, ndof2) (tuple): number of degrees of freedom for fes1 and fes2. 
+        (ndof, ndof2) (tuple): number of degrees of freedom for fes1 and fes2.
     P.D. Ledger added multiprocessing.set_start_method("spawn", force=True) for python >=3.11
     """
 
@@ -105,6 +108,22 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
 
     # Calculate the N0 tensor
     N0 = Calculate_N0(Integration_Order, N0, Theta0Sol, Theta0i, Theta0j, alpha, mesh, mu_inv)
+
+
+    #########################################################################
+    # Thetainf
+    # This section solves the Thetainf problem to calculate the solution vectors
+    # and compute the Minf tensor
+
+    # Here, we calculate Thetainf.
+    ThetainfSol, Thetainfi, Thetainfj, fes3, ndof, evec = Solve_Theta_inf_Problem(Additional_Int_Order, 1, Maxsteps, Order,
+                                                                         Solver,
+                                                                         Tolerance, alpha, epsi, inout, mesh,
+                                                                         recoverymode, sweepname)
+
+    # Calculate the Minf tensor
+    Minf = Calculate_Minf(Integration_Order, Minf, ThetainfSol, Thetainfi, Thetainfj, alpha, mesh, inout)
+
 
     #########################################################################
     # Theta1
@@ -158,7 +177,7 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
     #    by writing .vtk files (optional "legacy=True" argument in VTKOutput function), but this leads to much larger files and isn't necessary
     #    in most cases.
     # 4) NGSolve has added more documentation on vtk outputs: https://docu.ngsolve.org/latest/i-tutorials/appendix-vtk/vtk.html
-        
+
     if VTK == True:
         print(' creating vtk output', end='\r')
         ThetaE1 = GridFunction(fes2)
@@ -234,12 +253,12 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
         U_proxy = sp.identity(ndof2)
 
         Array = np.asarray([Omega])
-            
+
         real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, (np.asarray(Theta1Sols)),
             U_proxy, U_proxy, U_proxy, num_solver_threads, drop_tol, BigProblem, ReducedSolve=False)
-        imag_part = Mat_Method_Calc_Imag_Part(Array, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha, 
+        imag_part = Mat_Method_Calc_Imag_Part(Array, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha,
             (np.asarray(Theta1Sols)), sigma, U_proxy, U_proxy, U_proxy, xivec,  num_solver_threads, drop_tol, BigProblem, ReducedSolve=False)
-    
+
         R = real_part + N0.flatten()
         R = R.reshape(3,3)
         I = imag_part.reshape(3,3)
@@ -249,4 +268,4 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
     # del Theta1i, Theta1j, Theta0i, Theta0j, fes, fes2, Theta0Sol, Theta1Sol
     gc.collect()
 
-    return MPT, EigenValues, N0, numelements, (ndof, ndof2)
+    return MPT, EigenValues, N0, Minf, numelements, (ndof, ndof2)

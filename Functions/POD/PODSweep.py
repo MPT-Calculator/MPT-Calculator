@@ -10,6 +10,7 @@ Paul Ledger (2024 edit)
 Added drop_tol to reduce memory usage when building full matrices including interiors
 Paul Ledger (2025 edit)
 added multiprocessing.set_start_method("spawn", force=True) for python  >= 3.11
+add Minf calculation
 """
 #Importing
 
@@ -33,13 +34,16 @@ from ngsolve import *
 
 sys.path.insert(0,"Functions")
 from ..Core_MPT.Theta0 import *
+from ..Core_MPT.Thetainf import *
 from ..Core_MPT.Theta1 import *
 from ..Core_MPT.Theta1_Sweep import *
 from ..Core_MPT.Theta1_Lower_Sweep import *
 from ..Core_MPT.Theta1_Lower_Sweep_Mat_Method import *
 from ..Core_MPT.MPT_Preallocation import *
 from ..Core_MPT.Solve_Theta_0_Problem import *
+from ..Core_MPT.Solve_Theta_inf_Problem import *
 from ..Core_MPT.Calculate_N0 import *
+from ..Core_MPT.Calculate_Minf import *
 from ..Core_MPT.Theta0_Postprocessing import *
 from ..Core_MPT.Construct_Matrices import *
 from ..POD.Truncated_SVD import *
@@ -67,7 +71,7 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
 
     print(' Running as POD')
 
-    EigenValues, Mu0, N0, NumberofFrequencies, NumberofSnapshots, TensorArray,  inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_ord = MPT_Preallocation(
+    EigenValues, Mu0, N0, Minf, NumberofFrequencies, NumberofSnapshots, TensorArray,  inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_ord = MPT_Preallocation(
         Array, Object, PODArray, curve, inorout, mur, sig, Order, Order_L2, sweepname, NumSolverThreads, drop_tol)
 
     Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()
@@ -91,6 +95,20 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
     N0 = Calculate_N0(Integration_Order, N0, Theta0Sol, Theta0i, Theta0j, alpha, mesh, mu_inv)
 
     #########################################################################
+    # Thetainf
+    # This section solves the Thetainf problem to calculate the solution vectors
+    # and compute the Minf tensor
+
+    # Here, we calculate Thetainf.
+    ThetainfSol, Thetainfi, Thetainfj, fes3, ndof, evec = Solve_Theta_inf_Problem(Additional_Int_Order, 1, Maxsteps, Order,
+                                                                         Solver,
+                                                                         Tolerance, alpha, epsi, inout, mesh,
+                                                                         recoverymode, sweepname)
+
+    # Calculate the Minf tensor
+    Minf = Calculate_Minf(Integration_Order, Minf, ThetainfSol, Thetainfi, Thetainfj, alpha, mesh, inout)
+
+    #########################################################################
     # Theta1
     # This section solves the Theta1 problem to calculate the solution vectors
     # of the snapshots
@@ -109,17 +127,17 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
         else:
             Theta1Sols = np.zeros([ndof2, NumberofSnapshots, 3], dtype=complex)
 
-        if (PlotPod is False) or (use_integral is False): 
+        if (PlotPod is False) or (use_integral is False):
             ComputeTensors = False
         else:
             ComputeTensors = True
-        
-        
+
+
         if ComputeTensors == True:
             PODTensors, PODEigenValues, Theta1Sols[:, :, :] = Theta1_Sweep(PODArray, mesh, fes, fes2, Theta0Sol, xivec,
                                                                            alpha, sigma, mu_inv, inout, Tolerance, Maxsteps,
                                                                            epsi, Solver, N0, NumberofFrequencies, True,
-                                                                           True, False, BigProblem, Order, NumSolverThreads, Integration_Order, 
+                                                                           True, False, BigProblem, Order, NumSolverThreads, Integration_Order,
                                                                            Additional_Int_Order, bilinear_bonus_int_ord, drop_tol)
         else:
             Theta1Sols[:, :, :] = Theta1_Sweep(PODArray, mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
@@ -127,10 +145,10 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
                                                False, BigProblem, Order, NumSolverThreads, Integration_Order, Additional_Int_Order,
                                                bilinear_bonus_int_ord, drop_tol)
         print(' solved theta1 problems     ')
-        
-        
+
+
         if use_integral is False and PlotPod is True:
-            
+
             PODTensors = np.zeros([NumberofSnapshots, 9], dtype=complex)
             PODEigenValues = np.zeros([NumberofSnapshots, 3], dtype=complex)
             U_proxy = sp.eye(fes2.ndof)
@@ -140,7 +158,7 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
 
             imag_part = Mat_Method_Calc_Imag_Part(PODArray, Integration_Order, Theta0Sol, bilinear_bonus_int_ord, fes2, mesh, inout, alpha, np.squeeze(np.asarray(Theta1Sols)),
                 sigma, U_proxy, U_proxy, U_proxy, xivec,  NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
-            
+
             for Num in range(len(PODArray)):
                 PODTensors[Num, :] = real_part[Num,:] + N0.flatten()
                 PODTensors[Num, :] += 1j * imag_part[Num,:]
@@ -148,10 +166,10 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
                 R = PODTensors[Num, :].real.reshape(3, 3)
                 I = PODTensors[Num, :].imag.reshape(3, 3)
                 PODEigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
-    
-    
-            
-        
+
+
+
+
         #########################################################################
         # POD
 
@@ -185,14 +203,14 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
         np.savetxt('Results/' + sweepname + '/Data/PODEigenvalues.csv', PODEigenValues, delimiter=',')
     ########################################################################
     # Create the ROM
-    
+
     if PODErrorBars is True:
         HA0H1, HA0H2, HA0H3, HA1H1, HA1H2, HA1H3, HR1, HR2, HR3, ProL, RerrorReduced1, RerrorReduced2, RerrorReduced3, fes0, ndof0 = Construct_Linear_System(Additional_Int_Order, BigProblem, Mu0, Theta0Sol, alpha, epsi, fes, fes2, inout, mu_inv, sigma,
                   xivec, NumSolverThreads, drop_tol, u1Truncated, u2Truncated, u3Truncated, dom_nrs_metal, PODErrorBars)
     else:
         HA0H1, HA0H2, HA0H3, HA1H1, HA1H2, HA1H3, HR1, HR2, HR3, _, _, _, _, _, _ = Construct_Linear_System(Additional_Int_Order, BigProblem, Mu0, Theta0Sol, alpha, epsi, fes, fes2, inout, mu_inv, sigma,
                   xivec, NumSolverThreads, drop_tol, u1Truncated, u2Truncated, u3Truncated, dom_nrs_metal, PODErrorBars)
-        
+
     # Clear the variables
     A0H, A1H = None, None
     a0, a1 = None, None
@@ -356,7 +374,7 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
 
         imag_part = Mat_Method_Calc_Imag_Part(Array, Integration_Order, Theta0Sol, bilinear_bonus_int_ord, fes2, mesh, inout, alpha, np.squeeze(np.asarray(Lower_Sols)),
             sigma, u1Truncated, u2Truncated, u3Truncated, xivec,  NumSolverThreads, drop_tol, BigProblem, ReducedSolve=True)
-        
+
         for Num in range(len(Array)):
             TensorArray[Num, :] = real_part[Num,:] + N0.flatten()
             TensorArray[Num, :] += 1j * imag_part[Num,:]
@@ -403,15 +421,11 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
 
     if PlotPod == True:
         if PODErrorBars == True:
-            return TensorArray, EigenValues, N0, PODTensors, PODEigenValues, numelements, ErrorTensors, (ndof, ndof2)
+            return TensorArray, EigenValues, N0, Minf, PODTensors, PODEigenValues, numelements, ErrorTensors, (ndof, ndof2)
         else:
-            return TensorArray, EigenValues, N0, PODTensors, PODEigenValues, numelements, (ndof, ndof2)
+            return TensorArray, EigenValues, N0, Minf, PODTensors, PODEigenValues, numelements, (ndof, ndof2)
     else:
         if PODErrorBars == True:
-            return TensorArray, EigenValues, N0, numelements, ErrorTensors, (ndof, ndof2)
+            return TensorArray, EigenValues, N0, Minf, numelements, ErrorTensors, (ndof, ndof2)
         else:
-            return TensorArray, EigenValues, N0, numelements, (ndof, ndof2)
-
-
-
-
+            return TensorArray, EigenValues, N0, Minf, numelements, (ndof, ndof2)

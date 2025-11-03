@@ -7,7 +7,7 @@ Changed pool generation to spawn to fix linux bug.
 """
 Paul Ledger (2024 edit)
 Added drop_tol to reduce memory usage when building full matrices including interiors
-Paul Ledger (2025) 
+Paul Ledger (2025)
 Added multiprocessing.set_start_method("spawn", force=True) to overcome issues in python >=3.11
 """
 
@@ -45,7 +45,9 @@ from ..POD.calc_error_certificates import *
 from ..Core_MPT.imap_execution import *
 from ..Core_MPT.supress_stdout import *
 from ..Core_MPT.Solve_Theta_0_Problem import *
+from ..Core_MPT.Solve_Theta_inf_Problem import *
 from ..Core_MPT.Calculate_N0 import *
+from ..Core_MPT.Calculate_Minf import *
 from ..Core_MPT.Theta0_Postprocessing import *
 from ..Core_MPT.Construct_Matrices import *
 from ..POD.Truncated_SVD import *
@@ -69,16 +71,16 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
                   PODErrorBars, BigProblem, Integration_Order, Additional_Int_Order, Order_L2, drop_tol,  curve=5, recoverymode=False,
                   NumSolverThreads='default', save_U=False):
     """
-    B.A. Wilson, J.Elgy, P.D.Ledger 2020-2024
+    B.A. Wilson, J.Elgy, P.D.Ledger 2020-2025
     Function to compute MPT spectral signature using the parallel POD mode.
-    
+
     1) Preallocate mesh, finite element spaces, material properties and assign bonus integration orders.
     2) Compute theta0 and N0
     3) Compute theta1 for K POD snapshot frequencies. Optionally compute POD tensor coefficients.
     4) Compute and solve ROM linear system for N output frequencies.
-    5) Compute tensor coefficients for N output frequencies. 
+    5) Compute tensor coefficients for N output frequencies.
     6) Optionally compute error certificates.
-    
+
 
     Args:
         Object (str): Geometry file name
@@ -131,13 +133,13 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
                 N0 (np.ndarray): 3x3 N0 tensor,
                 numelements (int): nnumber of elements in mesh
                 ErrorTensors (np.ndarray): Nx6 array of error certificates. Note that errors are symmetric so we only store upper trianglar part.
-                
+
             else:
                 TensorArray (np.ndarray): Nx9 complex tensor coefficients
                 EigenValues (np.ndarray): Nx3 complex eigenvalues
                 N0 (np.ndarray): 3x3 N0 tensor,
                 numelements (int): nnumber of elements in mesh
-                
+
     """
     print('Running as parallel POD')
 
@@ -149,7 +151,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         Array, Object, PODArray, curve, inorout, mur, sig, Order, Order_L2, sweepname, NumSolverThreads, drop_tol)
     # Set up the Solver Parameters
     Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()
-    
+
     timing_dictionary['Preallocation'] = time.time()
 
     #########################################################################
@@ -170,6 +172,21 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
     N0 = Calculate_N0(Integration_Order, N0, Theta0Sol, Theta0i, Theta0j, alpha, mesh, mu_inv)
 
     timing_dictionary['Theta0'] = time.time()
+
+    #########################################################################
+    # Thetainf
+    # This section solves the Thetainf problem to calculate the solution vectors
+    # and compute the Minf tensor
+
+    # Here, we calculate Thetainf.
+    ThetainfSol, Thetainfi, Thetainfj, fes3, ndof, evec = Solve_Theta_inf_Problem(Additional_Int_Order, 1, Maxsteps, Order,
+                                                                         Solver,
+                                                                         Tolerance, alpha, epsi, inout, mesh,
+                                                                         recoverymode, sweepname)
+
+    # Calculate the Minf tensor
+    Minf = Calculate_Minf(Integration_Order, Minf, ThetainfSol, Thetainfi, Thetainfj, alpha, mesh, inout)
+
 
     #########################################################################
     # Theta1
@@ -211,18 +228,18 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         Runlist = []
         manager = multiprocessing.Manager()
         counter = manager.Value('i', 0)
-        
+
         # If we want to compute the tensors for the full order sweep using efficient mat method,
         # We do the post processing only once. For this reason, we only need the Theta1Sols matrix.
         # To do this without large changes to the code, we temporarily set ComputeTensors=False and then
         # Reset it later.
-        
-        if (PlotPod is False) or (use_integral is False): 
+
+        if (PlotPod is False) or (use_integral is False):
             ComputeTensors = False
         else:
             ComputeTensors = True
-        
-        
+
+
         for i in range(len(PODArray)):
             Runlist.append((np.asarray([PODArray[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
                             Tolerance, Maxsteps, epsi, Solver, N0, NumberofSnapshots, True, ComputeTensors, counter,
@@ -268,19 +285,19 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
                     Theta1Sols[j,i,:] = Outputs[i][j][0][:]
 
         if use_integral is False and PlotPod is True: # Efficiently compute POD snapshot tensor coefficients
-            
+
             U_proxy = sp.eye(fes2.ndof) # For full solve we use a sparse identity inorder to not rewrite loads of code.
 
-            
+
             real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Theta1Sols)),
                 U_proxy, U_proxy, U_proxy, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
             timing_dictionary['POD_Real'] = time.time()
-            
-            imag_part = Mat_Method_Calc_Imag_Part(PODArray, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha, 
+
+            imag_part = Mat_Method_Calc_Imag_Part(PODArray, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha,
                 np.squeeze(np.asarray(Theta1Sols)), sigma, U_proxy, U_proxy, U_proxy, xivec,  NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
             timing_dictionary['POD_Imag'] = time.time()
-            
-            
+
+
             for Num in range(len(PODArray)):
                 PODTensors[Num, :] = real_part[Num,:] + N0.flatten()
                 PODTensors[Num, :] += 1j * imag_part[Num,:]
@@ -288,7 +305,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
                 R = PODTensors[Num, :].real.reshape(3, 3)
                 I = PODTensors[Num, :].imag.reshape(3, 3)
                 PODEigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
-        
+
         timing_dictionary['Theta1'] = time.time()
 
         ########################################################################
@@ -446,7 +463,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
         g[:, k, 0] = np.linalg.solve(HA0H1 + HA1H1 * omega, HR1 * omega)
         g[:, k, 1] = np.linalg.solve(HA0H2 + HA1H2 * omega, HR2 * omega)
         g[:, k, 2] = np.linalg.solve(HA0H3 + HA1H3 * omega, HR3 * omega)
-    
+
     # Work out where to send each frequency
     timing_dictionary['SolvedSmallerSystem'] = time.time()
     Tensor_CPUs = min(NumberofFrequencies, multiprocessing.cpu_count(), CPUs)
@@ -501,18 +518,18 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
             Outputs = pool.starmap(Theta1_Lower_Sweep, Runlist)
 
     else:
-        
+
         real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Lower_Sols)),
             u1Truncated, u2Truncated, u3Truncated, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=True)
 
         timing_dictionary['Real_Part'] = time.time()
-    
+
         imag_part = Mat_Method_Calc_Imag_Part(Array, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha, np.squeeze(np.asarray(Lower_Sols)),
             sigma, u1Truncated, u2Truncated, u3Truncated, xivec,  NumSolverThreads, drop_tol, BigProblem, ReducedSolve=True)
-        
+
         timing_dictionary['Imag_Part'] = time.time()
 
-        
+
         for Num in range(len(Array)):
             TensorArray[Num, :] = real_part[Num,:] + N0.flatten()
             TensorArray[Num, :] += 1j * imag_part[Num,:]
@@ -520,7 +537,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
             R = TensorArray[Num, :].real.reshape(3, 3)
             I = TensorArray[Num, :].imag.reshape(3, 3)
             EigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
-            
+
 
     try:
         pool.terminate()
@@ -559,7 +576,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
     print(' frequency sweep complete')
     timing_dictionary['Tensors'] = time.time()
     np.save('Results/' + sweepname + f'/Data/Timings_cpus={CPUs}.npy', timing_dictionary)
-    
+
     #Backup output of timings to csv.
     with open('Results/' + sweepname + f'/Data/Timings_cpus={CPUs}.csv','w', newline='') as fp:
         writer = csv.DictWriter(fp, fieldnames=timing_dictionary.keys())
@@ -568,18 +585,11 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
 
     if PlotPod == True:
         if PODErrorBars == True:
-            return TensorArray, EigenValues, N0, PODTensors, PODEigenValues, numelements, ErrorTensors, (ndof, ndof2)
+            return TensorArray, EigenValues, N0, Minf, PODTensors, PODEigenValues, numelements, ErrorTensors, (ndof, ndof2)
         else:
-            return TensorArray, EigenValues, N0, PODTensors, PODEigenValues, numelements, (ndof, ndof2)
+            return TensorArray, EigenValues, N0, Minf, PODTensors, PODEigenValues, numelements, (ndof, ndof2)
     else:
         if PODErrorBars == True:
-            return TensorArray, EigenValues, N0, numelements, ErrorTensors, (ndof, ndof2)
+            return TensorArray, EigenValues, N0, Minf, numelements, ErrorTensors, (ndof, ndof2)
         else:
-            return TensorArray, EigenValues, N0, numelements, (ndof, ndof2)
-
-
-
-
-
-
-
+            return TensorArray, EigenValues, N0, Minf, numelements, (ndof, ndof2)

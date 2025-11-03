@@ -20,7 +20,9 @@ from ..Core_MPT.Theta1_Sweep import *
 from ..Core_MPT.MPTCalculator import *
 from ..Core_MPT.MPT_Preallocation import *
 from ..Core_MPT.Solve_Theta_0_Problem import *
+from ..Core_MPT.Solve_Theta_inf_Problem import *
 from ..Core_MPT.Calculate_N0 import *
+from ..Core_MPT.Calculate_Minf import *
 from ..Core_MPT.Theta0_Postprocessing import *
 from ..Core_MPT.Mat_Method_Calc_Imag_Part import *
 from ..Core_MPT.Mat_Method_Calc_Real_Part import *
@@ -35,11 +37,11 @@ def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSol
     """
     B.A. Wilson, J.Elgy, P.D.Ledger 2020-2024
     Function to compute MPT for an array of frequencies.
-    
+
     1) Preallocate mesh, finite element spaces, material properties and assign bonus integration orders.
     2) Compute theta0 and N0
     3) Compute theta1 for each frequency in Array.
-    4) Compute tensor coefficients. 
+    4) Compute tensor coefficients.
 
     Args:
         Object (str): Geometry file name
@@ -62,13 +64,14 @@ def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSol
         TensorArray (np.ndarray): Nx9 complex tensor coefficients
         EigenValues (np.ndarray): Nx3 complex eigenvalues
         N0 (np.ndarray): 3x3 N0 tensor,
+        Minf (np.ndarray): 3x3 Minf tensor,
         numelements (int): nnumber of elements in mesh
         (ndof, ndof2) (tuple): ndof in fes1 and fes2.
-    
+
     P.D.Ledger edit 2025 added multiprocessing.set_start_method("spawn", force=True) for python >=3.11
     """
-    
-    
+
+
 
     print(' Running as full sweep')
 
@@ -102,6 +105,23 @@ def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSol
 
 
     #########################################################################
+    # Thetainf
+    # This section solves the Thetainf problem to calculate the solution vectors
+    # and compute the Minf tensor
+
+    # Here, we calculate Thetainf.
+    ThetainfSol, Thetainfi, Thetainfj, fes3, ndof, evec = Solve_Theta_inf_Problem(Additional_Int_Order, 1, Maxsteps, Order,
+                                                                     Solver,
+                                                                     Tolerance, alpha, epsi, inout, mesh,
+                                                                     recoverymode, sweepname)
+
+    # Calculate the Minf tensor
+    Minf = Calculate_Minf(Integration_Order, Minf, ThetainfSol, Thetainfi, Thetainfj, alpha, mesh, inout)
+
+
+
+
+    #########################################################################
     # Theta1
     # This section solves the Theta1 problem to calculate the solution vectors
     # of the snapshots
@@ -126,7 +146,7 @@ def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSol
                                                 False, False, Order, NumSolverThreads, Integration_Order, Additional_Int_Order, bilinear_bonus_intorder, drop_tol)
 
 
-        
+
         U_proxy = sp.eye(fes2.ndof)
 
         real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_intorder, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Theta1Sols)),
@@ -134,7 +154,7 @@ def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSol
 
         imag_part = Mat_Method_Calc_Imag_Part(Array, Integration_Order, Theta0Sol, bilinear_bonus_intorder, fes2, mesh, inout, alpha, np.squeeze(np.asarray(Theta1Sols)),
             sigma, U_proxy, U_proxy, U_proxy, xivec,  NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
-        
+
         for Num in range(len(Array)):
             TensorArray[Num, :] = real_part[Num,:] + N0.flatten()
             TensorArray[Num, :] += 1j * imag_part[Num,:]
@@ -142,8 +162,8 @@ def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSol
             R = TensorArray[Num, :].real.reshape(3, 3)
             I = TensorArray[Num, :].imag.reshape(3, 3)
             EigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
-    
-    
+
+
     print(' solved theta1 problems     ')
 
     # if use_integral is False:
@@ -156,5 +176,4 @@ def FullSweep(Object, Order, alpha, inorout, mur, sig, Array, BigProblem, NumSol
 
     print(' frequency sweep complete')
 
-    return TensorArray, EigenValues, N0, numelements, (ndof, ndof2)
-
+    return TensorArray, EigenValues, N0, Minf, numelements, (ndof, ndof2)

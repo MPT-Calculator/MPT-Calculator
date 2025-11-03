@@ -14,11 +14,11 @@ from .FtoS import *
 from .DictionaryList import *
 
 
-def SingleSave(Geometry, Omega, MPT, EigenValues, N0, elements, alpha, Order, MeshSize, mur, sig, EddyCurrentTest,
+def SingleSave(Geometry, Omega, MPT, EigenValues, N0, Minf, elements, alpha, Order, MeshSize, mur, sig, EddyCurrentTest,
                invariants):
     """
     B.A. Wilson, P.D. Ledger, J.Elgy 2020-2023
-    save data and make folder structure for single frequency solve. 
+    save data and make folder structure for single frequency solve.
 
     Args:
         Geometry (str): geometry file name. E.g. 'sphere'
@@ -26,6 +26,7 @@ def SingleSave(Geometry, Omega, MPT, EigenValues, N0, elements, alpha, Order, Me
         MPT (np.ndarray): 3x3 complex MPT coefficients.
         EigenValues (list): 3 complex eigenvalues
         N0 (np.ndarray): 3x3 N0 coefficients
+        Minf (np.ndarray): 3x3 Minf coefficients
         elements (int: total number of elements in mesh
         alpha (float): object size scaling
         Order (int): order of finite element space.
@@ -35,8 +36,8 @@ def SingleSave(Geometry, Omega, MPT, EigenValues, N0, elements, alpha, Order, Me
         EddyCurrentTest (float | None): max frequency for eddy current regime, or None if not calculated.
         invariants (np.ndarray): Nx3 MPT Tensor invarients.
     """
-    
-    
+
+
     # Find how the user wants the data to be saved
     # FolderStructure = SaverSettings()
 
@@ -61,6 +62,7 @@ def SingleSave(Geometry, Omega, MPT, EigenValues, N0, elements, alpha, Order, Me
     np.savetxt("Results/" + sweepname + "/Data/MPT.csv", MPT, delimiter=",")
     np.savetxt("Results/" + sweepname + "/Data/Eigenvalues.csv", EigenValues, delimiter=",")
     np.savetxt("Results/" + sweepname + "/Data/N0.csv", N0, delimiter=",")
+    np.savetxt("Results/" + sweepname + "/Data/Minf.csv", Minf, delimiter=",")
     np.savetxt("Results/" + sweepname + "/Data/Invariants.csv", invariants, delimiter=",")
     if isinstance(EddyCurrentTest, float):
         f = open('Results/' + sweepname + '/Data/Eddy-current_breakdown.txt', 'w+')

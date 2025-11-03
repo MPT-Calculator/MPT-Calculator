@@ -64,7 +64,7 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
              PODErrorBars, BigProblem, Integration_Order, Additional_Int_Order, drop_tol, curve=5,  use_parallel=False,
                       cpus='default', save_U=False):
     """
-    James Elgy - 2022
+    James Elgy - 2022, Paul Ledger 2025
     Iterative version of the existing POD method where additional snapshots are placed in regions of high uncertainty.
     The function works by first calculating the original logarithmically spaced distribution using PODArray and
     calculating error certificates for each frequency in Array. Scipy FindPeaks is then used to calculate the most
@@ -196,6 +196,20 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
     # Calculate the N0 tensor
     N0 = Calculate_N0(Integration_Order, N0, Theta0Sol, Theta0i, Theta0j, alpha, mesh, mu_inv)
 
+    #########################################################################
+    # Thetainf
+    # This section solves the Thetainf problem to calculate the solution vectors
+    # and compute the Minf tensor
+
+    # Here, we calculate Thetainf.
+    ThetainfSol, Thetainfi, Thetainfj, fes3, ndof, evec = Solve_Theta_inf_Problem(Additional_Int_Order, 1, Maxsteps, Order,
+                                                                     Solver,
+                                                                     Tolerance, alpha, epsi, inout, mesh,
+                                                                     recoverymode, sweepname)
+
+    # Calculate the Minf tensor
+    Minf = Calculate_Minf(Integration_Order, Minf, ThetainfSol, Thetainfi, Thetainfj, alpha, mesh, inout)
+
 
 
     #########################################################################
@@ -235,18 +249,18 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
     Runlist = []
     manager = multiprocessing.Manager()
     counter = manager.Value('i', 0)
-    
+
     # If we want to compute the tensors for the full order sweep using efficient mat method,
     # We do the post processing only once. For this reason, we only need the Theta1Sols matrix.
     # To do this without large changes to the code, we temporarily set ComputeTensors=False and then
     # Reset it later.
-    
-    if (PlotPod is False) or (use_integral is False): 
+
+    if (PlotPod is False) or (use_integral is False):
         ComputeTensors = False
     else:
         ComputeTensors = True
-    
-    
+
+
     for i in range(len(PODArray)):
         Runlist.append((np.asarray([PODArray[i]]), mesh, fes, fes2, Theta0Sol, xivec, alpha, sigma, mu_inv, inout,
                         Tolerance, Maxsteps, epsi, Solver, N0, NumberofSnapshots, True, ComputeTensors, counter,
@@ -292,19 +306,19 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
                 Theta1Sols[j,i,:] = Outputs[i][j][0][:]
 
     if use_integral is False and PlotPod is True: # Efficiently compute POD snapshot tensor coefficients
-        
+
         U_proxy = sp.eye(fes2.ndof) # For full solve we use a sparse identity inorder to not rewrite loads of code.
 
-        
+
         real_part = Mat_Method_Calc_Real_Part(bilinear_bonus_int_order, fes2, inout, mu_inv, alpha, np.squeeze(np.asarray(Theta1Sols)),
             U_proxy, U_proxy, U_proxy, NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
         timing_dictionary['POD_Real'] = time.time()
-        
-        imag_part = Mat_Method_Calc_Imag_Part(PODArray, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha, 
+
+        imag_part = Mat_Method_Calc_Imag_Part(PODArray, Integration_Order, Theta0Sol, bilinear_bonus_int_order, fes2, mesh, inout, alpha,
             np.squeeze(np.asarray(Theta1Sols)), sigma, U_proxy, U_proxy, U_proxy, xivec,  NumSolverThreads, drop_tol, BigProblem, ReducedSolve=False)
         timing_dictionary['POD_Imag'] = time.time()
-        
-        
+
+
         for Num in range(len(PODArray)):
             PODTensors[Num, :] = real_part[Num,:] + N0.flatten()
             PODTensors[Num, :] += 1j * imag_part[Num,:]
@@ -312,7 +326,7 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
             R = PODTensors[Num, :].real.reshape(3, 3)
             I = PODTensors[Num, :].imag.reshape(3, 3)
             PODEigenValues[Num, :] = np.sort(np.linalg.eigvals(R)) + 1j * np.sort(np.linalg.eigvals(I))
-        
+
     timing_dictionary['Theta1'] = time.time()
 
 
@@ -934,9 +948,6 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
     plt.savefig('Results/' + sweepname + '/Graphs/Convergence.pdf')
 
     if PlotPod == True:
-        return TensorArray, EigenValues, N0, PODTensors, PODEigenValues, numelements, ErrorTensors, (ndof, ndof2), PODArray, PODArray_orig, TensorArray_orig, EigenValues_orig, ErrorTensors_orig, PODEigenValues_orig, PODTensors_orig, N_Snaps, Error_Array, Final_Evaluation_Array, Array_orig
+        return TensorArray, EigenValues, N0, Minf, PODTensors, PODEigenValues, numelements, ErrorTensors, (ndof, ndof2), PODArray, PODArray_orig, TensorArray_orig, EigenValues_orig, ErrorTensors_orig, PODEigenValues_orig, PODTensors_orig, N_Snaps, Error_Array, Final_Evaluation_Array, Array_orig
     else:
-        return TensorArray, EigenValues, N0, numelements, ErrorTensors, (ndof, ndof2), PODArray, PODArray_orig, TensorArray_orig, EigenValues_orig, ErrorTensors_orig, PODEigenValues_orig, PODTensors_orig, N_Snaps, Error_Array, Final_Evaluation_Array, Array_orig
-
-
-
+        return TensorArray, EigenValues, N0, Minf, numelements, ErrorTensors, (ndof, ndof2), PODArray, PODArray_orig, TensorArray_orig, EigenValues_orig, ErrorTensors_orig, PODEigenValues_orig, PODTensors_orig, N_Snaps, Error_Array, Final_Evaluation_Array, Array_orig

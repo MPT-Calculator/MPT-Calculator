@@ -17,7 +17,7 @@ from .FtoS import *
 from .DictionaryList import *
 
 
-def FullSave(Geometry, Array, TensorArray, EigenValues, N0, Pod, PODArray, PODTol, elements, alpha, Order, MeshSize,
+def FullSave(Geometry, Array, TensorArray, EigenValues, N0, Minf, Pod, PODArray, PODTol, elements, alpha, Order, MeshSize,
              mur, sig, ErrorTensors, EddyCurrentTest, invariants):
     """
     B.A. Wilson, J.Elgy, P.D. Ledger.2020-2023.
@@ -29,6 +29,7 @@ def FullSave(Geometry, Array, TensorArray, EigenValues, N0, Pod, PODArray, PODTo
         TensorArray (np.ndarray): Nx9 complex tensor coefficients.
         EigenValues (np.ndarray): Nx3 complex eigenvalues
         N0 (np.ndarray): 3x3 N0 coefficient
+        Minf (np.ndarray): 3x3 Minf coefficient
         Pod (bool): bool for if sweep used POD
         PODArray (list | np.ndarray): list of K frequencies (rad/s) for POD snapshots.
         PODTol (float): Tolerance for truncated SVD
@@ -42,8 +43,8 @@ def FullSave(Geometry, Array, TensorArray, EigenValues, N0, Pod, PODArray, PODTo
         EddyCurrentTest (float | None): max frequency for eddy current regime, or None if not calculated.
         invariants (np.ndarray): Nx3 MPT Tensor invarients.
     """
-    
-    
+
+
     # Find how the user wants the data to be saved
     # FolderStructure = SaverSettings()
 
@@ -79,6 +80,7 @@ def FullSave(Geometry, Array, TensorArray, EigenValues, N0, Pod, PODArray, PODTo
     np.savetxt("Results/" + sweepname + "/Data/Frequencies.csv", Array, delimiter=",")
     np.savetxt("Results/" + sweepname + "/Data/Eigenvalues.csv", EigenValues, delimiter=",")
     np.savetxt("Results/" + sweepname + "/Data/N0.csv", N0, delimiter=",")
+    np.savetxt("Results/" + sweepname + "/Data/Minf.csv", Minf, delimiter=",")
     np.savetxt("Results/" + sweepname + "/Data/Tensors.csv", TensorArray, delimiter=",")
     np.savetxt("Results/" + sweepname + "/Data/Invariants.csv", invariants, delimiter=",")
 

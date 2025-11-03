@@ -17,10 +17,10 @@ from .FtoS import *
 from .DictionaryList import *
 
 
-def PODSave(Geometry, Array, TensorArray, EigenValues, N0, PODTensors, PODEigenValues, PODArray, PODTol, elements,
+def PODSave(Geometry, Array, TensorArray, EigenValues, N0, Minf, PODTensors, PODEigenValues, PODArray, PODTol, elements,
             alpha, Order, MeshSize, mur, sig, ErrorTensors, EddyCurrentTest, invariants, using_iterative_POD=False):
     """_summary_
-    B.A. Wilson, J.Elgy, P.D. Ledger.2020-2023.
+    B.A. Wilson, J.Elgy, P.D. Ledger.2020-2025.
     Save data and make folder structure with POD tensors and Eigenvalues.
 
     Args:
@@ -29,6 +29,7 @@ def PODSave(Geometry, Array, TensorArray, EigenValues, N0, PODTensors, PODEigenV
         TensorArray (np.ndarray): Nx9 complex tensor coefficients.
         EigenValues (np.ndarray): Nx3 complex eigenvalues
         N0 (np.ndarray): 3x3 N0 coefficient
+        Minf (np.ndarray): 3x3 Minf coefficient
         PODTensors (np.ndarray): Kx9 POD tensor coefficients.
         PODEigenValues (np.ndarray): Kx3 POD eigenvalues.
         PODArray (list | np.ndarray): list of K frequencies (rad/s) for POD snapshots.
@@ -44,9 +45,9 @@ def PODSave(Geometry, Array, TensorArray, EigenValues, N0, PODTensors, PODEigenV
         invariants (np.ndarray): Nx3 MPT Tensor invarients.
         using_iterative_POD (bool, optional): flag that the sweep was run using the iterative POD mode. Defaults to False.
     """
-    
-    
-    
+
+
+
     # Find how the user wants the data to be saved
     # FolderStructure = SaverSettings()
 
@@ -83,6 +84,7 @@ def PODSave(Geometry, Array, TensorArray, EigenValues, N0, PODTensors, PODEigenV
     np.savetxt("Results/" + sweepname + "/Data/Eigenvalues.csv", EigenValues, delimiter=",")
     np.savetxt("Results/" + sweepname + "/Data/PODEigenvalues.csv", PODEigenValues, delimiter=",")
     np.savetxt("Results/" + sweepname + "/Data/N0.csv", N0, delimiter=",")
+    np.savetxt("Results/" + sweepname + "/Data/Minf.csv", Minf, delimiter=",")
     np.savetxt("Results/" + sweepname + "/Data/Tensors.csv", TensorArray, delimiter=",")
     np.savetxt("Results/" + sweepname + "/Data/PODTensors.csv", PODTensors, delimiter=",")
     np.savetxt("Results/" + sweepname + "/Data/Invariants.csv", invariants, delimiter=",")
