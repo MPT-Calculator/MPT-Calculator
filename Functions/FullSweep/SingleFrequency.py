@@ -81,7 +81,7 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
     P.D. Ledger added multiprocessing.set_start_method("spawn", force=True) for python >=3.11
     """
 
-    _, Mu0, _, _, _, _, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation([Omega], Object, [], curve, inorout,
+    _, Mu0, _, _, _, _,_, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation([Omega], Object, [], curve, inorout,
                                                                                                               mur, sig, Order, 0, sweepname,
                                                                                                               num_solver_threads, drop_tol)
     # Set up the Solver Parameters
@@ -119,7 +119,7 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
     ThetainfSol, Thetainfi, Thetainfj, fes3, ndof, evec = Solve_Theta_inf_Problem(Additional_Int_Order, 1, Maxsteps, Order,
                                                                          Solver,
                                                                          Tolerance, alpha, epsi, inout, mesh,
-                                                                         recoverymode, sweepname)
+                                                                         False, '')
 
     # Calculate the Minf tensor
     Minf = Calculate_Minf(Integration_Order, Minf, ThetainfSol, Thetainfi, Thetainfj, alpha, mesh, inout)

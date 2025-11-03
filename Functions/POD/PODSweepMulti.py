@@ -147,7 +147,7 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
 
     timing_dictionary['start_time'] = time.time()
 
-    EigenValues, Mu0, N0, NumberofFrequencies, NumberofSnapshots, TensorArray,  inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation(
+    EigenValues, Mu0, N0, Minf, NumberofFrequencies, NumberofSnapshots, TensorArray,  inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation(
         Array, Object, PODArray, curve, inorout, mur, sig, Order, Order_L2, sweepname, NumSolverThreads, drop_tol)
     # Set up the Solver Parameters
     Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()

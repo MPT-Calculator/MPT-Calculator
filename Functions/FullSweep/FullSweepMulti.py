@@ -77,7 +77,7 @@ def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProb
     print(' Running as parallel full sweep')
 
 
-    EigenValues, Mu0, N0, NumberofFrequencies, _, TensorArray, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation(
+    EigenValues, Mu0, N0, Minf, NumberofFrequencies, _, TensorArray, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation(
         Array, Object, [], curve, inorout, mur, sig, Order, Order_L2, sweepname,NumSolverThreads, drop_tol )
     # Set up the Solver Parameters
     Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()
@@ -110,7 +110,7 @@ def FullSweepMulti(Object ,Order ,alpha ,inorout ,mur ,sig ,Array ,CPUs ,BigProb
     ThetainfSol, Thetainfi, Thetainfj, fes3, ndof, evec = Solve_Theta_inf_Problem(Additional_Int_Order, 1, Maxsteps, Order,
                                                                 Solver,
                                                                 Tolerance, alpha, epsi, inout, mesh,
-                                                                recoverymode, sweepname)
+                                                                False, '')
 
     # Calculate the Minf tensor
     Minf = Calculate_Minf(Integration_Order, Minf, ThetainfSol, Thetainfi, Thetainfj, alpha, mesh, inout)

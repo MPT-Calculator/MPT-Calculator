@@ -134,7 +134,7 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
 
     CPUs = cpus
 
-    EigenValues, Mu0, N0, NumberofFrequencies, NumberofSnapshots, TensorArray,  inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation(
+    EigenValues, Mu0, N0, Minf, NumberofFrequencies, NumberofSnapshots, TensorArray,  inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation(
         Array, Object, PODArray, curve, inorout, mur, sig, Order, 0, sweepname, NumSolverThreads, drop_tol )
 
     # Updating PODErrorBars so that the function will always compute error certificates. We do it here so that the user
@@ -205,7 +205,7 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
     ThetainfSol, Thetainfi, Thetainfj, fes3, ndof, evec = Solve_Theta_inf_Problem(Additional_Int_Order, 1, Maxsteps, Order,
                                                                      Solver,
                                                                      Tolerance, alpha, epsi, inout, mesh,
-                                                                     recoverymode, sweepname)
+                                                                     False, sweepname)
 
     # Calculate the Minf tensor
     Minf = Calculate_Minf(Integration_Order, Minf, ThetainfSol, Thetainfi, Thetainfj, alpha, mesh, inout)

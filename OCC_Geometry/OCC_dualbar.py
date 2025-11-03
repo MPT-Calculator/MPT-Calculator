@@ -13,8 +13,8 @@ This example illustrates that lists can be used for multiple objects.
 # For multiple objects then object_name, mur, and sigma should be given as parameter lists.
 # These lists are used in the generation of the associated .geo files.
 material_name = ['bar1', 'bar2']
-mur = [1, 32]
-sigma = [1e6, 1e6]
+mur = [1, 1]
+sigma = [1e6, 1e8]
 alpha = 0.001
 
 # Generating OCC primitive boxes:
