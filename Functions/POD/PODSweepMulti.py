@@ -163,8 +163,9 @@ def PODSweepMulti(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
                                                                    Tolerance, alpha, epsi, inout, mesh, mu_inv,
                                                                    recoverymode, sweepname)
 
-    if save_U is True and recoverymode is False:
-        np.save('Results/' + sweepname + '/Data/Theta0', Theta0Sol)
+    # switch off saving Theta0 to save space
+    #if save_U is True and recoverymode is False:
+    #    np.save('Results/' + sweepname + '/Data/Theta0', Theta0Sol)
 
     Theta0Sol = Theta0_Postprocessing(Additional_Int_Order, Theta0Sol, fes)
 

@@ -94,17 +94,23 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
             rel_diff_array += [rel_diff]
             ord_array += [bonus_intord]
         del K
-        if counter > 1 and rel_diff >= last_rel_diff:
+        """if counter > 1 and rel_diff >= last_rel_diff:
             # No convergence
             print("No convergence - exit loop and switch to linear geometry")
             counter=max_iter
-            break
+            break"""
 
         #vals = np.zeros(nz)  # reset vals
 
         # using bonus_intord =n and bonus_intord =n+1 gives the same result (?). So we use even orders.
         bonus_intord += 2
         counter += 1
+
+    if counter>=max_iter:
+        index=np.argmin(np.array(rel_diff_array))
+        bonus_intord=ord_array[index]
+        print(index,bonus_intord)
+        counter=1
 
     plt.figure()
     plt.title(f'Curve order: {curve_order}')
@@ -175,17 +181,23 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
             ord_array += [bonus_intord]
         del A
 
-        if counter > 1 and rel_diff >= last_rel_diff:
+        """if counter > 1 and rel_diff >= last_rel_diff:
             # No convergence
             print("No convergence - exit loop and switch to linear geometry")
             counter=max_iter
-            break
+            break"""
 
         #vals = np.zeros(nz)  # reset vals
 
         # using bonus_intord =n and bonus_intord =n+1 gives the same result (?). So we use even orders.
         bonus_intord += 2
         counter += 1
+
+    if counter>=max_iter:
+        index=np.argmin(np.array(rel_diff_array)) 
+        bonus_intord=ord_array[index]
+        print(index,bonus_intord)
+        counter=1
 
     plt.figure()
     plt.title(f'Curve order: {curve_order}')
@@ -214,5 +226,6 @@ def BilinearForms_Check(mesh, order, mu_inv, sigma, inout, bilinearform_tol, max
     print(f'C Bilinear Form Converged using order {C_order}')
 
     gc.collect()
-    return max([K_order, C_order])
+    #return max([K_order, C_order])
+    return min([K_order, C_order])
 

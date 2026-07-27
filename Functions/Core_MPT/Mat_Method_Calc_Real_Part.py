@@ -144,7 +144,9 @@ def Mat_Method_Calc_Real_Part(bilinear_bonus_int_order: int,
                     Qij = locals()[f'Q{i+1}{j+1}']
 
                     A = np.conj(gi[None, :]) @ Qij @ (gj)[:, None]
-                    R[i, j] = (A * (-alpha ** 3) / 4).real
+                    #print(A)
+                    #print((A[0] * (-alpha ** 3) / 4).real[0])
+                    R[i, j] = (A[0] * (-alpha ** 3) / 4).real[0]
             #print(A,np.shape(A),alpha,np.shape(alpha))
 
         # If we don't reduce the size of the matrix and we still want to save memory, then we can use K.Apply here as well.

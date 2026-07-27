@@ -21,7 +21,7 @@ def count_prismatic_elements(filename):
             line_number += 1
 
         max_elements = int(f.readline())
-
+        
 #        stop = False
 #        line_number = 0
 #        while stop is False:
@@ -54,6 +54,10 @@ def count_prismatic_elements(filename):
                     ntets+=1
             line_number += 1
             if line[0:8] == '# surfid':
+                stop = True
+                line_number -= 3
+            # add update as volfile has changed structure 6.2.2606
+            if line[0:4] == '# p1':
                 stop = True
                 line_number -= 3
 

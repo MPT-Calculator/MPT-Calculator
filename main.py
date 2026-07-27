@@ -199,7 +199,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
         except:
             #Force update to the .vol file
             OldMesh = False
-
+    
 
 
     # For the combination of curved elements and high order elements, one can use the same quadrature rule as one would
@@ -235,6 +235,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
     # default in the linear and bilinear forms.
     Order_L2 = 0 # using piecewise constants for material properties.
     N_prisms, N_tets = count_prismatic_elements('./VolFiles/' +Geometry[:-4]+".vol")
+    
     if N_prisms > 0:
         prism_flag = True
         Additional_Int_Order = 2 + Order_L2  # Note that this could be reduced to 1*Oder_L2

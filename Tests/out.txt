@@ -1,0 +1,191 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.14, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/pdl11/Coding/MPT_calculator/July2026/MPT-Calculator/Tests
+collected 1 item
+
+test_suite.py OCC_test_sphere_prism_32.geo
+[0, 1] 2 ['air', 'mat1']
+Mesh Contains Prisms? True
+N Prisms: 1312, N Tets: 18157
+[0, 1] 2 ['air', 'mat1']
+ Running as POD
+ mesh contains 19469 elements
+[0, 1] 2 ['air', 'mat1']
+Predicted unit object volume is 4.212731335280559
+considering conductor element 0 2 air
+considering conductor element 1 2 mat1
+Calculated conductor volume as sum 4.212731335280559
+Running Bilinear Forms Check
+Mesh curve order set to:  5
+K: Iteration 1: bonus_intord = 2
+K: Iteration 2: bonus_intord = 4
+K: Iteration 3: bonus_intord = 6
+K: Iteration 4: bonus_intord = 8
+K: Iteration 5: bonus_intord = 10
+K: Iteration 6: bonus_intord = 12
+K: Iteration 7: bonus_intord = 14
+K Bilinear Form Converged using order 16
+C: Iteration 1: bonus_intord = 2
+C: Iteration 2: bonus_intord = 4
+C: Iteration 3: bonus_intord = 6
+C: Iteration 4: bonus_intord = 8
+C: Iteration 5: bonus_intord = 10
+C: Iteration 6: bonus_intord = 12
+C Bilinear Form Converged using order 14
+Solving Theta0:   0%|          | 0/3 [00:00<?, ?it/s]Solving Theta0:  33%|███▎      | 1/3 [00:11<00:23, 11.52s/it]Solving Theta0:  67%|██████▋   | 2/3 [00:22<00:11, 11.42s/it]Solving Theta0: 100%|██████████| 3/3 [00:35<00:00, 11.89s/it]Solving Theta0: 100%|██████████| 3/3 [00:35<00:00, 11.77s/it]
+ solved theta0 problems   
+Solving Thetainf:   0%|          | 0/3 [00:00<?, ?it/s]Solving Thetainf:  33%|███▎      | 1/3 [00:02<00:05,  2.76s/it]Solving Thetainf:  67%|██████▋   | 2/3 [00:05<00:02,  2.74s/it]Solving Thetainf: 100%|██████████| 3/3 [00:08<00:00,  2.76s/it]Solving Thetainf: 100%|██████████| 3/3 [00:08<00:00,  2.76s/it]
+ solved thetainf problems   
+Solving Theta1:   0%|          | 0/13 [00:00<?, ?it/s]Solving Theta1:   8%|▊         | 1/13 [00:09<01:50,  9.20s/it]Solving Theta1:  15%|█▌        | 2/13 [00:18<01:40,  9.15s/it]Solving Theta1:  23%|██▎       | 3/13 [00:27<01:31,  9.15s/it]Solving Theta1:  31%|███       | 4/13 [00:36<01:22,  9.17s/it]Solving Theta1:  38%|███▊      | 5/13 [00:45<01:13,  9.14s/it]Solving Theta1:  46%|████▌     | 6/13 [00:54<01:03,  9.14s/it]Solving Theta1:  54%|█████▍    | 7/13 [01:04<00:54,  9.17s/it]Solving Theta1:  62%|██████▏   | 8/13 [01:13<00:46,  9.22s/it]Solving Theta1:  69%|██████▉   | 9/13 [01:23<00:37,  9.38s/it]Solving Theta1:  77%|███████▋  | 10/13 [01:33<00:28,  9.65s/it]Solving Theta1:  85%|████████▍ | 11/13 [01:44<00:20, 10.02s/it]Solving Theta1:  92%|█████████▏| 12/13 [01:54<00:10, 10.11s/it]Solving Theta1: 100%|██████████| 13/13 [02:05<00:00, 10.27s/it]Solving Theta1: 100%|██████████| 13/13 [02:05<00:00,  9.63s/it]
+ solved theta1 problems     
+0 / 131 / 132 / 133 / 134 / 135 / 136 / 137 / 138 / 139 / 1310 / 1311 / 1312 / 130 / 131 / 132 / 133 / 134 / 135 / 136 / 137 / 138 / 139 / 1310 / 1311 / 1312 / 13 performing SVD               SVD complete      
+ Number of retained modes = 9
+ creating reduced order model0 / 401 / 402 / 403 / 404 / 405 / 406 / 407 / 408 / 409 / 4010 / 4011 / 4012 / 4013 / 4014 / 4015 / 4016 / 4017 / 4018 / 4019 / 4020 / 4021 / 4022 / 4023 / 4024 / 4025 / 4026 / 4027 / 4028 / 4029 / 4030 / 4031 / 4032 / 4033 / 4034 / 4035 / 4036 / 4037 / 4038 / 4039 / 400 / 401 / 402 / 403 / 404 / 405 / 406 / 407 / 408 / 409 / 4010 / 4011 / 4012 / 4013 / 4014 / 4015 / 4016 / 4017 / 4018 / 4019 / 4020 / 4021 / 4022 / 4023 / 4024 / 4025 / 4026 / 4027 / 4028 / 4029 / 4030 / 4031 / 4032 / 4033 / 4034 / 4035 / 4036 / 4037 / 4038 / 4039 / 40Pool has already closed.
+ reduced order systems solved
+ reduced order systems solved        
+ frequency sweep complete
+10.0 (-6.299744593079375e-14+5.263788952309799e-10j)
+15.117750706156622 (-1.4397686124527108e-13+7.957664740180445e-10j)
+22.854638641349908 (-3.2905392749405056e-13+1.203019862763034e-09j)
+34.55107294592218 (-7.52042104324836e-13+1.8186952555894365e-09j)
+52.23345074266843 (-1.718764303791015e-12+2.749457513894067e-09j)
+78.96522868499724 (-3.928171495917886e-12+4.156559133979991e-09j)
+119.37766417144357 (-8.977681966481057e-12+6.283774903902839e-09j)
+180.47217668271702 (-2.051810729624987e-11+9.499628076921755e-09j)
+272.83333764867695 (-4.6893079469114365e-11+1.4361210479448623e-08j)
+412.4626382901352 (-1.0717080277283533e-10+2.17106075577463e-08j)
+623.5507341273913 (-2.4492645355997076e-10+3.282047585345053e-08j)
+942.6684551178854 (-5.597259384558248e-10+4.9613448120474455e-08j)
+1425.1026703029977 (-1.2790003994998384e-09+7.499149307859509e-08j)
+2154.4346900318847 (-2.9218928601792927e-09+1.1332579160867977e-07j)
+3257.0206556597827 (-6.67153601994296e-09+1.7116964238541928e-07j)
+4923.882631706741 (-1.5214519643769455e-08+2.5824143486926563e-07j)
+7443.803013251689 (-3.4600923377085044e-08+3.885898159714327e-07j)
+11253.355826007646 (-7.819888200383545e-08+5.812972813666104e-07j)
+17012.54279852589 (-1.7428918173728186e-07+8.582651372454734e-07j)
+25719.13809059347 (-3.7699500273793026e-07+1.2321166847753562e-06j)
+38881.55180308085 (-7.678787044534592e-07+1.6725645267133378e-06j)
+58780.16072274912 (-1.4073241904967903e-06+2.0613974455407135e-06j)
+88862.38162743408 (-2.223535752372473e-06+2.2302275459446087e-06j)
+134339.93325989015 (-3.0129688924852965e-06+2.13585855707319e-06j)
+203091.76209047346 (-3.6452692220600623e-06+1.9056592711929772e-06j)
+307029.062975785 (-4.138293789921872e-06+1.6571235012543185e-06j)
+464158.8833612782 (-4.537918608756388e-06+1.42196188730157e-06j)
+701703.8286703823 (-4.863786549715486e-06+1.2056397057839674e-06j)
+1060818.3551394483 (-5.128773755082527e-06+1.0130110662920633e-06j)
+1603718.743751331 (-5.3442901701190974e-06+8.453625336931622e-07j)
+2424462.017082331 (-5.519571977339871e-06+7.017439340710076e-07j)
+3665241.237079626 (-5.662130523649746e-06+5.80129782882397e-07j)
+5541020.330009492 (-5.7780748944976644e-06+4.780395861795153e-07j)
+8376776.400682924 (-5.872373675475137e-06+3.929049820787334e-07j)
+12663801.734674022 (-5.949067869672024e-06+3.2227265320481604e-07j)
+19144819.761699576 (-6.011444067567038e-06+2.6390622200114926e-07j)
+28942661.247167516 (-6.062175287897093e-06+2.1582735834060814e-07j)
+43754793.75074189 (-6.103435525023248e-06+1.7632158636013664e-07j)
+66147406.41230146 (-6.136992911512888e-06+1.439247330607753e-07j)
+100000000.0 (-6.164285488251408e-06+1.1739981892818085e-07j)
+[-6.29974459e-14+5.26378895e-10j -1.43976861e-13+7.95766474e-10j
+ -3.29053927e-13+1.20301986e-09j -7.52042104e-13+1.81869526e-09j
+ -1.71876430e-12+2.74945751e-09j -3.92817150e-12+4.15655913e-09j
+ -8.97768197e-12+6.28377490e-09j -2.05181073e-11+9.49962808e-09j
+ -4.68930795e-11+1.43612105e-08j -1.07170803e-10+2.17106076e-08j
+ -2.44926454e-10+3.28204759e-08j -5.59725938e-10+4.96134481e-08j
+ -1.27900040e-09+7.49914931e-08j -2.92189286e-09+1.13325792e-07j
+ -6.67153602e-09+1.71169642e-07j -1.52145196e-08+2.58241435e-07j
+ -3.46009234e-08+3.88589816e-07j -7.81988820e-08+5.81297281e-07j
+ -1.74289182e-07+8.58265137e-07j -3.76995003e-07+1.23211668e-06j
+ -7.67878704e-07+1.67256453e-06j -1.40732419e-06+2.06139745e-06j
+ -2.22353575e-06+2.23022755e-06j -3.01296889e-06+2.13585856e-06j
+ -3.64526922e-06+1.90565927e-06j -4.13829379e-06+1.65712350e-06j
+ -4.53791861e-06+1.42196189e-06j -4.86378655e-06+1.20563971e-06j
+ -5.12877376e-06+1.01301107e-06j -5.34429017e-06+8.45362534e-07j
+ -5.51957198e-06+7.01743934e-07j -5.66213052e-06+5.80129783e-07j
+ -5.77807489e-06+4.78039586e-07j -5.87237368e-06+3.92904982e-07j
+ -5.94906787e-06+3.22272653e-07j -6.01144407e-06+2.63906222e-07j
+ -6.06217529e-06+2.15827358e-07j -6.10343553e-06+1.76321586e-07j
+ -6.13699291e-06+1.43924733e-07j -6.16428549e-06+1.17399819e-07j]
+[ 4.32801691e-14+5.26378778e-10j -3.76996987e-14+7.95766299e-10j
+ -2.22776248e-13+1.20301960e-09j -6.45761947e-13+1.81869486e-09j
+ -1.61248014e-12+2.74945691e-09j -3.82187786e-12+4.15655822e-09j
+ -8.87136722e-12+6.28377352e-09j -2.04117442e-11+9.49962599e-09j
+ -4.67866056e-11+1.43612073e-08j -1.07064076e-10+2.17106028e-08j
+ -2.44819148e-10+3.28204687e-08j -5.59617310e-10+4.96134373e-08j
+ -1.27888875e-09+7.49914768e-08j -2.92177432e-09+1.13325767e-07j
+ -6.67140180e-09+1.71169607e-07j -1.52143499e-08+2.58241385e-07j
+ -3.46006741e-08+3.88589755e-07j -7.81984593e-08+5.81297236e-07j
+ -1.74288403e-07+8.58265217e-07j -3.76993592e-07+1.23211724e-06j
+ -7.67876507e-07+1.67256637e-06j -1.40732180e-06+2.06140167e-06j
+ -2.22353449e-06+2.23023417e-06j -3.01296840e-06+2.13586586e-06j
+ -3.64526576e-06+1.90566549e-06j -4.13827718e-06+1.65712519e-06j
+ -4.53785391e-06+1.42195887e-06j -4.86359609e-06+1.20567993e-06j
+ -5.12838415e-06+1.01327670e-06j -5.34382459e-06+8.46206524e-07j
+ -5.51960203e-06+7.03399692e-07j -5.66342202e-06+5.82210667e-07j
+ -5.78100503e-06+4.79336539e-07j -5.87568912e-06+3.91987516e-07j
+ -5.95070037e-06+3.19825130e-07j -6.01108517e-06+2.61689848e-07j
+ -6.06042993e-06+2.15038380e-07j -6.10184630e-06+1.77715750e-07j
+ -6.13721545e-06+1.45917422e-07j -6.16443266e-06+1.17381776e-07j]
+.
+
+=============================== warnings summary ===============================
+test_suite.py:73
+  /home/pdl11/Coding/MPT_calculator/July2026/MPT-Calculator/Tests/test_suite.py:73: SyntaxWarning: invalid escape sequence '\o'
+    plt.xlabel('$\omega$, [rad/s]')
+
+test_suite.py:86
+  /home/pdl11/Coding/MPT_calculator/July2026/MPT-Calculator/Tests/test_suite.py:86: SyntaxWarning: invalid escape sequence '\o'
+    plt.xlabel('$\omega$, [rad/s]')
+
+test_suite.py:100
+  /home/pdl11/Coding/MPT_calculator/July2026/MPT-Calculator/Tests/test_suite.py:100: SyntaxWarning: invalid escape sequence '\o'
+    plt.xlabel('$\omega$, [rad/s]')
+
+test_suite.py:129
+  /home/pdl11/Coding/MPT_calculator/July2026/MPT-Calculator/Tests/test_suite.py:129: SyntaxWarning: invalid escape sequence '\o'
+    plt.xlabel('$\omega$, [rad/s]')
+
+test_suite.py:141
+  /home/pdl11/Coding/MPT_calculator/July2026/MPT-Calculator/Tests/test_suite.py:141: SyntaxWarning: invalid escape sequence '\o'
+    plt.xlabel('$\omega$, [rad/s]')
+
+test_suite.py:154
+  /home/pdl11/Coding/MPT_calculator/July2026/MPT-Calculator/Tests/test_suite.py:154: SyntaxWarning: invalid escape sequence '\o'
+    plt.xlabel('$\omega$, [rad/s]')
+
+test_suite.py:183
+  /home/pdl11/Coding/MPT_calculator/July2026/MPT-Calculator/Tests/test_suite.py:183: SyntaxWarning: invalid escape sequence '\o'
+    plt.xlabel('$\omega$, [rad/s]')
+
+test_suite.py:195
+  /home/pdl11/Coding/MPT_calculator/July2026/MPT-Calculator/Tests/test_suite.py:195: SyntaxWarning: invalid escape sequence '\o'
+    plt.xlabel('$\omega$, [rad/s]')
+
+test_suite.py:208
+  /home/pdl11/Coding/MPT_calculator/July2026/MPT-Calculator/Tests/test_suite.py:208: SyntaxWarning: invalid escape sequence '\o'
+    plt.xlabel('$\omega$, [rad/s]')
+
+test_suite.py:240
+  /home/pdl11/Coding/MPT_calculator/July2026/MPT-Calculator/Tests/test_suite.py:240: SyntaxWarning: invalid escape sequence '\o'
+    plt.xlabel('$\omega$, [rad/s]')
+
+test_suite.py:252
+  /home/pdl11/Coding/MPT_calculator/July2026/MPT-Calculator/Tests/test_suite.py:252: SyntaxWarning: invalid escape sequence '\o'
+    plt.xlabel('$\omega$, [rad/s]')
+
+test_suite.py:265
+  /home/pdl11/Coding/MPT_calculator/July2026/MPT-Calculator/Tests/test_suite.py:265: SyntaxWarning: invalid escape sequence '\o'
+    plt.xlabel('$\omega$, [rad/s]')
+
+test_suite.py:294
+  /home/pdl11/Coding/MPT_calculator/July2026/MPT-Calculator/Tests/test_suite.py:294: SyntaxWarning: invalid escape sequence '\o'
+    plt.xlabel('$\omega$, [rad/s]')
+
+test_suite.py:306
+  /home/pdl11/Coding/MPT_calculator/July2026/MPT-Calculator/Tests/test_suite.py:306: SyntaxWarning: invalid escape sequence '\o'
+    plt.xlabel('$\omega$, [rad/s]')
+
+test_suite.py:319
+  /home/pdl11/Coding/MPT_calculator/July2026/MPT-Calculator/Tests/test_suite.py:319: SyntaxWarning: invalid escape sequence '\o'
+    plt.xlabel('$\omega$, [rad/s]')
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================== 1 passed, 15 warnings in 271.73s (0:04:31) ==================

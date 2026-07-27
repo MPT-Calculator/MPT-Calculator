@@ -86,6 +86,9 @@ def MPT_Preallocation(Array, Object, PODArray, curve, inorout, mur, sig, Order, 
     mu_inv = muspecial
     sigma = sigmaspecial
 
+    # Run check on mesh, pass Integration_Order=1 as we are only integrating a constant
+    check_mesh_volumes(mesh, inout, Object, 1, curve)
+
 
     # Running pre-sweep checks for integration order and mesh consistency.
     run, bilinear_tol, max_iter = PrerunCheckSettings()

@@ -189,7 +189,8 @@ def PODSweepIterative(Object, Order, alpha, inorout, mur, sig, Array, PODArray, 
                                                                    Tolerance, alpha, epsi, inout, mesh, mu_inv,
                                                                    False, sweepname)
 
-    np.save('Results/' + sweepname + '/Data/Theta0', Theta0Sol)
+    # Switch off saving Theta0 to save space
+    #np.save('Results/' + sweepname + '/Data/Theta0', Theta0Sol)
 
     Theta0Sol = Theta0_Postprocessing(Additional_Int_Order, Theta0Sol, fes)
 

@@ -8,12 +8,14 @@ from ngsolve import *
 #import pytest
 try:
     from main import main
+    from Functions.Helper_Functions.exact_sphere import *
 except:
     currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     parentdir = os.path.dirname(currentdir)
     sys.path.insert(0, parentdir)
     os.chdir(parentdir)
     from main import *
+    from Functions.Helper_Functions.exact_sphere import *
 
 """
 James Elgy 2023-2024
@@ -40,8 +42,8 @@ To single test example (e.g. test_key):  python3 -m pytest -s test_suite.py::tes
 def test_sphere():
     
     # Running Sweep and computing error
-    geometry = 'OCC_test_sphere_prism_32.py'
-    test_results = main(geometry=geometry, order=3, use_OCC=True, use_POD=True, use_parallel=False, cpus=4)
+    geometry = 'OCC_test_sphere_prism_32.geo'#'OCC_test_sphere_prism_32.py'# was order=3 was use_OCC=True added alpha
+    test_results = main(geometry=geometry, order=3, use_OCC=False, use_POD=True, use_parallel=False, cpus=4, alpha=1e-2)
     test_tensors = test_results['TensorArray'] 
     
     validation_filename = r'Tests/Validation_Standards/OCC_sphere_prism_32/al_0.01_mu_1_sig_1e6/1e1-1e8_40_el_22426_ord_3_POD_13_1e-6/Data'
@@ -52,6 +54,17 @@ def test_sphere():
         rel_err[ind] = np.linalg.norm((test_tensors[ind, :] - valdiation_tensors[ind, :])) / np.linalg.norm(valdiation_tensors[ind, :])
     max_err = np.max(rel_err)
     
+    
+    exactmpt = np.zeros(len(test_results['FrequencyArray']), dtype = complex)
+
+    cnt=0
+    for omega in test_results['FrequencyArray']:
+        exactmpt[cnt] = exact_sphere(1e-2, 0, 1, 1e6, omega)
+        print(omega,exactmpt[cnt])
+        cnt+=1
+
+    print(exactmpt)
+    print(test_results['TensorArray'][:,0])
     # Generating Comparison Graphs
     plt.close('all')
     
@@ -66,6 +79,7 @@ def test_sphere():
         if i == 0:
             plt.semilogx(test_results['FrequencyArray'], test_results['TensorArray'][:,i].real, label='New', color='b')
             plt.semilogx(test_results['FrequencyArray'], valdiation_tensors[:,i].real, label='Standard', color='r')
+            plt.semilogx(test_results['FrequencyArray'], exactmpt.real,'mx', label='Exact')
         else:
             plt.semilogx(test_results['FrequencyArray'], test_results['TensorArray'][:,i].real, color='b')
             plt.semilogx(test_results['FrequencyArray'], valdiation_tensors[:,i].real, color='r')
@@ -79,6 +93,7 @@ def test_sphere():
         if i == 0:
             plt.semilogx(test_results['FrequencyArray'], test_results['TensorArray'][:,i].imag, label='New', color='b')
             plt.semilogx(test_results['FrequencyArray'], valdiation_tensors[:,i].imag, label='Standard', color='r')
+            plt.semilogx(test_results['FrequencyArray'], exactmpt.imag, 'mx', label='Exact')
         else:
             plt.semilogx(test_results['FrequencyArray'], test_results['TensorArray'][:,i].imag, color='b')
             plt.semilogx(test_results['FrequencyArray'], valdiation_tensors[:,i].imag, color='r')

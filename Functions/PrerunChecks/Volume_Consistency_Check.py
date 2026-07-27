@@ -7,11 +7,15 @@ import netgen.meshing as ngmeshing
 from ..MeshMaking.VolMatUpdater import *
 import runpy
 
-def check_mesh_volumes(mesh, inout, use_OCC, Object, integration_Order, curve):
+#def check_mesh_volumes(mesh, inout, use_OCC, Object, integration_Order, curve):
+def check_mesh_volumes(mesh, inout, Object, integration_Order, curve):
     """
     James Elgy 2023:
     Adaption of CheckValid to compute mesh volume and in case of OCC geometry compare to exact known volumes. Note,
     that this does not scale by alpha
+
+    Paul Ledger 2026:
+    Update to run from MPT_Preallocation.py
 
     Parameters
     ----------
@@ -27,7 +31,8 @@ def check_mesh_volumes(mesh, inout, use_OCC, Object, integration_Order, curve):
     # integration_Order = max([3*(curve - 1), 2*(Order + 1)])
 
     # Grabbing materials and mesh:
-    Materials, mur, sig, inorout, cond, ntags, tags = VolMatUpdater(Object[:-4] + '.vol', True)
+    Materials, mur, sig, inorout, cond, ntags, tags = VolMatUpdater(Object[:-4] + '.geo', True)
+    #Materials, mur, sig, inorout, cond, ntags, tags = VolMatUpdater(Object, True)
     cond_coef = [cond[mat] for mat in mesh.GetMaterials() ]
     conductor = CoefficientFunction(cond_coef)
 
@@ -45,9 +50,9 @@ def check_mesh_volumes(mesh, inout, use_OCC, Object, integration_Order, curve):
             totalvolume = totalvolume + volumepart
     print("Calculated conductor volume as sum",totalvolume)
 
-    if use_OCC is True:
-        out = runpy.run_path(f'OCC_Geometry/{Object[:-4]}.py')
-        nmesh = out['nmesh']
+    #if use_OCC is True:
+    #    out = runpy.run_path(f'OCC_Geometry/{Object[:-4]}.py')
+    #    nmesh = out['nmesh']
 
 
 # Helper function that returns 1 for if index=n and 0 otherwise

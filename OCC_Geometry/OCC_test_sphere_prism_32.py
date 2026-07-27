@@ -74,6 +74,7 @@ B = BoundaryLayerParameters(boundary=".*", thickness=layer_thicknesses, new_mate
 nmesh = OCCGeometry(joined_object).GenerateMesh(boundary_layers=[B])
 
 nmesh.Save(r'VolFiles/OCC_test_sphere_prism_32.vol')
+#print("Mesh generated")
 # print(nmesh.GetMaterial(2))
 from ngsolve import *
 mesh = Mesh(nmesh)
