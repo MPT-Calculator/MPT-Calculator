@@ -57,10 +57,6 @@ from ngsolve import *
 mesh = Mesh(nmesh)
 print(f'Materials = {mesh.GetMaterials()}')
 
-import warnings
-#import osii
-import gc
-
 # Testing of convergence of integration of bilinear fomrs
 
 # Setting mesh curve order so that we can recheck for linear geometry:
@@ -106,16 +102,10 @@ while (rel_diff > bilinearform_tol) and (counter < max_iter):
         ord_array += [bonus_intord]
         del K
         
-        # using bonus_intord =n and bonus_intord =n+1 gives the same result (?).
- 
+
     bonus_intord += 2
     counter += 1
 
-"""if counter>=max_iter:
-    index=np.argmin(np.array(rel_diff_array))
-    bonus_intord=ord_array[index]
-    print(index,bonus_intord)
-    counter=1"""
 
 plt.figure()
 plt.title(f'Curve order: {curve_order}')
@@ -155,16 +145,10 @@ while (rel_diff > bilinearform_tol) and (counter < max_iter):
         ord_array += [bonus_intord]
         del M
         
-        # using bonus_intord =n and bonus_intord =n+1 gives the same result (?).
- 
+
     bonus_intord += 2
     counter += 1
 
-"""if counter>=max_iter:
-    index=np.argmin(np.array(rel_diff_array))
-    bonus_intord=ord_array[index]
-    print(index,bonus_intord)
-    counter=1"""
 
 plt.figure()
 plt.title(f'Curve order: {curve_order}')

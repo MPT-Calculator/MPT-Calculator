@@ -42,8 +42,8 @@ To single test example (e.g. test_key):  python3 -m pytest -s test_suite.py::tes
 def test_sphere():
     
     # Running Sweep and computing error
-    geometry = 'OCC_test_sphere_prism_32.geo'#'OCC_test_sphere_prism_32.py'# was order=3 was use_OCC=True added alpha
-    test_results = main(geometry=geometry, order=3, use_OCC=False, use_POD=True, use_parallel=False, cpus=4, alpha=1e-2)
+    geometry = 'OCC_test_sphere_prism_32.py'#'OCC_test_sphere_prism_32.geo'#'OCC_test_sphere_prism_32.py'# was order=3 was use_OCC=True added alpha
+    test_results = main(geometry=geometry, order=3, use_OCC=True, use_POD=True, use_parallel=False, cpus=4)#, alpha=1e-2)
     test_tensors = test_results['TensorArray'] 
     
     validation_filename = r'Tests/Validation_Standards/OCC_sphere_prism_32/al_0.01_mu_1_sig_1e6/1e1-1e8_40_el_22426_ord_3_POD_13_1e-6/Data'

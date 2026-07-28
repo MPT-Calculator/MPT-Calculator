@@ -90,6 +90,7 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
 
     # Set up how the tensors will be stored
     N0 = np.zeros([3, 3])
+    Minf = np.zeros([3, 3])
     R = np.zeros([3, 3])
     I = np.zeros([3, 3])
 
@@ -268,4 +269,4 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
     # del Theta1i, Theta1j, Theta0i, Theta0j, fes, fes2, Theta0Sol, Theta1Sol
     gc.collect()
 
-    return MPT, EigenValues, N0, Minf, numelements, (ndof, ndof2)
+    return MPT, EigenValues, N0, Minf, numelements, (ndof, ndof2), Theta0Sol, Theta0i, Theta0j, fes
