@@ -31,7 +31,7 @@ alpha = 0.01
 # Setting Boundary layer Options:
 max_target_frequency = 1e8
 boundary_layer_material = material_name[0]
-number_of_layers = 2
+number_of_layers = 0
 
 
 # setting radius
@@ -39,7 +39,6 @@ r = 1
 
 # Generating OCC primative sphere centered at [0,0,0] with radius r:
 sphere = Sphere(Pnt(0,0,0), r=r)
-
 
 pos_sphere = sphere - Box(Pnt(0,100,100), Pnt(-100,-100,-100))
 neg_sphere = sphere - Box(Pnt(0,100,100), Pnt(100,-100,-100))
@@ -53,11 +52,10 @@ sphere.maxh = 0.2
 
 # Generating a large non-conducting region. For compatability with MPT-Calculator, we set the boundary condition to 'outer'
 # and the material name to 'air'.
-dim=1e3 # was 1e3
-box = Box(Pnt(-dim, -dim, -dim), Pnt(dim,dim,dim))
+box = Box(Pnt(-1000, -1000, -1000), Pnt(1000,1000,1000))
 box.mat('air')
 box.bc('outer')
-box.maxh=dim
+box.maxh=1000
 box=box-sphere
 
 # Joining the two meshes:
@@ -83,7 +81,7 @@ if number_of_layers > 0:
 else:
     nmesh = OCCGeometry(joined_object).GenerateMesh()
 
-nmesh.Save(r'VolFiles/OCC_sphere_prism_4.vol')
+nmesh.Save(r'VolFiles/OCC_sphere_4.vol')
 # print(nmesh.GetMaterial(2))
 from ngsolve import *
 mesh = Mesh(nmesh)

@@ -47,6 +47,7 @@ from ..Core_MPT.Calculate_Minf import *
 from ..Core_MPT.Theta0_Postprocessing import *
 from ..Core_MPT.Construct_Matrices import *
 from ..POD.Truncated_SVD import *
+from ..POD.Truncated_SVD_Single import *
 # from ..POD.Construct_Linear_System import *
 # from ..POD.Constuct_ROM import *
 from ..POD.calc_error_certificates import *
@@ -66,7 +67,7 @@ import time
 
 
 def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, PlotPod, sweepname, SavePOD,
-             PODErrorBars, BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, Order_L2, drop_tol, curve=5,
+             PODErrorBars, BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, Order_L2, drop_tol, SingleSVD, curve=5,
              recoverymode=False, save_U=False):
 
     print(' Running as POD')
@@ -174,7 +175,11 @@ def PODSweep(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, P
         #########################################################################
         # POD
 
-        cutoff, u1Truncated, u2Truncated, u3Truncated = Truncated_SVD(NumberofSnapshots, PODTol, Theta1Sols)
+        if SingleSVD==False:
+            cutoff, u1Truncated, u2Truncated, u3Truncated = Truncated_SVD(NumberofSnapshots, PODTol, Theta1Sols)
+        else:
+            print("Using new approach of single SVD for the 3 directions")
+            cutoff, u1Truncated, u2Truncated, u3Truncated = Truncated_SVD_Single(NumberofSnapshots, PODTol, Theta1Sols)
         plt.savefig('Results/' + sweepname + '/Graphs/SVD_Decay.pdf')
 
     else:

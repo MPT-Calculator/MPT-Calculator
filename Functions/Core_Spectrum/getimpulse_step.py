@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import nnls
+from scipy.optimize import lsq_linear
 from scipy.special import erfc
 import sympy as sym
 from scipy.optimize import fsolve
@@ -40,7 +41,7 @@ def getimpulse_step(MPTinf,N0,time,Poles,Amp,Nfound): #getimpulse_step(Frequenci
 
 
 # Generating the Poles and Amplitudes
-def PolesandAmp(Frequencies,Tensors,MPTinf):
+def PolesandAmp(Frequencies,Tensors,MPTinf, Iterative_refine=False):
 
     Omega=Frequencies
     N=len(Omega)
@@ -87,7 +88,7 @@ def PolesandAmp(Frequencies,Tensors,MPTinf):
     Amp=np.zeros((N,3),dtype=float)
     Nfound=np.zeros((3),dtype=int)
     for i in range(3):
-        nfound,amp,poles=get_poles_amp(MPTeig[:,i],MPTinfeig[i],OmegaScl,N,Scale)
+        nfound,amp,poles=get_poles_amp(MPTeig[:,i],MPTinfeig[i],OmegaScl,N,Scale, Iterative_refine)
         Poles[0:nfound,i]=poles
         Amp[0:nfound,i]=amp
         Nfound[i]=nfound
@@ -98,7 +99,7 @@ def PolesandAmp(Frequencies,Tensors,MPTinf):
 
 
 # This function obtains the poles and amplitudes for a particular coefficent
-def get_poles_amp(MPT,MPTinf,OmegaScl,N,Scale):
+def get_poles_amp(MPT,MPTinf,OmegaScl,N,Scale, Iterative_refine):
     # Choose possible relaxation frequencies to be the same as OmegaScl
     Xi=np.copy(OmegaScl)
     K=N
@@ -134,12 +135,50 @@ def get_poles_amp(MPT,MPTinf,OmegaScl,N,Scale):
     #for k in range(K+1):
 #        Ztilde[k,k]+=perturbation
 
+    #u,s,vh=np.linalg.svd(Ztilde)
+    #plt.figure()
+    #plt.semilogy(s/s[0])
+    #print(np.shape(s),np.shape(u),np.shape(vh))
+    ##Truncate svd
+    #for i in range(len(s)):
+    #    if s[i]/s[0] < 1e-7:
+    #        s[i]=0.
+    #Update Ztilde
+    #Ztilde=u[:,0:len(s)]@(np.diag(s)@vh)
+
+    hnorm=np.linalg.norm(htilde)
+    htilde=htilde/hnorm
+    """lam = 1e-8
+
+
+
+    L = np.diff(np.eye(Ztilde.shape[1]), axis=0)
+
+    Ztilde = np.vstack([
+            Ztilde,
+            np.sqrt(lam) * L])
+
+    htilde = np.concatenate([
+        htilde,
+        np.zeros(L.shape[0])])
+    """
+    
+
     # Setup rhs to l2 norm of 1
-    x=nnls(Ztilde,htilde,atol=1e-17)
+    #The parameter atol has now been deprecated in Scipy
+    #x=nnls(Ztilde,htilde,atol=1e-2)#1e-17)
+    #print("NNLS Solution residual",x[1])
 
     # solution for ck
-    c=x[0]
-    #print(x)
+    #c=x[0]*hnorm
+
+    if Iterative_refine==True:
+        c=lsq_linear_refined(Ztilde, htilde, bounds=(0., np.inf) )*hnorm
+    else:
+        x=nnls(Ztilde,htilde) # note optional atol option is deprecated - no control on accuracy and uses in-built fixed defaults
+        print("NNLS Solution residual",x[1])
+        c = x[0]*hnorm
+
     # determine xi and c
     #cout=[0,]
     #xiout=[0,]
@@ -189,6 +228,11 @@ def get_poles_amp(MPT,MPTinf,OmegaScl,N,Scale):
                 # use interpolation
                 xiout2[nfoundnew-1]=10**(np.log10(xiout2[nfoundnew-1])+cout[n]/(cout[n]+cout2[nfoundnew-1])*np.log10(xiout[n]/xiout2[nfoundnew-1]))
                 cout2[nfoundnew-1]=cout2[nfoundnew-1]+cout[n]
+            elif n > 1 and index[n]==index[n-2]+1:
+                # duplicate
+                # use interpolation
+                xiout2[nfoundnew-1]=10**(np.log10(xiout2[nfoundnew-1])+cout[n]  /(cout[n]+cout2[nfoundnew-1])*np.log10(xiout[n]/xiout2[nfoundnew-1]))
+                cout2[nfoundnew-1]=cout2[nfoundnew-1]+cout[n]
 
             else:
                 cout2[nfoundnew]=cout[n]
@@ -206,3 +250,68 @@ def get_poles_amp(MPT,MPTinf,OmegaScl,N,Scale):
         print("c="+str(ck))
         print("xi="+str(xi))
     return nfound,ck,xi
+
+def lsq_linear_refined(A, b, bounds=(0, np.inf), max_iter=10):
+    # 0. Precondition columns to have unit norm
+    col_norms = np.linalg.norm(A, axis=0)
+    col_norms[col_norms == 0] = 1.0  # Prevent division by zero
+    #A = A / col_norms
+
+    # 1. Compute the initial bounded solution
+    #res = lsq_linear(A, b, bounds=bounds, method='bvls', lsq_solver='exact')
+    res = nnls(A,b)
+    x = res[0]
+    
+    #free_idx = x > 0.  # Mask for variables strictly above zero
+
+    # 2. Extract the unconstrained sub-problem
+    #A_free = A[:, free_idx]
+    #x_free = x[free_idx]
+
+    for n in range(max_iter):
+        print("Refinement = ",n)
+        # 2. Compute the residual using higher precision (float64 or float128)
+        # This reduces cancellation errors in b - Ax
+        r = b.astype(np.float128) - A.astype(np.float128).dot(x.astype(np.float128))
+        r = np.asarray(r, dtype=np.float64)
+
+        # 3. Adjust the bounds for the correction step dx
+        # Since x_new = x + dx, the new bounds for dx are: lb - x <= dx <= ub - x
+        lb = bounds[0] - x if np.isscalar(bounds[0]) else bounds[0] - x
+        ub = bounds[1] - x if np.isscalar(bounds[1]) else bounds[1] - x
+
+        # 4. Solve for the correction dx using the residual as the target
+        res_dx = lsq_linear(A, r, bounds=(lb, ub), method='bvls', lsq_solver='exact')
+        dx = res_dx.x
+
+        # Solve standard unconstrained OLS for the correction dx (no bounds needed)
+        #dx_free, _, _, _ = np.linalg.lstsq(A_free, r, rcond=None)
+
+        #x_free += dx_free
+        #x_free=np.maximum(0, x_free+dx_free)
+
+        # 5. Terminate early if the corrections become negligible
+        #if np.allclose(dx , 0, atol=1e-12):
+        #   break
+
+        ## 6. Apply the correction
+        #x = x + dx
+        x=np.maximum(0, x+dx)
+        xfree = np.zeros_like(x)
+        for n in range(len(x)):
+            if x[n] > 1e-18:
+                xfree[n] = x[n]
+        x=xfree
+
+
+    #x = np.zeros_like(x)
+    #x[free_idx] = x_free
+    #print(x)
+    xfree = np.zeros_like(x)
+    for n in range(len(x)):
+        if x[n] > 1e-18:
+            xfree[n] = x[n]
+    
+    x=xfree
+    #print(x)
+    return x #/ col_norms

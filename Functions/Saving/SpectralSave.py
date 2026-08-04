@@ -7,6 +7,8 @@ from zipfile import *
 
 import netgen.meshing as ngmeshing
 from ngsolve import Mesh
+from ngsolve import Integrate
+from ngsolve import CoefficientFunction
 
 sys.path.insert(0,"Functions")
 from Settings import SaverSettings
@@ -18,7 +20,7 @@ from .DictionaryList import *
 
 
 def SpectralSave(Geometry, Array, TensorArray, EigenValues, N0, Minf, Pod, PODArray, PODTol, elements, alpha, Order, MeshSize,
-             mur, sig, ck, xi, Time, Sgn_step, Sgn_impulse, Amp_scale, inorout, Nfound):
+             mur, sig, ck, xi, Time, Sgn_step, Sgn_impulse, Amp_scale, inorout, Nfound, mesh):
     """
     P.D. Ledger.2026.
     Save data and make folder structure.
@@ -40,6 +42,10 @@ def SpectralSave(Geometry, Array, TensorArray, EigenValues, N0, Minf, Pod, PODAr
         mur (dict): dictionary of mur in each region
         sig (dict): dictionary of sigma in each region
     """
+
+    # Set up coefficent function, 1 inside B, 0 outside
+    inout_coef = [inorout[mat] for mat in mesh.GetMaterials()]
+    inout = CoefficientFunction(inout_coef)
 
 
     # Find how the user wants the data to be saved
@@ -83,7 +89,7 @@ def SpectralSave(Geometry, Array, TensorArray, EigenValues, N0, Minf, Pod, PODAr
 
     # plot out amplitudes and time_decays
     if Amp_scale == "default":
-        vol = Integrate(inorout,mesh)
+        vol = Integrate(inout,mesh)
         Amp_scale = alpha**3*vol
     # Otherwise allow user defined Amp_scale
 

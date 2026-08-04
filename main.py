@@ -46,8 +46,8 @@ from Functions.Helper_Functions.count_prismatic_elements import count_prismatic_
 
 
 def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry='default', frequency_array='default', use_OCC=False,
-         use_POD=False, use_parallel=False, use_iterative_POD=False, MPT_Eigen=False, MPT_Eigen_From_POD=False, cpus='default',
-         N_POD_points='default', Time=np.logspace(-8,-3,300), Amp_scale = 'default'):
+         use_POD=False, use_parallel=False, use_iterative_POD=False, MPT_Eigen=False, MPT_Eigen_From_POD=False, SingleSVD=False, Iterative_refine=False,
+         PODArray='default', cpus='default',N_POD_points='default', Time=np.logspace(-8,-3,300), Amp_scale = 'default'):
     """
     Main function to run 1D MPT calculator. Some common options have been added as function arguments to make iteration
     easier.
@@ -68,6 +68,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
     max error.
     :param MPT_Eigen: bool to control using an alternative approach to compute the MPT spectrum by solving an eigenvalue
     problem to get modes and amplitudes. This also naturally allow for the time domain response to step and impulse function.
+    :param PODArray: float array to overwrite default choice of log spacing for POD snapshots
     :param cpus: int to overwrite CPUs option in the settings file. Useful when iterating over different  FEM
     discretisations.
     :param N_POD_points: int overwrite to control how many POD snapshots are used when using POD or adaptive POD.
@@ -278,7 +279,12 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
         ErrorTensors=False
     else:
         ErrorTensors=True
-    PODArray = np.logspace(Start,Finish,PODPoints)
+    if 'default' in PODArray:
+        # choose default log spaceing of POD snapshots
+        PODArray = np.logspace(Start,Finish,PODPoints)
+    else:
+        PODPoints=len(PODArray) # fix number of POD snapshots according to input
+
 
     # Array = PODArray
 
@@ -424,14 +430,14 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
             #POD, MultiProcessing off, iterative off, plot pod on, error bars on
             TensorArray, EigenValues, N0, Minf, PODTensors, PODEigenValues, elements, ErrorTensors, ndofs = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,
                                                                                                                PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,BigProblem,
-                                                                                                               NumSolverThreads,Integration_Order, Additional_Int_Order, drop_tol,
-                                                                                                               Order_L2, curve=curve_degree, save_U=Save_U)
+                                                                                                               NumSolverThreads,Integration_Order, Additional_Int_Order,
+                                                                                                               Order_L2, drop_tol, SingleSVD, curve=curve_degree, save_U=Save_U)
 #####################################################################################################
         case {"Single": False, "MultiProcessing": False, "Pod": True, "OldPOD":False, "use_iterative_POD": False, "PODErrorBars": False, "PlotPod": True, "MPT_Eigen": False }:
             #POD, MultiProcessing off, iterative off, plot pod on, error bars off
             TensorArray, EigenValues, N0, Minf, PODTensors, PODEigenValues, elements, ndofs = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,
                                                                                                  sweepname,SavePOD,PODErrorBars,BigProblem, NumSolverThreads,
-                                                                                                 Integration_Order, Additional_Int_Order, drop_tol, Order_L2, curve=curve_degree,
+                                                                                                 Integration_Order, Additional_Int_Order, Order_L2, drop_tol, SingleSVD, curve=curve_degree,
                                                                                                  save_U=Save_U)
 #####################################################################################################
         case {"Single": False, "MultiProcessing": False, "Pod": True, "OldPOD":False, "use_iterative_POD": True, "PODErrorBars": PODErrorBars, "PlotPod": False, "MPT_Eigen": False }:
@@ -458,27 +464,27 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
             #POD, MultiProcessing off, iterative off, plot pod off, error bars on
             TensorArray, EigenValues, N0, Minf, PODTensors, PODEigenValues, elements, ErrorTensors, ndofs = PODSweep(
                 Geometry, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, PlotPod, sweepname,
-                SavePOD, PODErrorBars, BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, Order_L2, drop_tol, recoverymode=OldPOD, curve=curve_degree,
+                SavePOD, PODErrorBars, BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, Order_L2, drop_tol, SingleSVD, recoverymode=OldPOD, curve=curve_degree,
                 save_U=Save_U)
 #####################################################################################################
         case {"Single": False, "MultiProcessing": False, "Pod": True, "OldPOD":False, "use_iterative_POD": False, "PODErrorBars": False, "PlotPod": False, "MPT_Eigen": False }:
             #POD, MultiProcessing off, iterative off, plot pod off, error bars off
             TensorArray, EigenValues, N0, Minf, elements, ndofs = PODSweep(Geometry,Order,alpha,inorout,mur,sig,Array,PODArray,PODTol,PlotPod,sweepname,SavePOD,PODErrorBars,
-                BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, Order_L2, drop_tol,
+                BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, Order_L2, drop_tol, SingleSVD,
                 curve=curve_degree, save_U=Save_U)
 #####################################################################################################
         case {"Single": False, "MultiProcessing": False, "Pod": True, "OldPOD":True, "use_iterative_POD": use_iterative_POD, "PODErrorBars": True, "PlotPod": True, "MPT_Eigen": False }:
             #POD, MultiProcessing off, old POD on, plot pod on, error bars on
             TensorArray, EigenValues, N0, Minf, PODTensors, PODEigenValues, elements, ErrorTensors, ndofs = PODSweep(
                 Geometry, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, PlotPod, sweepname,
-                SavePOD, PODErrorBars, BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, Order_L2, drop_tol, recoverymode=OldPOD, curve=curve_degree,
+                SavePOD, PODErrorBars, BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, Order_L2, drop_tol, SingleSVD, recoverymode=OldPOD, curve=curve_degree,
                 save_U=Save_U)
 #####################################################################################################
         case {"Single": False, "MultiProcessing": False, "Pod": True, "OldPOD":True, "use_iterative_POD": use_iterative_POD, "PODErrorBars": False, "PlotPod": True, "MPT_Eigen": False }:
             #POD, MultiProcessing off, old POD on, plot pod on, error bars off
             TensorArray, EigenValues, N0, Minf, PODTensors, PODEigenValues, elements, ndofs = PODSweep(
                 Geometry, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, PlotPod, sweepname,
-                SavePOD, PODErrorBars, BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, Order_L2, drop_tol, recoverymode=OldPOD, curve=curve_degree,
+                SavePOD, PODErrorBars, BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, Order_L2, drop_tol, SingleSVD, recoverymode=OldPOD, curve=curve_degree,
                 save_U=Save_U)
 #####################################################################################################
         case {"Single": False, "MultiProcessing": False, "Pod": True, "OldPOD":True, "use_iterative_POD": use_iterative_POD, "PODErrorBars": True, "PlotPod": False, "MPT_Eigen": False }:
@@ -490,7 +496,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
                                                                                    sweepname, SavePOD,
                                                                                    PODErrorBars,
                                                                                    BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order,
-                                                                                   Order_L2, drop_tol, recoverymode=OldPOD, curve=curve_degree, save_U=Save_U)
+                                                                                   Order_L2, drop_tol, SingleSVD, recoverymode=OldPOD, curve=curve_degree, save_U=Save_U)
 
 #####################################################################################################
         case {"Single": False, "MultiProcessing": False, "Pod": True, "OldPOD":True, "use_iterative_POD": use_iterative_POD, "PODErrorBars": False, "PlotPod": False, "MPT_Eigen": False }:
@@ -498,7 +504,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
             TensorArray, EigenValues, N0, Minf, elements, ndofs = PODSweep(Geometry, Order, alpha, inorout,
                                                                      mur, sig, Array, PODArray, PODTol,
                                                                      PlotPod, sweepname, SavePOD,
-                                                                     PODErrorBars, BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, Order_L2, drop_tol,
+                                                                     PODErrorBars, BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, Order_L2, drop_tol, SingleSVD,
                                                                      recoverymode=OldPOD, curve=curve_degree, save_U=Save_U)
 #####################################################################################################
         case {"Single": False, "MultiProcessing": True, "Pod": False, "OldPOD":OldPOD, "use_iterative_POD": use_iterative_POD, "PODErrorBars": PODErrorBars, "PlotPod": PlotPod, "MPT_Eigen": False }:
@@ -543,7 +549,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
 
     if MPT_Eigen_From_POD==True and MPT_Eigen==False:
         # Obtain approximate modes and amplitues from an existing spectral signature
-        xi, ck, Nfound = PolesandAmp(Array,np.conj(TensorArray),Minf)
+        xi, ck, Nfound = PolesandAmp(Array,np.conj(TensorArray),Minf, Iterative_refine)
 
         # Obtain impulse and step function response
         Sgn_impulse, Sgn_step = getimpulse_step(Minf,N0,Time,xi,ck,Nfound)
@@ -774,7 +780,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
     if MPT_Eigen_From_POD == True or  MPT_Eigen == True:
         # Call for spectral save
         SpectralSave(Geometry, Array, TensorArray, EigenValues, N0, Minf, Pod, PODArray, PODTol, elements, alpha, Order, MeshSize,
-                     mur, sig, ck, xi, Time, Sgn_step, Sgn_impulse, Amp_scale, inorout, Nfound)
+                     mur, sig, ck, xi, Time, Sgn_step, Sgn_impulse, Amp_scale, inorout, Nfound, mesh)
 
     # Constructing Return Dictionary
     # ReturnDict = {}

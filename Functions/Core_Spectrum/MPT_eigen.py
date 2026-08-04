@@ -65,20 +65,20 @@ def MPT_eigen(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine,
     # if not this will weight contributions so that the projection still works for the eigen problem????
 
     # Weak form
-    m = BilinearForm(fes,symmetric=True)#,condense=False)
-    m += SymbolicBFI(inout*(sigma/sigma_avg)*u*v,bonus_intorder=bilinear_bonus_int_order) #bonus_intorder
+    #m = BilinearForm(fes,symmetric=True)#,condense=False)
+    #m += SymbolicBFI(inout*(sigma/sigma_avg)*u*v,bonus_intorder=bilinear_bonus_int_order) #bonus_intorder
     #m += SymbolicBFI(epsi*u*v*(1-inout),bonus_intorder=bilinear_bonus_int_order)
     #m += SymbolicBFI(0*u*v*(1-inout),bonus_intorder=bilinear_bonus_int_order)
-    mext = BilinearForm(fes,symmetric=True)#,condense=False)
-    mext += SymbolicBFI(u*v*(1-inout),bonus_intorder=bilinear_bonus_int_order)
+    #mext = BilinearForm(fes,symmetric=True)#,condense=False)
+    #mext += SymbolicBFI(u*v*(1-inout),bonus_intorder=bilinear_bonus_int_order)
 
 
-    mreg = BilinearForm(fes,symmetric=True)#,condense=False)
+    mreg = BilinearForm(fes)#,symmetric=True)#,condense=False)
     mreg += SymbolicBFI(inout*(sigma/sigma_avg)*u*v,bonus_intorder=bilinear_bonus_int_order) #bonus_intorder
     mreg += SymbolicBFI(epsi*u*v*(1-inout),bonus_intorder=bilinear_bonus_int_order)
     #m += SymbolicBFI(0*u*v*(1-inout),bonus_intorder=bilinear_bonus_int_order)
 
-    apre = BilinearForm(fes,symmetric=True)#,condense=False)#BilinearForm(curl(u)*curl(v)*dx + 1*(1-inout)*u*v*dx+ reg*inout*u*v*dx)
+    apre = BilinearForm(fes)#,symmetric=True)#,condense=False)#BilinearForm(curl(u)*curl(v)*dx + 1*(1-inout)*u*v*dx+ reg*inout*u*v*dx)
     apre += SymbolicBFI(mu_inv*curl(u)*curl(v),bonus_intorder=bilinear_bonus_int_order)
     apre += SymbolicBFI(u*v*(sigma/sigma_avg)*inout,bonus_intorder=bilinear_bonus_int_order)
     apre += SymbolicBFI(epsi*u*v*(1-inout),bonus_intorder=bilinear_bonus_int_order)
@@ -91,24 +91,23 @@ def MPT_eigen(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine,
 
     EigType="Dirichlet"# "Neumann"
     IterativeSolver="Iterative"# "Direct"
-
+    print("running eigensolver")
 
     with TaskManager():
         a.Assemble()
         mreg.Assemble()
-        m.Assemble()
+        #m.Assemble()
         apre.Assemble()
+        #mext.Assemble()
         pre.Update()
-        mext.Assemble()
-        pre.Update()
-
+        
         # build gradient matrix as sparse matrix (and corresponding scalar FESpace)
         gradmat, fesh1 = fes.CreateGradient()
-
 
         gradmattrans = gradmat.CreateTranspose() # transpose sparse matrix
         math1 = gradmattrans @ mreg.mat @ gradmat   # multiply matrices
 
+        print("assembled matrices")
         # Try to build our own stiffness Matrix
         #u = fesh1.TrialFunction()
         #v = fesh1.TestFunction()
@@ -196,9 +195,12 @@ def MPT_eigen(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine,
         projpre = proj @ pre.mat
 
         #evals, evecs = solvers.PINVIT(a.mat, m.mat, pre=projpre, num=10, maxit=20) #150
-        neval=1000#int(fes.ndof/40)#750#1000
+        neval=2000#int(fes.ndof/40)#750#1000
         print("Looking for nevel modes=",neval)
-        evals,evecs = myeigensolver(fes,a,m,mreg,mext,projpre,neval, mesh, Theta0i, Theta_Return,scale)
+        evals,evecs = myeigensolver(fes,a,mreg,projpre,neval, mesh, Theta0i, Theta_Return,scale)
+
+    del a, mreg, apre, gradmat,math1,gradmattrans, proj,projpre, u, v
+    gc.collect()
 
     return evals, evecs, sigma_avg
 
@@ -283,16 +285,16 @@ def MPT_eigen(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine,
 
 
 """preconditioned inverse iteration"""
-def myeigensolver(fes,a,m,mreg,mext, pre,num, mesh, Theta0i, Theta_Return,scale ):
-    MaxIter=20
+def myeigensolver(fes,a,mreg, pre,num, mesh, Theta0i, Theta_Return,scale ):
+    MaxIter=5
     Tol=5e-3
     printrates=True
     import scipy.linalg
     ndof=fes.ndof
     mata=a.mat
-    matm=m.mat
+    #matm=m.mat
     matmreg=mreg.mat
-    matmext=mext.mat
+    #matmext=mext.mat
 
     r = mata.CreateRowVector()
 
@@ -305,19 +307,19 @@ def myeigensolver(fes,a,m,mreg,mext, pre,num, mesh, Theta0i, Theta_Return,scale 
     uvecs[:] = pre * vecs[0:num]
     lams = Vector(num * [1])#Vector(num * [1])
     ev=np.zeros(num)
-    xivec = [CoefficientFunction((0, -z, y)), CoefficientFunction((z, 0, -x)), CoefficientFunction((-y, x, 0))]
-    gfu = GridFunction(fes)
-    xivecgfu = GridFunction(fes)
-    Xivec_Return=np.zeros((fes.ndof,3))
-    for i in range(3):
-        xivecgfu.Set(xivec[i])
-        Xivec_Return[:,i] = xivecgfu.vec.FV().NumPy()[:]
-    print("Completed setting up xivecgfu")
+    #xivec = [CoefficientFunction((0, -z, y)), CoefficientFunction((z, 0, -x)), CoefficientFunction((-y, x, 0))]
+    #gfu = GridFunction(fes)
+    #xivecgfu = GridFunction(fes)
+    #Xivec_Return=np.zeros((fes.ndof,3))
+    #for i in range(3):
+    #    xivecgfu.Set(xivec[i])
+    #    Xivec_Return[:,i] = xivecgfu.vec.FV().NumPy()[:]
+    #print("Completed setting up xivecgfu")
 
     Filter=False
     Project=False
     for i in range(MaxIter):
-        vecs[0:num] = mata * uvecs - (matm * uvecs).Scale (lams)
+        vecs[0:num] = mata * uvecs - (matmreg * uvecs).Scale (lams)
         vecs[num:2*num] = pre * vecs[0:num]
         vecs[0:num] = uvecs
         #vecs.Orthogonalize(matm)
@@ -327,20 +329,26 @@ def myeigensolver(fes,a,m,mreg,mext, pre,num, mesh, Theta0i, Theta_Return,scale 
 
         #vecs[0:num] = uvecs
 
-        vecs.Orthogonalize(matm)
+        vecs.Orthogonalize(matmreg)
 
         # hv[:] = mata * vecs
         # asmall = InnerProduct (vecs, hv)
         # hv[:] = matm * vecs
         # msmall = InnerProduct (vecs, hv)
         asmall = InnerProduct (vecs, mata * vecs)
-        msmall = InnerProduct (vecs, matm * vecs)
+        msmall = InnerProduct (vecs, matmreg * vecs)
         lamsold=list(lams)[0:num]
         #ev,evec = scipy.linalg.eigh(a=asmall, b=msmall)
         #print(msmall)
         ev,evec = scipy.linalg.eigh(a=asmall, b=msmall)
+        #ev,evec = scipy.linalg.eig(a=asmall, b=msmall)
+        
+        #ev = np.real(ev)
+        #evec = np.real(evec)
+        #for i  in range(len(ev)):
+        #    evec[:,i]=evec[:,i]/(np.transpose(evec[:,i])@msmall@evec[:,i])
 
-        if Filter==True and np.mod(i,3)==0: # Only apply filter every 4 iterations
+        """if Filter==True and np.mod(i,3)==0: # Only apply filter every 4 iterations
             N=len(ev)
             lams = Vector(ev[0:N])
             uvecs[:] = vecs * Matrix(evec[:,0:N])
@@ -355,16 +363,16 @@ def myeigensolver(fes,a,m,mreg,mext, pre,num, mesh, Theta0i, Theta_Return,scale 
             vecs = MultiVector(r, 2*num)
             lams=Vector(lamsfilter[0:num])
             uvecs[:]=uvecsfilter[0:num]
-        else:
-            lams = Vector(ev[0:num])
-            if printrates:
-                print (i, ":", list(lams))
+        else:"""
+        lams = Vector(ev[0:num])
+        if printrates:
+            print (i, ":", list(lams))
 
-            uvecs[:] = vecs * Matrix(evec[:,0:num])
-            if Project==True:
-                uvecs,lams,count = projecttheta0(uvecs, xivec, Theta0i, Theta_Return, gfu, mesh,  Xivec_Return, xivecgfu, matm, num,r,pre,lams,scale  )
-
-            nkeep=num
+        uvecs[:] = vecs * Matrix(evec[:,0:num])
+        """if Project==True:
+                uvecs  = projecttheta0(uvecs, xivec, Theta0i, Theta_Return, gfu, mesh,  Xivec_Return, xivecgfu, matmext, num,r,pre,lams,scale  )
+                uvecs.Orthogonalize(matmreg)"""
+        nkeep=num
 
         print(list(lams)[0:nkeep])
         lamslist=list(lams)[0:nkeep]
@@ -375,16 +383,19 @@ def myeigensolver(fes,a,m,mreg,mext, pre,num, mesh, Theta0i, Theta_Return,scale 
         else:
             print("Res",np.linalg.norm(np.array(lamslist)[0:40]-np.array(lamsold[0:40]))/np.linalg.norm(np.array(lamsold[0:40])))
     print (i, ":", list(lams))
-    if Filter==True:
+    """if Filter==True:
         lams=Vector(list(lams)[0:nkeep])
+"""
+    #if Project==True:
+    #    # remove last few (reset modes)
+    #    for n in range(num-count-1, num):
+    #        lams[n]=0
+    #        uvecs[n]=np.zeros(ndof)
 
-    if Project==True:
-        # remove last few (reset modes)
-        for n in range(num-count-1, num):
-            lams[n]=0
-            uvecs[n]=np.zeros(ndof)
+    """uvecs.Orthogonalize(matmreg)"""
 
-    uvecs.Orthogonalize(matm)
+    del a, mreg, pre
+    gc.collect()
     return lams, uvecs
 
 def filtereigs(lams, uvecs, xivec, Theta0i, Theta_Return, gfu, mesh, num, r, pre, Xivec_Return, xivecgfu, matm, matmext   ):
@@ -439,8 +450,35 @@ def filtereigs(lams, uvecs, xivec, Theta0i, Theta_Return, gfu, mesh, num, r, pre
 
     return lamskeep,uvecs, nkeep, filterarray
 
+def projecttheta0(vecs, xivec, Theta0i, Theta_Return, gfu, mesh,  Xivec_Return, xivecgfu, matmext, num, r,pre,lams,scale  ):
 
-def projecttheta0(vecs, xivec, Theta0i, Theta_Return, gfu, mesh,  Xivec_Return, xivecgfu, matm, num, r,pre,lams,scale  ):
+    TOL=5e-3
+    ndof, dum = np.shape(Theta_Return)
+    check=np.zeros((ndof))
+    count=0
+    for n in range(0,num):#(0,2*num):#(num,2*num):
+
+        gfu.vec.data = vecs[n]
+        #r.vec.data = gfu.vec.data
+        flag=1
+        for i in range(3):
+            Theta0i.vec.FV().NumPy()[:] = Theta_Return[:, i]
+            xivecgfu.vec.FV().NumPy()[:] = Xivec_Return[:, i]
+            #I1= Integrate(gfu*(Theta0i+xivec[i]),mesh,definedon=mesh.Materials("object"))
+            I = InnerProduct(gfu.vec,matmext*(Theta0i.vec +xivecgfu.vec))
+    
+            D = InnerProduct(gfu.vec,matmext*gfu.vec)
+
+            gfu.vec.data -= I/D*gfu.vec.data
+
+    
+        vecs[n] =  gfu.vec.data
+        
+    
+    return vecs
+
+
+def projecttheta0old(vecs, xivec, Theta0i, Theta_Return, gfu, mesh,  Xivec_Return, xivecgfu, matm, num, r,pre,lams,scale  ):
 
     TOL=5e-3
     ndof, dum = np.shape(Theta_Return)
