@@ -103,23 +103,20 @@ def get_poles_amp(MPT,MPTinf,OmegaScl,N,Scale, Iterative_refine):
     # Choose possible relaxation frequencies to be the same as OmegaScl
     Xi=np.copy(OmegaScl)
     K=N
-    Z=np.zeros((N,1+K),dtype=complex)
-    diagscale=1.
-    for n in range(1+K):
+    Z=np.zeros((N,K),dtype=complex)
+    for n in range(K):
         for m in range(N):
-            if n==0:
-                Z[m,n]=diagscale
-            else:
-                Z[m,n]=1./(1.+1j*(OmegaScl[m]/Xi[n-1]))
+            Z[m,n]=1./(1.+1j*(OmegaScl[m]/Xi[n-1]))
     ZRe=np.real(Z)
     ZIm=np.imag(Z)
-    Ztilde=np.zeros((2*N,1+K))
-    for n in range(1+K):
+    Ztilde=np.zeros((2*N,K))
+    for n in range(K):
         for m in range(N):
             Ztilde[m,n]=ZRe[m,n]
             Ztilde[m+N,n]=ZIm[m,n]
     #set offset according to M(inf)
-    safety=2
+    #offset=-np.real(MPT[-1])
+    safety=1
     offset=-MPTinf*safety
     # Apply offset to ensure convergence
     hRe=np.real(MPT+offset)
@@ -130,34 +127,90 @@ def get_poles_amp(MPT,MPTinf,OmegaScl,N,Scale, Iterative_refine):
         htilde[m]=hRe[m]
         htilde[m+N]=hIm[m]
 
-    # Normalise the right hand side
+    # Perturb diagaonal elements
+    #perturbation=1e-1
+    #for k in range(K+1):
+#        Ztilde[k,k]+=perturbation
+
+    #u,s,vh=np.linalg.svd(Ztilde)
+    #plt.figure()
+    #plt.semilogy(s/s[0])
+    #print(np.shape(s),np.shape(u),np.shape(vh))
+    ##Truncate svd
+    #for i in range(len(s)):
+    #    if s[i]/s[0] < 1e-7:
+    #        s[i]=0.
+    #Update Ztilde
+    #Ztilde=u[:,0:len(s)]@(np.diag(s)@vh)
+
     hnorm=np.linalg.norm(htilde)
     htilde=htilde/hnorm
+    """lam = 1e-8
 
+
+
+    L = np.diff(np.eye(Ztilde.shape[1]), axis=0)
+
+    Ztilde = np.vstack([
+            Ztilde,
+            np.sqrt(lam) * L])
+
+    htilde = np.concatenate([
+        htilde,
+        np.zeros(L.shape[0])])
+    """
+    
+
+    # Setup rhs to l2 norm of 1
     #The parameter atol has now been deprecated in Scipy
+    #x=nnls(Ztilde,htilde,atol=1e-2)#1e-17)
+    #print("NNLS Solution residual",x[1])
+
+    # solution for ck
+    #c=x[0]*hnorm
+
+    col_norms = np.linalg.norm(Ztilde, axis=0)
+    col_norms[col_norms == 0] = 1.0  # Prevent division by zero
+    Ztilde = Ztilde / col_norms
+
     print("The condition number of Ztilde is",np.linalg.cond(Ztilde))
     if Iterative_refine==True:
         c=lsq_linear_refined(Ztilde, htilde, bounds=(0., np.inf) )*hnorm
     else:
         x=nnls(Ztilde,htilde) # note optional atol option is deprecated - no control on accuracy and uses in-built fixed defaults
         print("NNLS Solution residual",x[1])
-        c = x[0]*hnorm
+        c = x[0]*hnorm/col_norms
 
     # determine xi and c
+    #cout=[0,]
+    #xiout=[0,]
+    #nfound=1
     mysum=0.
-    cout=[(c[0]-offset)/diagscale]
+    #index=[0]
+    cout=[-offset]
     xiout=[0.]
     nfound=1
     index=[0]
-    for n in range(1,1+K):
+    for n in range(0,K):
         if abs(c[n]) > 0:
+            #if n==0:
+            #    cout.append(c[n])
+            #    xiout.append(0)
+            #    index.append(n)
+            #else:
+            #    cout.append(c[n])
+            #    xiout.append(Scale*Xi[n-1])
+            #    index.append(n)
             cout.append(c[n])
-            xiout.append(Scale*Xi[n-1])
+            xiout.append(Scale*Xi[n])
             index.append(n)
             nfound+=1
-    
+    print("Found"+str(nfound)+"terms")
     ck=np.array(cout)
     xi=np.array(xiout)
+    #print("c="+str(ck))
+    #print("xi="+str(xi))
+    #print(index)
 
     if nfound > 1:
         # Post processs and resolve duplicates
@@ -171,17 +224,24 @@ def get_poles_amp(MPT,MPTinf,OmegaScl,N,Scale, Iterative_refine):
         cout2[nfoundnew]=cout[1]
         nfoundnew=2
         cnt=2
-        for n in range(cnt,nfound):
-            if index[n]==index[n-1]+1:
+        for n in range(cnt,nfound-1):
+            #print(n,cnt,nfound)
+            if n > 0 and index[n]==index[n-1]+1:
                 # duplicate
                 # use interpolation
                 xiout2[nfoundnew-1]=10**(np.log10(xiout2[nfoundnew-1])+cout[n]/(cout[n]+cout2[nfoundnew-1])*np.log10(xiout[n]/xiout2[nfoundnew-1]))
                 cout2[nfoundnew-1]=cout2[nfoundnew-1]+cout[n]
+#            elif n > 1 and index[n]==index[n-2]+1:
+#                # duplicate
+#                # use interpolation
+#                xiout2[nfoundnew-1]=10**(np.log10(xiout2[nfoundnew-1])+cout[n]  /(cout[n]+cout2[nfoundnew-1])*np.log10(xiout[n]/xiout2[nfoundnew-1]))
+#                cout2[nfoundnew-1]=cout2[nfoundnew-1]+cout[n]
+
             else:
                 cout2[nfoundnew]=cout[n]
                 xiout2[nfoundnew]=xiout[n]
                 nfoundnew+=1
-        nfound=nfoundnew
+        nfound=nfoundnew-1
         xiout=xiout2[0:nfound]
         cout=cout2[0:nfound]
 
