@@ -135,13 +135,27 @@ def get_poles_amp(MPT,MPTinf,OmegaScl,N,Scale, Iterative_refine):
     htilde=htilde/hnorm
 
     #The parameter atol has now been deprecated in Scipy
-    print("The condition number of Ztilde is",np.linalg.cond(Ztilde))
+    #print("The condition number of Ztilde is",np.linalg.cond(Ztilde))
+    #col_norms = np.linalg.norm(Ztilde, axis=0)
+    #col_norms[col_norms == 0] = 1.0  # Prevent division by zero
+    #Ztilde = Ztilde / col_norms
+    #print("The condition number of Ztilde is",np.linalg.cond(Ztilde))
+
+
     if Iterative_refine==True:
-        c=lsq_linear_refined(Ztilde, htilde, bounds=(0., np.inf) )*hnorm
+        #c=lsq_linear_refined(Ztilde, htilde, bounds=(0., np.inf) )*hnorm #/col_norms
+        result=auto_regularized_nnls(Ztilde, htilde, L=None,
+                          lambda_min=1e-15,
+                          lambda_max=1e3)
+        c=result['x']*hnorm
+        print("Estimated lambda parameter",result['lambda'])
     else:
-        x=nnls(Ztilde,htilde) # note optional atol option is deprecated - no control on accuracy and uses in-built fixed defaults
+        #print(np.shape(Ztilde))
+        #print(Ztilde.shape[0],Ztilde.shape[1])
+        maxiter=np.max(np.array((Ztilde.shape[0],Ztilde.shape[1])))*3
+        x=nnls(Ztilde,htilde,maxiter=maxiter) # note optional atol option is deprecated - no control on accuracy and uses in-built fixed defaults
         print("NNLS Solution residual",x[1])
-        c = x[0]*hnorm
+        c = x[0]*hnorm #/ col_norms
 
     # determine xi and c
     mysum=0.
@@ -150,7 +164,7 @@ def get_poles_amp(MPT,MPTinf,OmegaScl,N,Scale, Iterative_refine):
     nfound=1
     index=[0]
     for n in range(1,1+K):
-        if abs(c[n]) > 0:
+        if abs(c[n]) > 1e-12:#0:
             cout.append(c[n])
             xiout.append(Scale*Xi[n-1])
             index.append(n)
@@ -206,21 +220,21 @@ def lsq_linear_refined(A, b, bounds=(0, np.inf), max_iter=0): #10
     lam = 0#1e-12 * np.linalg.norm(A, 2)**2
     #A = np.vstack([A,np.sqrt(lam) * np.eye(A.shape[1])])
     #b = np.concatenate([b,np.zeros(A.shape[1])])
-    n =A.shape[1]
-    D = np.zeros((n-1,n))
-    for i in range(n-1):
-        D[i,i]=-1
-        D[i,i+1]=1
+    #n =A.shape[1]
+    #D = np.zeros((n-1,n))
+    #for i in range(n-1):
+    #    D[i,i]=-1
+    #    D[i,i+1]=1
 
-    A = np.vstack([A,np.sqrt(lam) * D])
-    b = np.concatenate([b,np.zeros(D.shape[0])])
+    #A = np.vstack([A,np.sqrt(lam) * D])
+    #b = np.concatenate([b,np.zeros(D.shape[0])])
 
     print("with preconditioning and regularisation",np.linalg.cond(A))
 
     # 0. Precondition columns to have unit norm
-    #col_norms = np.linalg.norm(A, axis=0)
-    #col_norms[col_norms == 0] = 1.0  # Prevent division by zero
-    #A = A / col_norms
+    col_norms = np.linalg.norm(A, axis=0)
+    col_norms[col_norms == 0] = 1.0  # Prevent division by zero
+    A = A / col_norms
 
     # 1. Compute the initial bounded solution # method ='bvls'
     #res = lsq_linear(A, b, bounds=bounds, method='bvls', lsq_solver='exact')
@@ -281,3 +295,147 @@ def lsq_linear_refined(A, b, bounds=(0, np.inf), max_iter=0): #10
     x=xfree
     #print(x)
     return x / col_norms
+
+from scipy.optimize import minimize_scalar
+
+
+#def nnls_tikhonov(A, b, lam, L=None):
+def solve_regularized_nnls(A, b, lam, L=None):
+    """
+    Solve
+
+        min ||Ax-b||^2 + lam ||Lx||^2
+        s.t. x >= 0
+
+    using NNLS.
+    """
+    m, n = A.shape
+
+    if L is None:
+        L = np.eye(n)
+
+    A_aug = np.vstack([
+        A,
+        np.sqrt(lam) * L
+    ])
+
+    b_aug = np.concatenate([
+        b,
+        np.zeros(L.shape[0])
+    ])
+
+    x, _ = nnls(A_aug, b_aug)
+    return x
+
+
+def gcv_objective(log_lam, A, b, L=None):
+    """
+    Approximate GCV score.
+    """
+    lam = np.exp(log_lam)
+
+    x = nnls_tikhonov(A, b, lam, L)
+
+    residual = np.linalg.norm(A @ x - b) ** 2
+
+    n = A.shape[1]
+
+    if L is None:
+        L = np.eye(n)
+
+    ATA = A.T @ A
+    LTL = L.T @ L
+
+    H = ATA + lam * LTL
+
+    # Effective degrees of freedom
+    df = np.trace(np.linalg.solve(H, ATA))
+
+    denom = (len(b) - df) ** 2
+
+    return residual / max(denom, 1e-12)
+
+
+#def auto_regularized_nnls(A, b, L=None,
+#                          lambda_min=1e-12,
+#                          lambda_max=1e3):
+#    """
+#    Automatically select lambda via GCV,
+#    then solve the regularized NNLS problem.
+#    """
+#
+#    result = minimize_scalar(
+#        lambda z: gcv_objective(z, A, b, L),
+#        bounds=(np.log(lambda_min), np.log(lambda_max)),
+#        method='bounded'
+#    )
+#
+#    lam_opt = np.exp(result.x)
+#
+#    x = nnls_tikhonov(A, b, lam_opt, L)
+#
+#    return x, lam_opt
+
+def restricted_gcv(A, b, x, tol=1e-10):
+    """
+    Restricted GCV score.
+
+    df = number of active variables.
+    """
+
+    m = len(b)
+
+    residual = np.linalg.norm(A @ x - b) ** 2
+
+    df = np.count_nonzero(x > tol)
+
+    denom = max((m - df) ** 2, 1.0)
+
+    return residual / denom
+
+
+def auto_regularized_nnls(
+        A,
+        b,
+        L=None,
+        lambda_min=1e-8,
+        lambda_max=1e2,
+        n_lambda=40,
+        tol=1e-10):
+    """
+    Automatic lambda selection using restricted GCV.
+    """
+
+    lambdas = np.logspace(
+        np.log10(lambda_min),
+        np.log10(lambda_max),
+        n_lambda
+    )
+
+    best_x = None
+    best_lambda = None
+    best_score = np.inf
+
+    scores = []
+
+    for lam in lambdas:
+
+        x = solve_regularized_nnls(A, b, lam, L)
+
+        score = restricted_gcv(A, b, x, tol)
+
+        scores.append(score)
+
+        if score < best_score:
+            best_score = score
+            best_lambda = lam
+            best_x = x
+
+    return {
+        "x": best_x,
+        "lambda": best_lambda,
+        "gcv": best_score,
+        "lambdas": lambdas,
+        "scores": np.array(scores)
+    }
+

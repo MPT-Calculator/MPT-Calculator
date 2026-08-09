@@ -121,7 +121,7 @@ def SolverParameters():
     #(string) "bddc"/"local"
 
     #regularisation
-    epsi = 1e-10#10**-10
+    epsi = 1e-10#1e-10#10**-10
     #(float) regularisation to be used in the problem
 
     #Maximum iterations to be used in solving the problem
