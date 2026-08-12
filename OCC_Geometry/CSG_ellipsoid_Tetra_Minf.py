@@ -30,7 +30,7 @@ subdomain_dict = {'ell':material_name[0]}
 
 mur = [32]
 sigma = [1e7]
-alpha = 0.001
+alpha = 0.01
 
 # Boundary Layer Settings: max frequency under consideration, the total number of prismatic layers and the material of each layer.
 # Setting Boundary layer Options:
