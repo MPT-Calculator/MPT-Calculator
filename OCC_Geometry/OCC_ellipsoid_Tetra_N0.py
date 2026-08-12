@@ -41,7 +41,12 @@ r3 = 1.56200836
 
 
 # Generating OCC primative sphere centered at [0,0,0] with radius r:
-ellipsoid = Ellipsoid(Axes(Pnt(0,0,0),n=Z,h=X),r1,r2,r3)
+#ellipsoid = Ellipsoid(Axes(Pnt(0,0,0),n=Z,h=X),r1,r2,r3)
+# Follow this tutorial to get an ellipsoid
+#https://forum.ngsolve.org/t/drawing-mesh-and-generating-ellipsoid/2213/2
+sp = Sphere( (0,0,0), 1)
+gtr = gp_GTrsf( (r1,0,0, 0,r2,0, 0,0,r3), (0,0,0))
+ellipsoid = gtr (sp)
 
 #pos_ellipsoid = ellipsoid - Box(Pnt(0,100,100), Pnt(-100,-100,-100))
 #neg_ellipsoid = ellipsoid - Box(Pnt(0,100,100), Pnt(100,-100,-100))
@@ -51,7 +56,7 @@ ellipsoid = Ellipsoid(Axes(Pnt(0,0,0),n=Z,h=X),r1,r2,r3)
 # For compatability, we want the non-conducting region to have the 'outer' boundary condition and be labeled as 'air'
 ellipsoid.bc('default')
 ellipsoid.mat(material_name[0])
-ellipsoid.maxh = 0.3
+ellipsoid.maxh = 0.15
 
 # Generating a large non-conducting region. For compatability with MPT-Calculator, we set the boundary condition to 'outer'
 # and the material name to 'air'.

@@ -163,28 +163,25 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
             c = Preconditioner(a, "bddc")  # Apply the bddc preconditioner
         with TaskManager():
             a.Assemble()
-        if Solver == "local":
-            c = Preconditioner(a, "local")  # Apply the local preconditioner
-        c.Update()
+            if Solver == "local":
+                c = Preconditioner(a, "local")  # Apply the local preconditioner
+            c.Update()
         #print("Built A and C")
 
-        # Calculate the inverse operator
-        with TaskManager():
+            # Calculate the inverse operator
             inverse = CGSolver(a.mat, c.mat, tol=Tolerance, maxiter=Maxsteps)
         #print("Built inverse operator")
 
-        # Solve in each direction
+            # Solve in each direction
+            Theta1.Set((0, 0, 0), BND)
+            Theta2.Set((0, 0, 0), BND)
+            Theta3.Set((0, 0, 0), BND)
 
-        Theta1.Set((0, 0, 0), BND)
-        Theta2.Set((0, 0, 0), BND)
-        Theta3.Set((0, 0, 0), BND)
-
-        # e1
-        res.data.FV().NumPy()[:] = f1.vec.FV().NumPy() * Omega
-        with TaskManager():
+            # e1
+            res.data.FV().NumPy()[:] = f1.vec.FV().NumPy() * Omega
+            
             res.data += a.harmonic_extension_trans * res.data
-        ftemp.data = res.data
-        with TaskManager():
+            ftemp.data = res.data
             res.data -= a.mat * Theta1.vec
             Theta1.vec.data += inverse * res
             Theta1.vec.data += a.harmonic_extension * Theta1.vec
@@ -194,24 +191,21 @@ def Theta1_Sweep(Array ,mesh ,fes ,fes2 ,Theta0Sols ,xivec ,alpha ,sigma ,mu_inv
 
         #print("Solevd e1")
 
-        # e2
-        res.data.FV().NumPy()[:] = f2.vec.FV().NumPy() * Omega
-        with TaskManager():
+            # e2
+            res.data.FV().NumPy()[:] = f2.vec.FV().NumPy() * Omega
+        
             res.data += a.harmonic_extension_trans * res.data
-        ftemp.data = res.data
-        with TaskManager():
+            ftemp.data = res.data
             res.data -= a.mat * Theta2.vec
             Theta2.vec.data += inverse * res
             Theta2.vec.data += a.harmonic_extension * Theta2.vec
             Theta2.vec.data += a.inner_solve * ftemp.data
         
         #print("Solevd e2")
-        # e3
-        res.data.FV().NumPy()[:] = f3.vec.FV().NumPy() * Omega
-        with TaskManager():
+            # e3
+            res.data.FV().NumPy()[:] = f3.vec.FV().NumPy() * Omega
             res.data += a.harmonic_extension_trans * res.data
-        ftemp.data = res.data
-        with TaskManager():
+            ftemp.data = res.data
             res.data -= a.mat * Theta3.vec
             Theta3.vec.data += inverse * res
             Theta3.vec.data += a.harmonic_extension * Theta3.vec

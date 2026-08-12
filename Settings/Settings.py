@@ -131,7 +131,7 @@ def SolverParameters():
     #the local will take more
 
     #Relative tolerance
-    Tolerance = 1e-8#10**-8
+    Tolerance =1e-6# 1e-8#10**-8
     #(float) the amount the redsidual must decrease by relatively to solve
     #the problem
 

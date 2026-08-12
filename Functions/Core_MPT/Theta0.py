@@ -50,20 +50,21 @@ def Theta0(fes, Order, alpha, mu_inv, inout, e, Tolerance, Maxsteps, epsi, simnu
     a += SymbolicBFI(epsi * (u * v), bonus_intorder=Additional_Int_Order)
     if Solver == "bddc":
         c = Preconditioner(a, "bddc")  # Apply the bddc preconditioner
-    a.Assemble()
-    f.Assemble()
-    if Solver == "local":
-        c = Preconditioner(a, "local")  # Apply the local preconditioner
-    c.Update()
+    with TaskManager():
+        a.Assemble()
+        f.Assemble()
+        if Solver == "local":
+            c = Preconditioner(a, "local")  # Apply the local preconditioner
+        c.Update()
 
-    # Solve the problem
-    f.vec.data += a.harmonic_extension_trans * f.vec
-    res = f.vec.CreateVector()
-    res.data = f.vec - a.mat * Theta.vec
-    inverse = CGSolver(a.mat, c.mat, precision=Tolerance, maxsteps=Maxsteps, printrates=True)
-    Theta.vec.data += inverse * res
-    Theta.vec.data += a.harmonic_extension * Theta.vec
-    Theta.vec.data += a.inner_solve * f.vec
+        # Solve the problem
+        f.vec.data += a.harmonic_extension_trans * f.vec
+        res = f.vec.CreateVector()
+        res.data = f.vec - a.mat * Theta.vec
+        inverse = CGSolver(a.mat, c.mat, precision=Tolerance, maxsteps=Maxsteps, printrates=True)
+        Theta.vec.data += inverse * res
+        Theta.vec.data += a.harmonic_extension * Theta.vec
+        Theta.vec.data += a.inner_solve * f.vec
     
     Theta_Return = np.zeros([fes.ndof], dtype=np.longdouble)
     Theta_Return[:] = Theta.vec.FV().NumPy()

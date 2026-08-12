@@ -23,7 +23,7 @@ material_name = ['tetra']
 subdomain_dict = {'tetra':material_name[0]}
 sigma = [1e7]
 mur = [32]
-alpha = 0.001
+alpha = 0.01
 
 # Setting Boundary layer Options:
 max_target_frequency = 1e8

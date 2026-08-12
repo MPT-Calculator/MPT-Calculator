@@ -9,4 +9,4 @@ solid object= tetra;
 solid outside=box and not object ;
 
 tlo outside -col=[0,0,1] -transparent -material=air ;#air
-tlo object -col=[1,0,0] -material=tetra ;#tetra -mur=10 -sig=5.96E+06
+tlo object -col=[1,0,0] -material=tetra ;#tetra -mur=32 -sig=1e7
