@@ -25,7 +25,7 @@ Added new boundary layer capability
 material_name = ['mat1']
 mur = [32]
 sigma = [1e7]
-alpha = 0.001
+alpha = 0.01
 
 # Boundary Layer Settings: max frequency under consideration, the total number of prismatic layers and the material of each layer.
 # Setting Boundary layer Options:
@@ -56,7 +56,7 @@ ellipsoid = gtr (sp)
 # For compatability, we want the non-conducting region to have the 'outer' boundary condition and be labeled as 'air'
 ellipsoid.bc('default')
 ellipsoid.mat(material_name[0])
-ellipsoid.maxh = 0.15
+ellipsoid.maxh = 0.2
 
 # Generating a large non-conducting region. For compatability with MPT-Calculator, we set the boundary condition to 'outer'
 # and the material name to 'air'.
@@ -84,7 +84,7 @@ layer_thicknesses = [(2**n)*tau for n in range(number_of_layers)]
 
 B = BoundaryLayerParameters(boundary=".*", thickness=layer_thicknesses, new_material=boundary_layer_material,
                            domain=boundary_layer_material, outside=False, disable_curving=False )
-nmesh = OCCGeometry(joined_object).GenerateMesh(meshsize.coarse,boundary_layers=[B]) 
+nmesh = OCCGeometry(joined_object).GenerateMesh(meshsize.coarse,boundary_layers=[B],curvaturesafety=6.0) 
 
 nmesh.Save(r'VolFiles/OCC_ellipsoid_Tetra_Minf.vol')
 # print(nmesh.GetMaterial(2))

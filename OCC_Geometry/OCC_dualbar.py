@@ -33,6 +33,16 @@ bar2.bc('default')
 outer_box.mat('air')
 outer_box.bc('outer')
 
+print("The volume of the object is",bar1.mass+bar2.mass)
+print("The volume of the bar1 is",bar1.mass)
+print("The volume of the bar2 is",bar1.mass)
+vol=bar1.mass+bar2.mass
+vol1=bar1.mass
+vol2=bar2.mass
+print("The average conductivity is",(sigma[0]*vol1+sigma[1]*vol2)/vol)
+print("The average permeability is",(mur[0]*vol1+mur[1]*vol2)/vol)
+
+
 # Setting maxh for each object:
 bar1.maxh = 0.12
 bar2.maxh = 0.12

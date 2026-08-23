@@ -29,9 +29,12 @@ def Calculate_Minf(Integration_Order, Minf, ThetainfSol, Thetainfi, Thetainfj, a
         for j in range(3):
             Thetainfj.vec.FV().NumPy()[:] = ThetainfSol[:, j]
             if i == j:
+                # Note that only defined outside the conductor so include
+                # (1-inout) to exclude integration over the conductor
                 Minf[i, j] = -(alpha ** 3) * (VolConstant + (1 / 4) * (
-                    Integrate( (InnerProduct(curl(Thetainfi), curl(Thetainfj))), mesh, order=Integration_Order)))
+                    Integrate( (1-inout)*(InnerProduct(curl(Thetainfi), curl(Thetainfj))), mesh, order=Integration_Order)))
             else:
                 Minf[i, j] = - (alpha ** 3 / 4) * (
-                    Integrate(  (InnerProduct(curl(Thetainfi), curl(Thetainfj))), mesh, order=Integration_Order))
+                    Integrate(  (1-inout)*(InnerProduct(curl(Thetainfi), curl(Thetainfj))), mesh, order=Integration_Order))
+    print(Minf)
     return Minf

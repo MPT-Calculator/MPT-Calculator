@@ -36,7 +36,9 @@ def check_mesh_volumes(mesh, inout, Object, integration_Order, curve):
     cond_coef = [cond[mat] for mat in mesh.GetMaterials() ]
     conductor = CoefficientFunction(cond_coef)
 
-
+    # Setting mesh curve order:
+    print("Using mesh curve",curve)
+    mesh.Curve(curve)
 
     mesh_volume = Integrate(inout, mesh, order=integration_Order)
 
@@ -46,6 +48,7 @@ def check_mesh_volumes(mesh, inout, Object, integration_Order, curve):
         # loop over the conductor elements
         print("considering conductor element",n,ntags,tags[n])
         volumepart = Integrate(myinout(conductor,n,ntags), mesh, order=integration_Order)
+        print("volume of this part",volumepart)
         if tags[n] != "air":
             totalvolume = totalvolume + volumepart
     print("Calculated conductor volume as sum",totalvolume)
