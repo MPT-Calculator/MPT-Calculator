@@ -35,6 +35,14 @@ def check_mesh_volumes(mesh, inout, Object, integration_Order, curve):
     #Materials, mur, sig, inorout, cond, ntags, tags = VolMatUpdater(Object, True)
     cond_coef = [cond[mat] for mat in mesh.GetMaterials() ]
     conductor = CoefficientFunction(cond_coef)
+    mu_coef = [mur[mat] for mat in mesh.GetMaterials() ]
+    mu = CoefficientFunction(mu_coef)
+    sig_coef = [sig[mat] for mat in mesh.GetMaterials() ]
+    sigma = CoefficientFunction(sig_coef)
+
+
+
+
 
     # Setting mesh curve order:
     print("Using mesh curve",curve)
@@ -44,14 +52,25 @@ def check_mesh_volumes(mesh, inout, Object, integration_Order, curve):
 
     print("Predicted unit object volume is",mesh_volume)
     totalvolume=0.
+    muavg=0.
+    sigmaavg=0.
     for n in range(ntags):
-        # loop over the conductor elements
-        print("considering conductor element",n,ntags,tags[n])
-        volumepart = Integrate(myinout(conductor,n,ntags), mesh, order=integration_Order)
-        print("volume of this part",volumepart)
         if tags[n] != "air":
-            totalvolume = totalvolume + volumepart
+            # loop over the conductor elements
+            print("considering conductor element",n,ntags,tags[n])
+            volumepart = Integrate(myinout(conductor,n,ntags), mesh, order=integration_Order)
+            mupart=Integrate(mu*myinout(conductor,n,ntags),mesh)/volumepart
+            sigmapart=Integrate(sigma*myinout(conductor,n,ntags),mesh)/volumepart
+            muavg+=mupart*volumepart
+            sigmaavg+=sigmapart*volumepart
+            print("volume of this part",volumepart)
+            print("mu of this part",mupart)
+            print("sigma of this part",sigmapart)
+            if tags[n] != "air":
+                totalvolume = totalvolume + volumepart
     print("Calculated conductor volume as sum",totalvolume)
+    print("Volume avg mu",muavg/mesh_volume)
+    print("Volume avg sigma",sigmaavg/mesh_volume)
 
     #if use_OCC is True:
     #    out = runpy.run_path(f'OCC_Geometry/{Object[:-4]}.py')
