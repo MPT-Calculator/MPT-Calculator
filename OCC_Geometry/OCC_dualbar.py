@@ -44,8 +44,9 @@ print("The average permeability is",(mur[0]*vol1+mur[1]*vol2)/vol)
 
 
 # Setting maxh for each object:
-bar1.maxh = 0.12
-bar2.maxh = 0.12
+# use 0.4 for eigen comp
+bar1.maxh = 0.12#0.4#0.12
+bar2.maxh = 0.12#0.4#0.12
 outer_box.maxh = 100
 outer_box=outer_box-bar1-bar2
 
@@ -55,6 +56,8 @@ joined_object = Glue([bar1, bar2, outer_box])
 
 # Generating Mesh:
 geo = OCCGeometry(joined_object)
+# Mesh for eigen
+#nmesh = geo.GenerateMesh(meshsize.coarse)
 nmesh = geo.GenerateMesh()
 nmesh.Save(r'VolFiles/OCC_dualbar.vol')
 ngmesh = Mesh(nmesh)

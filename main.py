@@ -329,7 +329,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
             # Single Frequency Solve
             if MultiProcessing!=True:
                 CPUs = 1
-            MPT, EigenValues, N0, Minf, elements, ndofs, Theta0Sol, Theta0i, Theta0j, fes = SingleFrequency(Geometry,Order,alpha,inorout,mur,sig,Omega,CPUs,vtk_output,Refine, Integration_Order,
+            MPT, EigenValues, N0, Minf, elements, ndofs, Theta0Sol, Theta0i, Theta0j, fes,mesh,bilinear_bonus_int_order = SingleFrequency(Geometry,Order,alpha,inorout,mur,sig,Omega,CPUs,vtk_output,Refine, Integration_Order,
                                                         Additional_Int_Order, Order_L2, sweepname, drop_tol, curve=curve_degree, num_solver_threads=NumSolverThreads)
             TensorArray = MPT.ravel()
 
@@ -522,16 +522,16 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
             if MultiProcessing!=True:
                 CPUs = 1
             Omega = Array[0] # dummy set as we are using the Single Frequency call to get N0 and Minf
-            MPT, EigenValues, N0, Minf, elements, ndofs, Theta0Sol, Theta0i, Theta0j, fes = SingleFrequency(Geometry,Order,alpha,inorout,mur,sig,Omega,CPUs,vtk_output,Refine, Integration_Order,
+            MPT, EigenValues, N0, Minf, elements, ndofs, Theta0Sol, Theta0i, Theta0j, fes,mesh,bilinear_bonus_int_order = SingleFrequency(Geometry,Order,alpha,inorout,mur,sig,Omega,CPUs,vtk_output,Refine, Integration_Order,
                                                             Additional_Int_Order, Order_L2, sweepname, drop_tol, curve=curve_degree, num_solver_threads=NumSolverThreads)
             TensorArray = MPT.ravel()
 
             # New Function to compute eigen-modes
-            evals, evecs, sigma_avg = MPT_eigen(Geometry, Order, alpha, inorout, mur, sig, Omega, CPUs, vtk_output, Refine, Integration_Order, Additional_Int_Order, Order_L2, sweepname, drop_tol, fes, Theta0i, Theta0Sol,
+            evals, evecs, sigma_avg = MPT_eigen(Geometry, Order, alpha, inorout, mur, sig, Omega, CPUs, vtk_output, Refine, Integration_Order, Additional_Int_Order, Order_L2, sweepname, drop_tol, fes, Theta0i, Theta0Sol,mesh,bilinear_bonus_int_order,
                         curve=curve_degree, num_solver_threads=NumSolverThreads)
 
             # New Function to compute spectrum
-            xi, ck, TensorArray, EigenValues = MPT_spectrum(evals, evecs, Theta0Sol, Theta0i, Theta0j, fes, Array, alpha, sigma_avg, Geometry, Order, inorout, mur, sig, sweepname, drop_tol, N0, Minf, curve=curve_degree, num_solver_threads=NumSolverThreads)
+            xi, ck, TensorArray, EigenValues = MPT_spectrum(evals, evecs, Theta0Sol, Theta0i, Theta0j, fes, Array, alpha, sigma_avg, Geometry, Order, inorout, mur, sig, sweepname, drop_tol, N0, Minf, mesh,bilinear_bonus_int_order,curve=curve_degree, num_solver_threads=NumSolverThreads)
 
             # Obtain impulse and step function response
             Nfound = np.array((len(xi),len(xi),len(xi)))

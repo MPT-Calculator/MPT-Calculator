@@ -269,4 +269,4 @@ def SingleFrequency(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, R
     # del Theta1i, Theta1j, Theta0i, Theta0j, fes, fes2, Theta0Sol, Theta1Sol
     gc.collect()
 
-    return MPT, EigenValues, N0, Minf, numelements, (ndof, ndof2), Theta0Sol, Theta0i, Theta0j, fes
+    return MPT, EigenValues, N0, Minf, numelements, (ndof, ndof2), Theta0Sol, Theta0i, Theta0j, fes, mesh,bilinear_bonus_int_order

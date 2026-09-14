@@ -10,6 +10,7 @@ import cmath
 import numpy as np
 
 import netgen.meshing as ngmeshing
+#import ngsolve.krylovspace as ks
 from ngsolve import *
 
 sys.path.insert(0, "Functions")
@@ -38,12 +39,24 @@ import gc
 from Functions.Helper_Functions.count_prismatic_elements import count_prismatic_elements
 
 
-def MPT_eigen(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine, Integration_Order, Additional_Int_Order, Order_L2, sweepname, drop_tol, fes, Theta0i, Theta_Return,
+def MPT_eigen(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine, Integration_Order, Additional_Int_Order, Order_L2, sweepname, drop_tol, fes, Theta0i, Theta_Return,mesh,bilinear_bonus_int_order,
                     curve=5, theta_solutions_only=False, num_solver_threads='default'):
 
-    _, Mu0, _, _, _, _,_, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation([Omega], Object, [], curve, inorout,
-                                                                                                                  mur, sig, Order, 0, sweepname,
-                                                                                                                  num_solver_threads, drop_tol)
+    #_, Mu0, _, _, _, _,_, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation([Omega], Object, [], curve, inorout,
+    #                                                                                                              mur, sig, Order, 0, sweepname,
+    #                                                                                                              num_solver_threads, drop_tol)
+    
+    # Coefficient functions
+    Mu0=4*np.pi*1e-7
+    mu_coef = [mur[mat] for mat in mesh.GetMaterials()]
+    mu = CoefficientFunction(mu_coef)
+    inout_coef = [inorout[mat] for mat in mesh.GetMaterials()]
+    inout = CoefficientFunction(inout_coef)
+    sigma_coef = [sig[mat] for mat in mesh.GetMaterials()]
+    sigma = CoefficientFunction(sigma_coef)
+    mu_inv =1./mu
+
+
     # Set up the Solver Parameters
     Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()
     _,BigProblem,_,_,_, _, _, _tol = DefaultSettings()
@@ -54,7 +67,7 @@ def MPT_eigen(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine,
     v = fes.TestFunction()
 
     # Weak form
-    a = BilinearForm(fes,symmetric=True)#,condense=False)
+    a = BilinearForm(fes)#,symmetric=True)#,condense=False)
     a += SymbolicBFI(mu_inv*curl(u)*curl(v),bonus_intorder=bilinear_bonus_int_order)
 
 
@@ -90,7 +103,7 @@ def MPT_eigen(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine,
     pre = Preconditioner(apre, "bddc")
 
     EigType="Dirichlet"# "Neumann"
-    IterativeSolver="Iterative"# "Direct"
+    IterativeSolver="Direct"#"Iterative"# "Direct"
     print("running eigensolver")
 
     with TaskManager():
@@ -130,8 +143,8 @@ def MPT_eigen(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine,
 
                 cgmath1 = CGSolver(
                     mat=math1,pre=math1smooth,
-                    maxsteps=100,
-                    precision=1e-8
+                    maxsteps=2000,
+                    precision=1e-9
                     )
 
                 class H1Inverse(BaseMatrix):
@@ -160,18 +173,35 @@ def MPT_eigen(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine,
                 invh1 = math1.Inverse(inverse="sparsecholesky", freedofs=fesh1.FreeDofs()) # Note use of free DOFs only
             else:
 
-                math1smooth = math1.CreateSmoother(freedofs=fesh1.FreeDofs())
+                #math1smooth = math1.CreateSmoother(freedofs=fesh1.FreeDofs())
 
-                cgmath1 = CGSolver(
-                    mat=math1,pre=math1smooth,
-                    maxsteps=300,
-                    precision=1e-8
+                #cgmath1 = CGSolver(
+                #    mat=math1,
+                #    pre=math1smooth,
+                #    maxsteps=1000,
+                #    precision=1e-8#1e-8
+                #    )
+                
+                import ngsolve_amgcl
+                opts = ngsolve_amgcl.AMGCLOptions()
+                opts.coarsening = "smoothed_aggregation"
+                opts.relaxation = "spai0"
+    
+    
+                # Create preconditioner
+                premath1 = ngsolve_amgcl.AMGCLPreconditioner(math1, fesh1.FreeDofs(), opts)
+
+                cgmath1 =  ks.CGSolver(
+                    mat=math1,
+                    pre=math1smooth,
+                    maxiter=1000,
+                    atol=1e-9
                     )
 
                 class H1Inverse(BaseMatrix):
 
                     def Mult(self, x, y):
-                        y.data = cgmath1 * x#invh1s*x#cgH * x
+                        y.data = cgmath1 * x
 
                     def CreateColVector(self):
                         return math1.CreateColVector()
@@ -194,12 +224,13 @@ def MPT_eigen(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine,
 
         projpre = proj @ pre.mat
 
-        #evals, evecs = solvers.PINVIT(a.mat, m.mat, pre=projpre, num=10, maxit=20) #150
-        neval=2000#int(fes.ndof/40)#750#1000
-        print("Looking for nevel modes=",neval)
-        evals,evecs = myeigensolver(fes,a,mreg,projpre,neval, mesh, Theta0i, Theta_Return,scale)
+        nevals=2000#1500
+        #evals, evecs = solvers.PINVIT(a.mat, mreg.mat, pre=projpre, num=nevals, maxit=10) #150
+        #neval=700#int(fes.ndof/40)#750#1000
+        #print("Looking for nevel modes=",neval)
+        evals,evecs = myeigensolver(fes,a,mreg,projpre,nevals, mesh, Theta0i, Theta_Return,scale)
 
-    del a, mreg, apre, gradmat,math1,gradmattrans, proj,projpre, u, v
+    #del math1smooth, invh1, proj, projpre, math1, gradmattrans, gradmat, pre,apre, a, mreg, u, v
     gc.collect()
 
     return evals, evecs, sigma_avg
@@ -286,8 +317,8 @@ def MPT_eigen(Object, Order, alpha, inorout, mur, sig, Omega, CPUs, VTK, Refine,
 
 """preconditioned inverse iteration"""
 def myeigensolver(fes,a,mreg, pre,num, mesh, Theta0i, Theta_Return,scale ):
-    MaxIter=5
-    Tol=5e-3
+    MaxIter=20
+    Tol=1e-4
     printrates=True
     import scipy.linalg
     ndof=fes.ndof

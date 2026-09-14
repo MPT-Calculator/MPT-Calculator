@@ -14,12 +14,21 @@ from ngsolve import *
 from ..Core_MPT.MPT_Preallocation import *
 
 
-def MPT_spectrum(evals, evecs, Theta0Sol, Theta0i, Theta0j, fes, Omega, alpha, sigma_avg, Object, Order, inorout, mur, sig, sweepname, drop_tol, N0, Minf, curve=5, num_solver_threads='default'):
+def MPT_spectrum(evals, evecs, Theta0Sol, Theta0i, Theta0j, fes, Omega, alpha, sigma_avg, Object, Order, inorout, mur, sig, sweepname, drop_tol, N0, Minf,mesh,bilinear_bonus_int_order,curve=5, num_solver_threads='default'):
 
-    _, Mu0, _, _, _, _,_, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation([Omega], Object, [], curve, inorout,
-                                                                                                                  mur, sig, Order, 0, sweepname,
-                                                                                                                  num_solver_threads, drop_tol)
+    #_, Mu0, _, _, _, _,_, inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_order = MPT_Preallocation([Omega], Object, [], curve, inorout,
+    #                                                                                                              mur, sig, Order, 0, sweepname,
+    #                                                                                                              num_solver_threads, drop_tol)
 
+    # Coefficient functions
+    Mu0=4*np.pi*1e-7
+    mu_coef = [mur[mat] for mat in mesh.GetMaterials()]
+    mu = CoefficientFunction(mu_coef)
+    inout_coef = [inorout[mat] for mat in mesh.GetMaterials()]
+    inout = CoefficientFunction(inout_coef)
+    sigma_coef = [sig[mat] for mat in mesh.GetMaterials()]
+    sigma = CoefficientFunction(sigma_coef)
+    mu_inv =1./mu
 
     print(Omega)
     xivec = [CoefficientFunction((0, -z, y)), CoefficientFunction((z, 0, -x)), CoefficientFunction((-y, x, 0))]
@@ -60,6 +69,8 @@ def MPT_spectrum(evals, evecs, Theta0Sol, Theta0i, Theta0j, fes, Omega, alpha, s
                 if np.abs(evals[k-1]-evals[k])/np.abs(evals[k]) > Tol:
                     nfound+=1
             evalsout[nfound]=evals[k]
+            if nfound > 3*len(evals):
+                print("exceeded length of array",nfound,3*len(evals))
             gfu.vec.data = evecs[k]
 
 
@@ -90,6 +101,7 @@ def MPT_spectrum(evals, evecs, Theta0Sol, Theta0i, Theta0j, fes, Omega, alpha, s
     #print(evals,evalsout,nfound)
     #nfound-=1
 
+    print("Apt found")
     n=0
     for omega in Omega:
         sMPT[n,:,:]=N0[:,:]
@@ -130,5 +142,5 @@ def MPT_spectrum(evals, evecs, Theta0Sol, Theta0i, Theta0j, fes, Omega, alpha, s
     TensorArray=np.conj(TensorArray)
     EigenValues=np.conj(EigenValues)
 
-
+    print("found ck")
     return xi, ck, TensorArray, EigenValues
