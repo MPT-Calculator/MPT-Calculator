@@ -20,7 +20,7 @@ from .DictionaryList import *
 
 
 def SpectralSave(Geometry, Array, TensorArray, EigenValues, N0, Minf, Pod, PODArray, PODTol, elements, alpha, Order, MeshSize,
-             mur, sig, ck, xi, Time, Sgn_step, Sgn_impulse, Amp_scale, inorout, Nfound, mesh):
+             mur, sig, ck, xi, ck_low, xi_low, Time, Sgn_step, Sgn_impulse, Amp_scale, inorout, Nfound, Nfound_low, mesh):
     """
     P.D. Ledger.2026.
     Save data and make folder structure.
@@ -82,6 +82,8 @@ def SpectralSave(Geometry, Array, TensorArray, EigenValues, N0, Minf, Pod, PODAr
     # Save the data
     np.savetxt("Results/" + sweepname + "/Data/Amplitudes.csv", ck, delimiter=",")
     np.savetxt("Results/" + sweepname + "/Data/Modes.csv", xi, delimiter=",")
+    np.savetxt("Results/" + sweepname + "/Data/Amplitudes_low.csv", ck_low, delimiter=",")
+    np.savetxt("Results/" + sweepname + "/Data/Modes_low.csv", xi_low, delimiter=",")
     np.savetxt("Results/" + sweepname + "/Data/Time.csv", Time, delimiter=",")
     np.savetxt("Results/" + sweepname + "/Data/Sgn_impulse.csv", Sgn_impulse, delimiter=",")
     np.savetxt("Results/" + sweepname + "/Data/Sgn_step.csv", Sgn_step, delimiter=",")
@@ -111,6 +113,21 @@ def SpectralSave(Geometry, Array, TensorArray, EigenValues, N0, Minf, Pod, PODAr
         plt.savefig(savename+"Amplitudes+Modes"+str(i+1)+".pdf")
 
     plt.figure()
+
+    for i in range(3):
+        plt.figure()
+        nfound=Nfound[i]
+        ckp=ck_low[0:nfound,i]
+        xip=xi_low[0:nfound,i]
+        plt.stem(np.log10(np.abs(xip[1:])), ckp[1:]/Amp_scale,col[0],label=r"Approximate, $i=$"+str(i+1))
+        plt.xlabel(r'$log_{10}(\xi_k)$')
+        plt.ylabel(r'$\tilde{c}_{k,i}/Time_{scale}$')
+        plt.legend()
+        plt.grid()
+        plt.savefig(savename+"Amplitudes+Modes+low"+str(i+1)+".pdf")
+
+    plt.figure()
+
 
     # Plot out step response
     for i in range(3):

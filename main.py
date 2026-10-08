@@ -543,13 +543,21 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
                 for j in range(3):
                     xi2[i,j]=xi[i]
             xi=xi2
-
+            # No special proceedure in this case for the low-frequency approximation so set values to be the same
+            xi_low=xi
+            ck_low=ck
+            Nfound_low=Nfound
             Sgn_impulse, Sgn_step = getimpulse_step(Minf,N0,Time,xi,ck,Nfound)
 
 
     if MPT_Eigen_From_POD==True and MPT_Eigen==False:
         # Obtain approximate modes and amplitues from an existing spectral signature
-        xi, ck, Nfound = PolesandAmp(Array,np.conj(TensorArray),Minf, Iterative_refine)
+        option="High"
+        xi, ck, Nfound = PolesandAmp(Array,np.conj(TensorArray),Minf, N0, option, Iterative_refine)
+
+        # Obtain approximate modes and amplitudes from an existing spectral signature (low freq version)
+        option="Low"
+        xi_low, ck_low, Nfound_low = PolesandAmp(Array,np.conj(TensorArray),Minf, N0, option, Iterative_refine)
 
         # Obtain impulse and step function response
         Sgn_impulse, Sgn_step = getimpulse_step(Minf,N0,Time,xi,ck,Nfound)
@@ -780,7 +788,7 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
     if MPT_Eigen_From_POD == True or  MPT_Eigen == True:
         # Call for spectral save
         SpectralSave(Geometry, Array, TensorArray, EigenValues, N0, Minf, Pod, PODArray, PODTol, elements, alpha, Order, MeshSize,
-                     mur, sig, ck, xi, Time, Sgn_step, Sgn_impulse, Amp_scale, inorout, Nfound, mesh)
+                     mur, sig, ck, xi, ck_low, xi_low, Time, Sgn_step, Sgn_impulse, Amp_scale, inorout, Nfound, Nfound_low, mesh)
 
     # Constructing Return Dictionary
     # ReturnDict = {}
@@ -816,6 +824,9 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
         ReturnDict['xi'] = xi
         ReturnDict['ck'] = ck
         ReturnDict['Nfound'] = Nfound
+        ReturnDict['xi_low'] = xi_low
+        ReturnDict['ck_low'] = ck_low
+        ReturnDict['Nfound_low'] = Nfound_low
         ReturnDict['Sgn_impulse'] = Sgn_impulse
         ReturnDict['Sgn_step'] = Sgn_step
 

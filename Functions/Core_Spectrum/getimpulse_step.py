@@ -41,7 +41,7 @@ def getimpulse_step(MPTinf,N0,time,Poles,Amp,Nfound): #getimpulse_step(Frequenci
 
 
 # Generating the Poles and Amplitudes
-def PolesandAmp(Frequencies,Tensors,MPTinf, Iterative_refine=False):
+def PolesandAmp(Frequencies,Tensors,MPTinf, N0, option="High", Iterative_refine=False):
 
     Omega=Frequencies
     N=len(Omega)
@@ -50,6 +50,7 @@ def PolesandAmp(Frequencies,Tensors,MPTinf, Iterative_refine=False):
     MPTeig=np.zeros((N,3),dtype=complex)
     # Use the same eigenvector matrix just in case the ordering is different.
     MPTinfeig,Q=np.linalg.eig(MPTinf)#np.linalg.eig(MPTinf))
+    N0eig=np.diag(np.transpose(Q)@N0@Q)
 
     for n in range(N):
         ten=Tensors[n,:]
@@ -88,7 +89,7 @@ def PolesandAmp(Frequencies,Tensors,MPTinf, Iterative_refine=False):
     Amp=np.zeros((N,3),dtype=float)
     Nfound=np.zeros((3),dtype=int)
     for i in range(3):
-        nfound,amp,poles=get_poles_amp(MPTeig[:,i],MPTinfeig[i],OmegaScl,N,Scale, Iterative_refine)
+        nfound,amp,poles=get_poles_amp(MPTeig[:,i],MPTinfeig[i],N0eig[i],OmegaScl,N,Scale, Iterative_refine,option)
         Poles[0:nfound,i]=poles
         Amp[0:nfound,i]=amp
         Nfound[i]=nfound
@@ -99,7 +100,7 @@ def PolesandAmp(Frequencies,Tensors,MPTinf, Iterative_refine=False):
 
 
 # This function obtains the poles and amplitudes for a particular coefficent
-def get_poles_amp(MPT,MPTinf,OmegaScl,N,Scale, Iterative_refine):
+def get_poles_amp(MPT,MPTinf,N0,OmegaScl,N,Scale, Iterative_refine, option):
     # Choose possible relaxation frequencies to be the same as OmegaScl
     Xi=np.copy(OmegaScl)
     K=N
@@ -110,7 +111,10 @@ def get_poles_amp(MPT,MPTinf,OmegaScl,N,Scale, Iterative_refine):
             if n==0:
                 Z[m,n]=diagscale
             else:
-                Z[m,n]=1./(1.+1j*(OmegaScl[m]/Xi[n-1]))
+                if option=="High":
+                    Z[m,n]=1./(1.+1j*(OmegaScl[m]/Xi[n-1]))
+                else:
+                    Z[m,n]=-1j*OmegaScl[m]/Xi[n-1]/(1.+1j*(OmegaScl[m]/Xi[n-1]))
     ZRe=np.real(Z)
     ZIm=np.imag(Z)
     Ztilde=np.zeros((2*N,1+K))
@@ -120,7 +124,11 @@ def get_poles_amp(MPT,MPTinf,OmegaScl,N,Scale, Iterative_refine):
             Ztilde[m+N,n]=ZIm[m,n]
     #set offset according to M(inf)
     safety=2
-    offset=-MPTinf*safety
+    if option=="High":
+        offset=-MPTinf*safety
+    else:
+        safety=1
+        offset=-N0*safety
     # Apply offset to ensure convergence
     hRe=np.real(MPT+offset)
     hIm=np.imag(MPT)
