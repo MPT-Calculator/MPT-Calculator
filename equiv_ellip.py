@@ -52,9 +52,9 @@ def find_ellipsoid(Hill,vol,tol=None):
         x0=np.array((0.1,0.1))
         #x=fsolve(nonlin,x0,args=(rhs))
         if tol == None:
-            res=minimize(nonlin,x0,args=(rhs),bounds=((1-10,1e6),(1e-10,1e6)),method="L-BFGS-B")
+            res=minimize(nonlin,x0,args=(rhs),bounds=((1-12,1e8),(1e-12,1e8)),method="L-BFGS-B")
         else:
-            res=minimize(nonlin,x0,args=(rhs),bounds=((1-10,1e6),(1e-10,1e6)),method="L-BFGS-B",options={"gtol":tol})
+            res=minimize(nonlin,x0,args=(rhs),bounds=((1-12,1e8),(1e-12,1e8)),method="L-BFGS-B",options={"gtol":tol})
         x=res.x
         print("solution to min problem",x)
         if x[0]<0 or x[1]<0:
@@ -78,7 +78,7 @@ def find_ellipsoid(Hill,vol,tol=None):
 def nonlin(x,rhs):
     x1=x[0];
     x2=x[1];
-    IA=quad(A,1,np.inf,args=(x1,x2))[0]
-    IB=quad(B,1,np.inf,args=(x1,x2))[0]
-    IC=quad(C,1,np.inf,args=(x1,x2))[0]
+    IA=quad(A,1,np.inf,args=(x1,x2),epsabs=1e-20, epsrel=1e-20)[0]
+    IB=quad(B,1,np.inf,args=(x1,x2),epsabs=1e-20, epsrel=1e-20)[0]
+    IC=quad(C,1,np.inf,args=(x1,x2),epsabs=1e-20, epsrel=1e-20)[0]
     return np.linalg.norm(np.array((IC/IA-rhs[0], IB/IA-rhs[1])))
