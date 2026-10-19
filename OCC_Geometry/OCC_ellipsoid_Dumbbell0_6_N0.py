@@ -34,10 +34,10 @@ boundary_layer_material = material_name[0]
 number_of_layers = 2
 
 
-# setting radius
-r1 = 1.67397441 
-r2 = 0.95301236
-r3 = 0.95234751
+# setting radius 1.67670819 0.96134672 0.96134672]
+r1 = 1.67670819
+r2 = 0.96134672
+r3 = 0.96134672
 
 
 # Generating OCC primative sphere centered at [0,0,0] with radius r:
@@ -56,7 +56,7 @@ ellipsoid = gtr (sp)
 # For compatability, we want the non-conducting region to have the 'outer' boundary condition and be labeled as 'air'
 ellipsoid.bc('default')
 ellipsoid.mat(material_name[0])
-ellipsoid.maxh = 0.2
+ellipsoid.maxh = 0.1
 
 # Generating a large non-conducting region. For compatability with MPT-Calculator, we set the boundary condition to 'outer'
 # and the material name to 'air'.

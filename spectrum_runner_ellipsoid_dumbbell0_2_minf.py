@@ -9,7 +9,7 @@ if __name__ == '__main__':
    start_time = time();
    geometry = "OCC_ellipsoid_Dumbbell0_2_Minf.py"#"OCC_ellipsoid_Tetra_N0.py"
    CPUs=[6,6,6,6,6,6,6]
-   for order in [5]:#[2,3,4]:
+   for order in [3,4]:
        print("solving order=",order)
        Return_Dict = main(geometry=geometry,use_POD=True,use_parallel=False,use_OCC=True,start_stop=(-3,12,3000), curve_degree=1, MPT_Eigen=False, 
                         N_POD_points=50,MPT_Eigen_From_POD=True, order=order,cpus=CPUs[order],  Time=np.logspace(-9,-2,300))

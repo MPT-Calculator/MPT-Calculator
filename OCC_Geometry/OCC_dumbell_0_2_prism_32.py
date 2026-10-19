@@ -53,7 +53,7 @@ print(solid.mass)
 # For compatability, we want the non-conducting region to have the 'outer' boundary condition and be labeled as 'air'
 solid.bc('default')
 solid.mat(material_name[0])
-solid.maxh = 0.2
+solid.maxh = 0.1
 
 # Generating a large non-conducting region. For compatability with MPT-Calculator, we set the boundary condition to 'outer'
 # and the material name to 'air'.
@@ -81,7 +81,7 @@ layer_thicknesses = [(2**n)*tau for n in range(number_of_layers)]
 
 B = BoundaryLayerParameters(boundary=".*", thickness=layer_thicknesses, new_material=boundary_layer_material,
                            domain=boundary_layer_material, outside=False, disable_curving=False )
-nmesh = OCCGeometry(joined_object).GenerateMesh(meshsize.coarse,boundary_layers=[B])
+nmesh = OCCGeometry(joined_object).GenerateMesh(meshsize.coarse,boundary_layers=[B],curvaturesafety=6.0)
 
 nmesh.Save(r'VolFiles/OCC_dumbell_0_2_prism_32.vol')
 # print(nmesh.GetMaterial(2))

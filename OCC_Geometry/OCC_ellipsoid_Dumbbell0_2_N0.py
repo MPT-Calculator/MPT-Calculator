@@ -56,7 +56,7 @@ ellipsoid = gtr (sp)
 # For compatability, we want the non-conducting region to have the 'outer' boundary condition and be labeled as 'air'
 ellipsoid.bc('default')
 ellipsoid.mat(material_name[0])
-ellipsoid.maxh = 0.2
+ellipsoid.maxh = 0.1
 
 # Generating a large non-conducting region. For compatability with MPT-Calculator, we set the boundary condition to 'outer'
 # and the material name to 'air'.
