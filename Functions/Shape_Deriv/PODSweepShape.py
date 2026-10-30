@@ -425,7 +425,8 @@ def PODSweepShape(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
     # Mechanical finite element space
     Ordershape=1#np.max([1,Order])
     fesmech=VectorH1(mesh, order=Ordershape,dirichlet="outer")
-    directory="/Users/pdl11/Coding/MPT-Calculator/Oct2025/MPT-Calculator/Results/OCC_sphere_to_box_prism_32_8/al_0.001_mu_32_sig_1e6/1e1-1e12_100_el_29366_ord_4_POD_13_1e-6"
+    #directory="/Users/pdl11/Coding/MPT-Calculator/Oct2025/MPT-Calculator/Results/OCC_sphere_to_box_prism_32_8/al_0.001_mu_32_sig_1e6/1e1-1e12_100_el_29366_ord_4_POD_13_1e-6"
+    directory="/home/pdl11/Coding/PaulMPTResults/Results/OCC_sphere_to_box_prism_32_8/al_0.001_mu_32_sig_1e6/1e1-1e12_100_el_29366_ord_4_POD_13_1e-6"
     # Tensor Array_ms and N0_ms from this directory
     TensorArray_ms= np.genfromtxt(directory+'/Data/Tensors.csv', delimiter=',', dtype=complex)
     N0_ms= np.genfromtxt(directory+'/Data/N0.csv', delimiter=',')

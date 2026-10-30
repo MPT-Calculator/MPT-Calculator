@@ -66,7 +66,8 @@ def Shape_Rep(fes,fesmech,u1Truncated,u2Truncated,u3Truncated,inout,mu_inv,alpha
     print(len(Omega),Sols.shape[1])
 
     Mu0=4.*np.pi*1e-7
-    for k in range(Sols.shape[1]):
+    # Only consider every 10th frequency
+    for k in range(0,Sols.shape[1],10):
 
         nu=Omega[k]*Mu0*alpha**2 # without sigma
 
@@ -82,6 +83,7 @@ def Shape_Rep(fes,fesmech,u1Truncated,u2Truncated,u3Truncated,inout,mu_inv,alpha
         # Compute the term sum_i, sum_j Hmeasure(i)@(MPT-MPTms)@Hexcite(j)
         term=0.
         term+=Hmeasure@((MPTobj[:,:]-MPTms[:,:])@Hexcite)
+        print("omega=",Omega[k],"MPT diff",term)
 
         # For every frequency we want to construct the grid functions
 
