@@ -66,6 +66,31 @@ def Shape_Rep(fes,fesmech,u1Truncated,u2Truncated,u3Truncated,inout,mu_inv,alpha
     print(len(Omega),Sols.shape[1])
 
     Mu0=4.*np.pi*1e-7
+    # Construct shape functional (based on every 10th frequency)
+    Jfun=0.
+    for k in range(0,Sols.shape[1],10):
+
+        nu=Omega[k]*Mu0*alpha**2 # without sigma
+
+        # Set up MPTs of object and measurements
+        MPTobj=np.zeros((3,3),dtype=complex)
+        MPTms=np.zeros((3,3),dtype=complex)
+
+        for i in range(3):
+            for j in range(3):
+                MPTobj[i,j]=TensorArray_obj[k,j+i*3]-N0_obj[i,j]
+                MPTms[i,j]=TensorArray_ms[k,j+i*3]-N0_ms[i,j]
+
+        
+
+        # Compute the term sum_i, sum_j Hmeasure(i)@(MPT-MPTms)@Hexcite(j)
+        term=0.
+        term+=Hmeasure@((MPTobj[:,:]-MPTms[:,:])@Hexcite)
+        print("omega=",Omega[k],"MPT diff",term)
+        Jfun+=np.abs(term)**2
+    print("Shape functional has value",Jfun)
+
+
     # Only consider every 10th frequency
     for k in range(0,Sols.shape[1],10):
 
@@ -79,6 +104,8 @@ def Shape_Rep(fes,fesmech,u1Truncated,u2Truncated,u3Truncated,inout,mu_inv,alpha
             for j in range(3):
                 MPTobj[i,j]=TensorArray_obj[k,j+i*3]-N0_obj[i,j]
                 MPTms[i,j]=TensorArray_ms[k,j+i*3]-N0_ms[i,j]
+
+
 
         # Compute the term sum_i, sum_j Hmeasure(i)@(MPT-MPTms)@Hexcite(j)
         term=0.
@@ -102,18 +129,18 @@ def Shape_Rep(fes,fesmech,u1Truncated,u2Truncated,u3Truncated,inout,mu_inv,alpha
 
                 # add contribution to shape derivative term (for the real part)
                 sizefactor=-alpha**3/4
-                dJ+=SymbolicLFI(2*np.real(term*Hmeasure[i]*(sizefactor*inout * mu_inv *InnerProduct(curl(gfi),2*Sym(Grad(vmech))* curl(gfj)))*Hexcite[j]),bonus_intorder=bilinear_bonus_int_order+ordershape)
-                dJ+=SymbolicLFI(-2*np.real(term*Hmeasure[i]*(sizefactor*inout * mu_inv *InnerProduct(curl(gfi), curl(gfj)))*div(vmech)*Hexcite[j]),bonus_intorder=bilinear_bonus_int_order+ordershape)
+                dJ+=SymbolicLFI((1/Jfun)*2*np.real(term*Hmeasure[i]*(sizefactor*inout * mu_inv *InnerProduct(curl(gfi),2*Sym(Grad(vmech))* curl(gfj)))*Hexcite[j]),bonus_intorder=bilinear_bonus_int_order+ordershape)
+                dJ+=SymbolicLFI(-(1/Jfun)*2*np.real(term*Hmeasure[i]*(sizefactor*inout * mu_inv *InnerProduct(curl(gfi), curl(gfj)))*div(vmech)*Hexcite[j]),bonus_intorder=bilinear_bonus_int_order+ordershape)
 
-                dJ+=SymbolicLFI(2*np.real(term*Hmeasure[i]*(sizefactor*(1-inout) * InnerProduct(curl(gfi),2*Sym(Grad(vmech))* curl(gfj)))*Hexcite[j]),bonus_intorder=bilinear_bonus_int_order+ordershape)
-                dJ+=SymbolicLFI(-2*np.real(term*Hmeasure[i]*(sizefactor*(1-inout) * InnerProduct(curl(gfi), curl(gfj)))*div(vmech)*Hexcite[j]),bonus_intorder=bilinear_bonus_int_order+ordershape)
+                dJ+=SymbolicLFI((1/Jfun)*2*np.real(term*Hmeasure[i]*(sizefactor*(1-inout) * InnerProduct(curl(gfi),2*Sym(Grad(vmech))* curl(gfj)))*Hexcite[j]),bonus_intorder=bilinear_bonus_int_order+ordershape)
+                dJ+=SymbolicLFI(-(1/Jfun)*2*np.real(term*Hmeasure[i]*(sizefactor*(1-inout) * InnerProduct(curl(gfi), curl(gfj)))*div(vmech)*Hexcite[j]),bonus_intorder=bilinear_bonus_int_order+ordershape)
 
 
                 # add contribution to shape derivative (for the imaginary part)
                 sizefactor=alpha**3/4
                 # nb nu defined without sigma above
-                dJ+=SymbolicLFI(-2*np.real(term*Hmeasure[i]*(sizefactor*inout * 1j*sigma*nu *InnerProduct(gfi+xivec[i]+gf0i,2*Sym(Grad(vmech))* (gfj+xivec[j]+gf0j)))*Hexcite[j]),bonus_intorder=bilinear_bonus_int_order+ordershape)
-                dJ+=SymbolicLFI(2*np.real(term*Hmeasure[i]*(sizefactor*inout * 1j*sigma*nu *InnerProduct(gfi+xivec[i]+gf0i,(gfj+xivec[j]+gf0j)))*Hexcite[j]*div(vmech)),bonus_intorder=bilinear_bonus_int_order+ordershape)
+                dJ+=SymbolicLFI(-(1/Jfun)*2*np.real(term*Hmeasure[i]*(sizefactor*inout * 1j*sigma*nu *InnerProduct(gfi+xivec[i]+gf0i,2*Sym(Grad(vmech))* (gfj+xivec[j]+gf0j)))*Hexcite[j]),bonus_intorder=bilinear_bonus_int_order+ordershape)
+                dJ+=SymbolicLFI((1/Jfun)*2*np.real(term*Hmeasure[i]*(sizefactor*inout * 1j*sigma*nu *InnerProduct(gfi+xivec[i]+gf0i,(gfj+xivec[j]+gf0j)))*Hexcite[j]*div(vmech)),bonus_intorder=bilinear_bonus_int_order+ordershape)
 
 
     shape = GridFunction(fesmech)
