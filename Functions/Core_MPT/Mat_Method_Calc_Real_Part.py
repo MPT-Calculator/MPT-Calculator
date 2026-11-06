@@ -144,7 +144,7 @@ def Mat_Method_Calc_Real_Part(bilinear_bonus_int_order: int,
                     Qij = locals()[f'Q{i+1}{j+1}']
 
                     A = np.conj(gi[None, :]) @ Qij @ (gj)[:, None]
-                    R[i, j] = (A * (-alpha ** 3) / 4).real
+                    R[i, j] = (A * (-alpha ** 3) / 4).real.item()  # .item(): NumPy >= 2.5 rejects assigning a (1,1) array to a scalar cell
             #print(A,np.shape(A),alpha,np.shape(alpha))
 
         # If we don't reduce the size of the matrix and we still want to save memory, then we can use K.Apply here as well.
@@ -161,7 +161,7 @@ def Mat_Method_Calc_Real_Part(bilinear_bonus_int_order: int,
                         K.Apply(read_vec, write_vec)
                         
                     A = np.conj(gi[None,:]) @ write_vec.FV().NumPy()
-                    R[i, j] = (A * (-alpha ** 3) / 4).real
+                    R[i, j] = (A * (-alpha ** 3) / 4).real.item()  # .item(): NumPy >= 2.5 rejects assigning a (1,1) array to a scalar cell
                     
         
         R += np.transpose(R - np.diag(np.diag(R))).real

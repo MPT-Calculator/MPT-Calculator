@@ -112,7 +112,7 @@ def Theta1_Lower_Sweep_Mat_Method(Array, Q_array, c1_array, c5_array, c7, c8_arr
 
                 # Calc Real Part:
                 A = np.conj(gi[None, :]) @ Q @ (gj)[:, None]
-                R[i, j] = (A * (-alpha ** 3) / 4).real
+                R[i, j] = (A * (-alpha ** 3) / 4).real.item()  # .item(): NumPy >= 2.5 rejects assigning a (1,1) array to a scalar cell
 
                 # Calc Imag Part:
                 p1 = np.real(np.conj(gi) @ T @ gj)
