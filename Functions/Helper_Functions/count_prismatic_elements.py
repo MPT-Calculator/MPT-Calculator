@@ -44,22 +44,23 @@ def count_prismatic_elements(filename):
         line_number = 0
         ntets=0
         nprisms=0
-        while stop is False:
+        # Read exactly max_elements element lines: newer Netgen (e.g. 6.2.2608) no longer writes a
+        # '# surfid' comment after this block, so the old terminator caused an infinite loop at EOF.
+        while ntets + nprisms < max_elements:
             line = f.readline()
-            if len(line) > 2:
-                if line[1:4] == ' 6 ':
-                    #stop = True
-                    nprisms+=1
-                elif line[1:4] == ' 4 ':
-                    ntets+=1
-            line_number += 1
-            if line[0:8] == '# surfid':
-                stop = True
-                line_number -= 3
+            if line == '':
+                break
+            parts = line.split()
+            if len(parts) < 2 or parts[0].startswith('#'):
+                continue
+            if parts[1] == '6':
+                nprisms += 1
+            elif parts[1] == '4':
+                ntets += 1
 
 
         if ntets+nprisms != max_elements:
-            print("expected ",max_elments,"but got ",ntets," tets and ",nprisms)
+            print("expected ",max_elements,"but got ",ntets," tets and ",nprisms)
         tet_elements = ntets
         prism_elements = nprisms
 

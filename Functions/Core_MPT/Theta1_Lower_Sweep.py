@@ -311,7 +311,7 @@ def Theta1_Lower_Sweep(Array, mesh, fes, fes2, Sols, u1Truncated, u2Truncated, u
 
                         # A = np.conj(gi[None, :]) @ Q @ (gj)[:, None]
                         A = np.conj(wi[None, :]) @ Q @ (wj)[:, None]
-                        R[i, j] = (A * (-alpha ** 3) / 4).real
+                        R[i, j] = (A * (-alpha ** 3) / 4).real.item()  # .item(): NumPy >= 2.5 rejects assigning a (1,1) array to a scalar cell
 
                         c2 = wi[None, :] @ A_mat_t0
                         c3 = (t0i)[None, :] @ A_mat @ np.conj(wj)[:, None]
