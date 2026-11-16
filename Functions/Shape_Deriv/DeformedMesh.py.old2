@@ -1,0 +1,492 @@
+from math import sqrt
+
+from ngsolve import Mesh as NGSolveMesh
+
+from netgen.meshing import (
+    Mesh as NetgenMesh,
+    MeshPoint,
+    Element2D,
+    Element3D,
+    FaceDescriptor,
+    Pnt,
+)
+
+
+def _element_faces(vertices):
+    """
+    Return the faces of a tetrahedron or triangular prism.
+
+    The ordering is used only to identify matching faces.
+    Face orientation is therefore ignored.
+    """
+
+    v = list(vertices)
+    nv = len(v)
+
+    if nv == 4:
+        # Tetrahedron
+        return [
+            (v[0], v[1], v[2]),
+            (v[0], v[1], v[3]),
+            (v[0], v[2], v[3]),
+            (v[1], v[2], v[3]),
+        ]
+
+    if nv == 6:
+        # Triangular prism
+        #
+        # triangular ends:
+        #   0, 1, 2
+        #   3, 4, 5
+        #
+        # quadrilateral sides:
+        return [
+            (v[0], v[1], v[2]),
+            (v[3], v[4], v[5]),
+            (v[0], v[1], v[4], v[3]),
+            (v[1], v[2], v[5], v[4]),
+            (v[2], v[0], v[3], v[5]),
+        ]
+
+    raise NotImplementedError(
+        f"Unsupported 3D element with {nv} vertices. "
+        "Only tetrahedral and triangular-prismatic elements "
+        "are supported."
+    )
+
+
+def DeformedMesh(mesh, V, tau=1.0, verbose=True):
+    """
+    Construct a new independent 3D mesh with coordinates
+
+        x_new = x + tau*V(x).
+
+    Parameters
+    ----------
+    mesh
+        Original NGSolve mesh.
+
+    V
+        Real, three-component GridFunction defined on `mesh`.
+
+    tau
+        Shape-update step size.
+
+    verbose
+        Print reconstruction diagnostics.
+
+    Returns
+    -------
+    mesh_new
+        Independent NGSolve mesh containing the displaced coordinates.
+
+    Notes
+    -----
+    Supports:
+        * multiple materials;
+        * tetrahedral elements;
+        * triangular-prismatic elements;
+        * triangular and quadrilateral surface elements.
+
+    Does not preserve:
+        * high-order curved geometry;
+        * OCC/CSG geometry associations;
+        * periodic identifications;
+        * geometric edge descriptors.
+    """
+
+    if mesh.dim != 3:
+        raise ValueError("DeformedMesh3D requires a 3D mesh.")
+
+    old = mesh.ngmesh
+
+    volume_elements = list(old.Elements3D())
+    surface_elements = list(old.Elements2D())
+
+    if not volume_elements:
+        raise ValueError("The original mesh has no 3D volume elements.")
+
+    new = NetgenMesh(dim=3)
+
+    # ============================================================
+    # 1. Collect PointIds while preserving their original encounter
+    #    order. Do not use a set directly for iteration.
+    # ============================================================
+
+    old_point_ids = []
+    seen_point_ids = set()
+
+    for element in volume_elements:
+        for pid in element.vertices:
+            if pid not in seen_point_ids:
+                seen_point_ids.add(pid)
+                old_point_ids.append(pid)
+
+    for element in surface_elements:
+        for pid in element.vertices:
+            if pid not in seen_point_ids:
+                seen_point_ids.add(pid)
+                old_point_ids.append(pid)
+
+    # ============================================================
+    # 2. Add displaced points
+    # ============================================================
+
+    point_map = {}
+
+    maximum_displacement = 0.0
+    maximum_displacement_data = None
+
+    for old_pid in old_point_ids:
+        old_point = old[old_pid]
+        p = old_point.p
+
+        px = float(p[0])
+        py = float(p[1])
+        pz = float(p[2])
+
+        # Evaluate V on the original mesh.
+        d = V(mesh(px, py, pz))
+
+        dx = tau * float(d[0])
+        dy = tau * float(d[1])
+        dz = tau * float(d[2])
+
+        xnew = px + dx
+        ynew = py + dy
+        znew = pz + dz
+
+        new_pid = new.Add(
+            MeshPoint(
+                Pnt(xnew, ynew, znew)
+            )
+        )
+
+        point_map[old_pid] = new_pid
+
+        displacement_norm = sqrt(
+            dx * dx + dy * dy + dz * dz
+        )
+
+        if displacement_norm > maximum_displacement:
+            maximum_displacement = displacement_norm
+            maximum_displacement_data = {
+                "old_pid": old_pid,
+                "new_pid": new_pid,
+                "old": (px, py, pz),
+                "V": (
+                    float(d[0]),
+                    float(d[1]),
+                    float(d[2]),
+                ),
+                "new": (xnew, ynew, znew),
+            }
+
+        # Verify immediately that Netgen stored the displaced point.
+        stored = new[new_pid].p
+
+        storage_error = sqrt(
+            (float(stored[0]) - xnew) ** 2
+            + (float(stored[1]) - ynew) ** 2
+            + (float(stored[2]) - znew) ** 2
+        )
+
+        if storage_error > 1.0e-12:
+            raise RuntimeError(
+                "Netgen did not store the expected displaced point.\n"
+                f"Expected: {(xnew, ynew, znew)}\n"
+                f"Stored:   "
+                f"{(float(stored[0]), float(stored[1]), float(stored[2]))}"
+            )
+
+    if maximum_displacement == 0.0:
+        raise RuntimeError(
+            "The maximum vertex displacement is zero. "
+            "Although V may be nonzero inside elements, it is zero "
+            "at all mesh vertices."
+        )
+
+    def mapped_vertices(element):
+        return [
+            point_map[pid]
+            for pid in element.vertices
+        ]
+
+    # ============================================================
+    # 3. Copy material names
+    # ============================================================
+
+    material_names = list(mesh.GetMaterials())
+
+    for material_number, material_name in enumerate(
+        material_names,
+        start=1,
+    ):
+        new.SetMaterial(
+            material_number,
+            material_name,
+        )
+
+    # ============================================================
+    # 4. Build:
+    #
+    #       volume face -> adjacent material numbers
+    #
+    # A frozenset is used so that orientation does not affect
+    # matching.
+    # ============================================================
+
+    face_to_materials = {}
+
+    element_type_counts = {
+        "tetrahedra": 0,
+        "prisms": 0,
+    }
+
+    for element in volume_elements:
+        vertices = list(element.vertices)
+        material_number = int(element.index)
+
+        if len(vertices) == 4:
+            element_type_counts["tetrahedra"] += 1
+        elif len(vertices) == 6:
+            element_type_counts["prisms"] += 1
+
+        for face in _element_faces(vertices):
+            face_key = frozenset(face)
+
+            if face_key not in face_to_materials:
+                face_to_materials[face_key] = set()
+
+            face_to_materials[face_key].add(
+                material_number
+            )
+
+    # ============================================================
+    # 5. Infer neighbouring materials for every surface descriptor
+    # ============================================================
+
+    descriptor_domains = {}
+
+    for surface_element in surface_elements:
+        descriptor_index = int(surface_element.index)
+        face_key = frozenset(surface_element.vertices)
+
+        adjacent_materials = sorted(
+            face_to_materials.get(face_key, set())
+        )
+
+        if len(adjacent_materials) == 0:
+            raise RuntimeError(
+                "A surface element could not be matched to any "
+                "tetrahedral or prismatic volume face.\n"
+                f"FaceDescriptor index: {descriptor_index}\n"
+                f"Number of surface vertices: "
+                f"{len(surface_element.vertices)}"
+            )
+
+        if len(adjacent_materials) == 1:
+            # Exterior boundary
+            domains = (
+                adjacent_materials[0],
+                0,
+            )
+
+        elif len(adjacent_materials) == 2:
+            # Internal material interface
+            domains = (
+                adjacent_materials[0],
+                adjacent_materials[1],
+            )
+
+        else:
+            raise RuntimeError(
+                "A surface element is adjacent to more than two "
+                f"materials: {adjacent_materials}"
+            )
+
+        if descriptor_index in descriptor_domains:
+            previous_domains = descriptor_domains[descriptor_index]
+
+            # Orientation is not reconstructed, so compare as sets.
+            if set(previous_domains) != set(domains):
+                raise RuntimeError(
+                    f"FaceDescriptor {descriptor_index} is associated "
+                    "with inconsistent material pairs:\n"
+                    f"  previous: {previous_domains}\n"
+                    f"  current:  {domains}"
+                )
+        else:
+            descriptor_domains[descriptor_index] = domains
+
+    # ============================================================
+    # 6. Create FaceDescriptors
+    #
+    # Netgen surface element indices refer to positions in the
+    # FaceDescriptor array, so all descriptors up to the maximum
+    # used index must be created.
+    # ============================================================
+
+    used_descriptor_indices = sorted(
+        descriptor_domains.keys()
+    )
+
+    maximum_descriptor_index = max(
+        used_descriptor_indices,
+        default=0,
+    )
+
+    for descriptor_index in range(
+        1,
+        maximum_descriptor_index + 1,
+    ):
+        if descriptor_index not in descriptor_domains:
+            raise RuntimeError(
+                "FaceDescriptor numbering is not contiguous. "
+                f"Descriptor {descriptor_index} is missing, but "
+                f"descriptor {maximum_descriptor_index} is used."
+            )
+
+        domin, domout = descriptor_domains[
+            descriptor_index
+        ]
+
+        new.Add(
+            FaceDescriptor(
+                surfnr=descriptor_index,
+                domin=domin,
+                domout=domout,
+                bc=descriptor_index,
+            )
+        )
+
+    # ============================================================
+    # 7. Copy boundary names
+    # ============================================================
+
+    boundary_names = list(mesh.GetBoundaries())
+
+    for zero_based_index, boundary_name in enumerate(
+        boundary_names
+    ):
+        if zero_based_index >= maximum_descriptor_index:
+            break
+
+        try:
+            new.SetBCName(
+                zero_based_index,
+                boundary_name,
+            )
+        except Exception as error:
+            if verbose:
+                print(
+                    "Warning: could not copy boundary name "
+                    f"{boundary_name!r}: {error}"
+                )
+
+    # ============================================================
+    # 8. Copy volume elements
+    #
+    # The number of vertices distinguishes tetrahedral and
+    # prismatic Element3D objects.
+    # ============================================================
+
+    for element in volume_elements:
+        new.Add(
+            Element3D(
+                int(element.index),
+                mapped_vertices(element),
+            )
+        )
+
+    # ============================================================
+    # 9. Copy surface elements
+    #
+    # These may be triangular or quadrilateral.
+    # ============================================================
+
+    for element in surface_elements:
+        new.Add(
+            Element2D(
+                int(element.index),
+                mapped_vertices(element),
+            )
+        )
+
+    # ============================================================
+    # 10. Diagnostics before creating the NGSolve wrapper
+    # ============================================================
+
+    if verbose:
+        print("\nMesh reconstruction")
+        print("-------------------")
+        print("Points:", len(old_point_ids))
+        print("Volume elements:", len(volume_elements))
+        print("Surface elements:", len(surface_elements))
+        print("Tetrahedra:", element_type_counts["tetrahedra"])
+        print("Prisms:", element_type_counts["prisms"])
+        print("Materials:", material_names)
+        print("Boundaries:", boundary_names)
+        print(
+            "Maximum vertex displacement:",
+            maximum_displacement,
+        )
+
+        if maximum_displacement_data is not None:
+            print(
+                "Old coordinate:",
+                maximum_displacement_data["old"],
+            )
+            print(
+                "V at that vertex:",
+                maximum_displacement_data["V"],
+            )
+            print(
+                "New coordinate:",
+                maximum_displacement_data["new"],
+            )
+
+        print("\nReconstructed FaceDescriptors")
+
+        for descriptor_index in used_descriptor_indices:
+            domin, domout = descriptor_domains[
+                descriptor_index
+            ]
+
+            print(
+                f"  FD {descriptor_index}: "
+                f"domin={domin}, domout={domout}"
+            )
+
+        print()
+
+    # ============================================================
+    # 11. Construct the independent NGSolve mesh
+    # ============================================================
+
+    mesh_new = NGSolveMesh(new)
+
+
+
+    print("Netgen:")
+    for pid in list(point_map.values())[:5]:
+        print(new[pid].p)
+
+    print("\nNGSolve:")
+    for i, v in enumerate(mesh_new.vertices):
+        if i == 5:
+            break
+        print(mesh_new[v].point)
+
+    # Attach useful diagnostic information without relying on
+    # corresponding vertex iteration order.
+    diagnostics = {
+        "maximum_displacement": maximum_displacement,
+        "maximum_displacement_data": maximum_displacement_data,
+        "element_type_counts": element_type_counts,
+        "descriptor_domains": descriptor_domains,
+    }
+    print(diagnostics)
+    from time import sleep
+    sleep(50)
+    return mesh_new

@@ -62,13 +62,18 @@ import time
 
 
 def PODSweepShape(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODTol, PlotPod, sweepname, SavePOD,
-             PODErrorBars, BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, Order_L2, drop_tol, SingleSVD, curve=5,
+             PODErrorBars, BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, Order_L2, drop_tol, SingleSVD, iteration, curve=5,
              recoverymode=False, save_U=False):
 
     print(' Running as POD')
-
+    # First iteration use the standard mesh
+    Objectname=Object
+    if iteration > 0:
+        Objectname=Object[:-3]+str(iteration-1)+".vol"
+        curve=1
+    print(Objectname)
     EigenValues, Mu0, N0, Minf, NumberofFrequencies, NumberofSnapshots, TensorArray,  inout, mesh, mu_inv, numelements, sigma, bilinear_bonus_int_ord = MPT_Preallocation(
-        Array, Object, PODArray, curve, inorout, mur, sig, Order, Order_L2, sweepname, NumSolverThreads, drop_tol)
+            Array, Objectname, PODArray, curve, inorout, mur, sig, Order, Order_L2, sweepname, NumSolverThreads, drop_tol)
 
     Solver, epsi, Maxsteps, Tolerance, _, use_integral = SolverParameters()
 
@@ -114,6 +119,7 @@ def PODSweepShape(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
     dom_nrs_metal = [0 if mat == "air" else 1 for mat in mesh.GetMaterials()]
     fes2 = HCurl(mesh, order=Order, dirichlet="outer", complex=True, gradientdomains=dom_nrs_metal)
     ndof2 = fes2.ndof
+    fesfull =  HCurl(mesh, order=Order, dirichlet="outer")
 
     # Define the vectors for the right hand side
     xivec = [CoefficientFunction((0, -z, y)), CoefficientFunction((z, 0, -x)), CoefficientFunction((-y, x, 0))]
@@ -423,21 +429,46 @@ def PODSweepShape(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
 
     #New that the MPT signaure has been computed we can proceed to get the shape derivative
     # Mechanical finite element space
-    Ordershape=1#np.max([1,Order])
+    Ordershape=2#np.max([1,Order])
     fesmech=VectorH1(mesh, order=Ordershape,dirichlet="outer")
     #directory="/Users/pdl11/Coding/MPT-Calculator/Oct2025/MPT-Calculator/Results/OCC_sphere_to_box_prism_32_8/al_0.001_mu_32_sig_1e6/1e1-1e12_100_el_29366_ord_4_POD_13_1e-6"
-    directory="/home/pdl11/Coding/PaulMPTResults/Results/OCC_sphere_to_box_prism_32_8/al_0.001_mu_32_sig_1e6/1e1-1e12_100_el_29366_ord_4_POD_13_1e-6"
+    #directory="/home/pdl11/Coding/PaulMPTResults/Results/OCC_sphere_to_box_prism_32_8/al_0.001_mu_32_sig_1e6/1e1-1e12_100_el_29366_ord_4_POD_13_1e-6"
+    directory="/home/pdl11/Coding/MPT_calculator/Oct2026/MPT-Calculator/Results/OCC_dumbell_0_6_prism_32/al_0.001_mu_32_sig_1e6/1e-3-1e12_3000_el_53472_ord_4_POD_50_1e-6"
     # Tensor Array_ms and N0_ms from this directory
     TensorArray_ms= np.genfromtxt(directory+'/Data/Tensors.csv', delimiter=',', dtype=complex)
     N0_ms= np.genfromtxt(directory+'/Data/N0.csv', delimiter=',')
+    Minf_ms = np.genfromtxt(directory+'/Data/Minf.csv', delimiter=',')
+    print(Minf,Minf_ms)
+    # check for reordering
+    Minf_eig,Q=np.linalg.eig(Minf_ms)
+    eigord=np.argsort(-Minf_eig)
+    # reorder columns of Q
+    print(Minf_eig,eigord,Q)
+    Q=Q[:,eigord]
+    print(Q)
+    print(Minf,np.transpose(Q)@Minf_ms@Q)
+
+    ftest=np.genfromtxt(directory+'/Data/Frequencies.csv')
+    if np.linalg.norm(ftest-Array)/np.linalg.norm(ftest) > 1e-10:
+        print("issue with frequencies of data and computation!")
+        print("error",np.linalg.norm(ftest-Array))
+        print(Array,ftest)
+    else:
+        print("Data at the same frequencies as computation")
     # SHould be updated with measured (read from file MPT coeffs)
     shape=Shape_Rep(fes2,fesmech,u1Truncated,u2Truncated,u3Truncated,inout,mu_inv,alpha,np.squeeze(np.asarray(Lower_Sols)),TensorArray,\
-            TensorArray_ms,bilinear_bonus_int_ord,Ordershape,Theta0Sol,xivec,sigma,Array,Tolerance,Maxsteps,Solver,N0,N0_ms)
+            TensorArray_ms,bilinear_bonus_int_ord,Ordershape,Theta0Sol,xivec,sigma,Array,Tolerance,Maxsteps,Solver,N0,N0_ms,fes,mesh,Q,fesfull)
 
     print(Integrate(InnerProduct(shape,shape),mesh))
-    deformedmesh=DeformedMesh(mesh, shape, tau=1.0)
-    deformedmesh.ngmesh.Save('Results/' + sweepname + "/Data/deformed.vol")
+    deformedmesh=DeformedMesh(mesh, shape, tau=0.1)
+    deformedmesh.ngmesh.Save('Results/' + sweepname + "/Data/deformedi"+str(iteration)+".vol")
+    deformedmesh.ngmesh.Save('VolFiles/'+ Object [:-3] +str(iteration)+".vol")
+    import shutil
+    shutil.copyfile("GeoFiles/"+ Object [:-4]+".geo", "GeoFiles/"+ Object [:-3] +str(iteration)+".geo")
+
     vtk_shape_output(shape, dom_nrs_metal,mur,sig,alpha,Array[0],numelements,Order,mesh,Object,sweepname)
+
+    
 
 
     if PlotPod == True:

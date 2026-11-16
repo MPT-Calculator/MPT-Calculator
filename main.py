@@ -552,11 +552,14 @@ def main(h='coarse', order=2, curve_degree=5, start_stop=(), alpha='', geometry=
 #####################################################################################################
         case {"Single": False, "MultiProcessing": False, "Pod": True, "OldPOD":False, "use_iterative_POD": use_iterative_POD, "PODErrorBars": False, "PlotPod": PlotPod, "MPT_Eigen": False, "Shape_Grad": True}:
             #POD, MultiProcessing off, old POD on, plot pod off, error bars off, shape computation on
-            TensorArray, EigenValues, N0, Minf,  PODTensors, PODEigenValues, elements, ndofs = PODSweepShape(Geometry, Order, alpha, inorout,
+            deformedmesh=[]
+            for iteration in range(4):
+                TensorArray, EigenValues, N0, Minf,  PODTensors, PODEigenValues, elements, ndofs = PODSweepShape(Geometry, Order, alpha, inorout,
                                                                      mur, sig, Array, PODArray, PODTol,
                                                                      PlotPod, sweepname, SavePOD,
-                                                                     PODErrorBars, BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, Order_L2, drop_tol, SingleSVD,
+                                                                     PODErrorBars, BigProblem, NumSolverThreads, Integration_Order, Additional_Int_Order, Order_L2, drop_tol, SingleSVD,iteration,
                                                                      recoverymode=OldPOD, curve=curve_degree, save_U=Save_U)
+                
 #####################################################################################################
 
 
