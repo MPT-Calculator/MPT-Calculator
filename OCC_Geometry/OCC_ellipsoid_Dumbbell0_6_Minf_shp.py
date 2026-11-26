@@ -31,7 +31,7 @@ alpha = 0.001
 # Setting Boundary layer Options:
 max_target_frequency = 1e8
 boundary_layer_material = material_name[0]
-number_of_layers = 2
+number_of_layers = 0
 
 
 # setting radius1.29607704 1.0466758  1.04667567
@@ -74,16 +74,19 @@ joined_object = Glue([ellipsoid, box])
 
 
 # Creating Boundary Layer Structure:
-mu0 = 4 * 3.14159 * 1e-7
-tau = (2/(max_target_frequency * sigma[0] * mu0 * mur[0]))**0.5 / alpha
-layer_thicknesses = [(2**n)*tau for n in range(number_of_layers)]
+if number_of_layers > 0:
+    mu0 = 4 * 3.14159 * 1e-7
+    tau = (2/(max_target_frequency * sigma[0] * mu0 * mur[0]))**0.5 / alpha
+    layer_thicknesses = [(2**n)*tau for n in range(number_of_layers)]
 
 #nmesh.BoundaryLayer(boundary=".*", thickness=layer_thicknesses, material=boundary_layer_material,
 #                           domains=boundary_layer_material, outside=False)
 
-B = BoundaryLayerParameters(boundary=".*", thickness=layer_thicknesses, new_material=boundary_layer_material,
+    B = BoundaryLayerParameters(boundary=".*", thickness=layer_thicknesses, new_material=boundary_layer_material,
                            domain=boundary_layer_material, outside=False, disable_curving=False )
-nmesh = OCCGeometry(joined_object).GenerateMesh(meshsize.coarse,boundary_layers=[B],curvaturesafety=6.0) 
+    nmesh = OCCGeometry(joined_object).GenerateMesh(meshsize.coarse,boundary_layers=[B],curvaturesafety=6.0) 
+else:
+    nmesh = OCCGeometry(joined_object).GenerateMesh(meshsize.coarse,curvaturesafety=6.0)
 
 nmesh.Save(r'VolFiles/OCC_ellipsoid_Dumbbell0_6_Minf_shp.vol')
 # print(nmesh.GetMaterial(2))

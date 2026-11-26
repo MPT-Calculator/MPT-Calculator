@@ -1,0 +1,280 @@
+import numpy as np
+from ngsolve import *
+import scipy.sparse as sp
+import gc
+import os
+from ..Saving.DictionaryList import *
+
+
+
+def Shape_Rep(fes2,fesmech,u1Truncated,u2Truncated,u3Truncated,inout,mu_inv,alpha,Sols,TensorArray_obj,TensorArray_ms,\
+            bilinear_bonus_int_order,ordershape, Theta0Sol,xivec,sigma,Omega,Tolerance,Maxsteps,Solver,N0_obj,N0_ms,fes,mesh,Q,fesfull):
+
+    """
+    Paul Ledger - 2026.
+    Function to compute the shape derivative of J .
+
+    1) Sets up linear form for dJ[v] for a mechanical test function v
+
+    Args:
+        fes: H(curl) finite element space for theta1, theta0
+        fesmech: (H^1)^3 finite element space for v
+        u1Truncated (_type_): Ndof x M complex left singular matrix for e_1. If ReducedSolve is False, then replace U with sparse identity of size Ndof.
+        u2Truncated (_type_): Ndof x M complex left singular mactrix for e_2. If ReducedSolve is False, then replace U with sparse identity of size Ndof.
+        u3Truncated (_type_): Ndof x M complex left singular matrix for e_3. If ReducedSolve is False, then replace U with sparse identity of size Ndof.
+        inout (fem.CoefficientFunction): material coefficient function. 1 inside objects, 0 outside
+        mu_inv (comp.GridFunction): grid function for 1/mu_r. Note that for material discontinuities aligning with vertices no interpolation is done.
+        alpha (float): object size scaling
+        Sols (np.ndarray): Ndof x nfreqs x 3 vector of solution coefficients.
+        TensorArray_obj: TensorArray of current object
+        TensorArray_ms: TensorArray of measured (target) object
+        bilinear_bonus_int_order (int): Integration order for the bilinear forms
+        ordershape: order of the mechancial representation
+        Theta0Sol (np.ndarray): ndof x 3 array of theta0 solutions.
+        xivec (list): 3x3 list of direction vectors
+        sigma: coefficent function for sigma
+        Omega: array of output POD frequencies
+
+    Returns:
+
+    """
+
+    # Hmeasure
+    Hmeasure=np.array((1,1,1))
+    # Hexcite
+    Hexcite=np.array((1,1,1))
+
+    # Note that we have a complex fes for thetea1 (fes2) and a real fes (fes) for theta0
+    gfi=GridFunction(fes2)
+    gfir=GridFunction(fes)
+    gfii=GridFunction(fes)
+    gf0i=GridFunction(fes)
+    gfj=GridFunction(fes2)
+    gfjr=GridFunction(fes)
+    gfji=GridFunction(fes)
+    gf0j=GridFunction(fes)
+    xii=GridFunction(fes)
+    xij=GridFunction(fes)
+    tmp=GridFunction(fes)
+
+
+    # Test and trial functions
+    umech = fesmech.TrialFunction()
+    vmech = fesmech.TestFunction()
+
+    dim1,dim2=np.shape(u1Truncated)
+    U=np.zeros((3,dim1,dim2),dtype=complex)
+    U[0,:,:]=u1Truncated[:,:]
+    U[1,:,:]=u2Truncated[:,:]
+    U[2,:,:]=u3Truncated[:,:]
+
+    dJ=LinearForm(fesmech)
+
+    # We want to loop over frequencies
+    print(len(Omega),Sols.shape[1])
+
+    Mu0=4.*np.pi*1e-7
+    # Construct shape functional (based on every 10th frequency)
+    Jfun=0.
+    cnt=0
+    for k in range(0,Sols.shape[1],200):
+        if Omega[k] > 1e6 or cnt > 6:
+            break
+        nu=Omega[k]*Mu0*alpha**2 # without sigma
+        cnt+=1
+
+        # Set up MPTs of object and measurements
+        MPTobj=np.zeros((3,3),dtype=complex)
+        MPTms=np.zeros((3,3),dtype=complex)
+
+        for i in range(3):
+            for j in range(3):
+                MPTobj[i,j]=TensorArray_obj[k,j+i*3]-N0_obj[i,j]
+                MPTms[i,j]=TensorArray_ms[k,j+i*3]-N0_ms[i,j]
+        MPTms=np.transpose(Q)@MPTms@Q
+
+        
+
+        # Compute the term sum_i, sum_j Hmeasure(i)@(MPT-MPTms)@Hexcite(j)
+        term=0.
+        #term+=Hmeasure@((MPTobj[:,:]-MPTms[:,:])@Hexcite)/alpha**3
+        term+=np.real(Hmeasure@((MPTobj[:,:]-MPTms[:,:])@Hexcite))/alpha**3
+        print("omega=",Omega[k],"MPT diff",term)
+        Jfun+=np.abs(term)**2
+    print("Shape functional has value",Jfun)
+    norm=Jfun # Normalisation term
+
+    # Only consider every 10th frequency
+    cnt=0
+    sizefactor=1/4 # Gc = G.Compile(realcompile=True)
+    # (u,v) = u^* v
+    # real((u,v)) = real(u^* v) = real(u^*)real (v) - imag(u^*) imag(v) = real (u) real (v) + imag(u) imag (v)
+    # imag((u,v)) = imag(u^* v) = real(u^*) imag(v) + imag(u^*) real(v) = real (u) imag(v) - imag(u) real (v)
+    G1r=((-sizefactor*( OuterProduct(curl(gfir),curl(gfjr)) +  OuterProduct(curl(gfii),curl(gfji)) )).Compile(realcompile=True))
+    G1i=((-sizefactor*( OuterProduct(curl(gfir),curl(gfji)) -  OuterProduct(curl(gfii),curl(gfjr)) )).Compile(realcompile=True))
+    G2r=((-sizefactor*( InnerProduct(curl(gfir),curl(gfjr)) + InnerProduct(curl(gfii),curl(gfji))  )).Compile(realcompile=True))
+    G2i=((-sizefactor*( InnerProduct(curl(gfir),curl(gfji)) -  InnerProduct(curl(gfii),curl(gfjr))  )).Compile(realcompile=True))
+    # Note due to 1j factor real and imag parts of H are swapped and includion of -ve factor for H1r and H2r
+    H1r=((-sizefactor*(OuterProduct(gfir+xii+gf0i,gfji) - OuterProduct(gfii,gfjr+xij+gf0j)  )).Compile(realcompile=True))
+    H1i=((sizefactor*(OuterProduct(gfir+xii+gf0i,gfjr+xij+gf0j) + OuterProduct(gfii,gfji))).Compile(realcompile=True))
+    H2r=((-sizefactor*( InnerProduct(gfir+xii+gf0i,gfji) - InnerProduct(gfii,gfjr+xij+gf0j)  )).Compile(realcompile=True))
+    H2i=((sizefactor* ( InnerProduct(gfir+xii+gf0i,gfjr+xij+gf0j)+InnerProduct(gfii,gfji)  )).Compile(realcompile=True))
+
+    with TaskManager():
+        for k in range(0,Sols.shape[1],200):
+            if Omega[k] > 1e6 or cnt > 6:
+                break
+    
+            nu=Omega[k]*Mu0*alpha**2 # without sigma
+            cnt+=1
+
+            # Set up MPTs of object and measurements
+            MPTobj=np.zeros((3,3),dtype=complex)
+            MPTms=np.zeros((3,3),dtype=complex)
+
+            for i in range(3):
+                for j in range(3):
+                    MPTobj[i,j]=TensorArray_obj[k,j+i*3]-N0_obj[i,j]
+                    MPTms[i,j]=TensorArray_ms[k,j+i*3]-N0_ms[i,j]
+            MPTms=np.transpose(Q)@MPTms@Q
+
+
+            # Compute the term sum_i, sum_j Hmeasure(i)@(MPT-MPTms)@Hexcite(j)
+            term=0.
+            #term+=np.conj(Hmeasure@((MPTobj[:,:]-MPTms[:,:])@Hexcite))/alpha**3
+            term+=np.real(Hmeasure@((MPTobj[:,:]-MPTms[:,:])@Hexcite))/alpha**3
+            print("omega=",Omega[k],"MPT diff",term)
+
+            # For every frequency we want to construct the grid functions
+
+            for i in range(3):
+                gi = np.squeeze(Sols[:,k, i])
+
+                # This is the grid function representing theta_i^(1) computed from POD at frequency omega(k)
+                gfi.vec.FV().NumPy()[:] = U[i,:, :]@gi
+                gfir.Set(gfi.real)
+                gfii.Set(gfi.imag)
+                tmp.vec.FV().NumPy()[:]=Theta0Sol[:, i]
+                gf0i.Set(tmp)
+                xii.Set(xivec[i])
+
+                for j in range(3):
+                    gj = np.squeeze(Sols[:,k, j])
+                    # This is the grid function representing theta_j^(1) computed from POD at frequency omega(k)
+                    gfj.vec.FV().NumPy()[:] = U[j,:, :]@gj
+                    gfjr.Set(gfj.real)
+                    gfji.Set(gfj.imag)
+                    tmp.vec.FV().NumPy()[:]=Theta0Sol[:, j]
+                    gf0j.Set(tmp)
+                    xij.Set(xivec[j])
+
+                    # add contribution to shape derivative term (for the real part)
+                    #sizefactor=-1/4#-alpha**3/4
+                    #G1=((sizefactor*OuterProduct(Conj(curl(gfi)),curl(gfj)))).Compile()
+                    #G2=((sizefactor*InnerProduct(curl(gfi),curl(gfj)))).Compile()
+                    #G1r=((-sizefactor*OuterProduct(Conj(curl(gfi)),curl(gfj)))).real
+                    #G1i=((-sizefactor*OuterProduct(Conj(curl(gfi)),curl(gfj)))).imag
+                    #G2r=((-sizefactor*InnerProduct(curl(gfi),curl(gfj))).real)
+                    #G2i=((-sizefactor*InnerProduct(curl(gfi),curl(gfj))).imag)
+                    #H1r=((sizefactor*1j*OuterProduct(Conj(gfi+xii+gf0i),(gfj+xij+gf0j))).real)
+                    #H1i=((sizefactor*1j*OuterProduct(Conj(gfi+xii+gf0i),(gfj+xij+gf0j))).imag)
+                    #H2r=((sizefactor*1j*InnerProduct(gfi+xii+gf0i,(gfj+xij+gf0j))).real)
+                    #H2i=((sizefactor*1j*InnerProduct(gfi+xii+gf0i,(gfj+xij+gf0j))).imag)
+                    
+                    
+                    
+                    # Inner product uses a complex conjugate (u,v) = u^* v
+                    # So real( (u,v) with real v is
+                    # real( u^* v) = real(u^*) v = real(u) v
+                    # but u = (Gr + i Gi) * (re(term) + i im(term))
+                    #       = Gr*re(term) - Gi *im(term) + i ( Gr* im(term) + Gi* re(term))
+                    #   re(u) = Gr *re(term) - Gi *im(term)
+                    dJ+=SymbolicLFI((1/norm)*2*Hmeasure[i]*Hexcite[j]*inout * mu_inv *InnerProduct(np.real(term)*G1r-np.imag(term)*G1i,2*Sym(Grad(vmech))),bonus_intorder=bilinear_bonus_int_order+ordershape)
+                    dJ+=SymbolicLFI(-(1/norm)*2*Hmeasure[i]*Hexcite[j]*inout * mu_inv *(np.real(term)*G2r-np.imag(term)*G2i)*div(vmech),bonus_intorder=bilinear_bonus_int_order+ordershape)
+
+                    dJ+=SymbolicLFI((1/norm)*2*Hmeasure[i]*Hexcite[j]*(1-inout) * InnerProduct(np.real(term)*G1r-np.imag(term)*G1i,2*Sym(Grad(vmech))),bonus_intorder=bilinear_bonus_int_order+ordershape)
+                    dJ+=SymbolicLFI(-(1/norm)*2*Hmeasure[i]*Hexcite[j]*(1-inout)*(np.real(term)*G2r-np.imag(term)*G2i)*div(vmech),bonus_intorder=bilinear_bonus_int_order+ordershape)
+
+
+                    # add contribution to shape derivative (for the imaginary part)
+                    #sizefactor=1/4#alpha**3/4
+                    # nb nu defined without sigma above
+                    #H1=(sizefactor*1j*OuterProduct(Conj(gfi+xivec[i]+gf0i),(gfj+xivec[j]+gf0j))).Compile()
+                    #H2=(sizefactor*1j*InnerProduct(gfi+xivec[i]+gf0i,(gfj+xivec[j]+gf0j))).Compile()
+                    #dJ+=SymbolicLFI((1/norm)*2*Hmeasure[i]*Hexcite[j]*inout *sigma*nu *InnerProduct(np.real(term)*H1r-np.imag(term)*H1i,-2*Sym(Grad(vmech))),bonus_intorder=bilinear_bonus_int_order+ordershape)
+                    #dJ+=SymbolicLFI((1/norm)*2*Hmeasure[i]*Hexcite[j]*inout *sigma*nu *(np.real(term)*H2r-np.imag(term)*H2i)*div(vmech),bonus_intorder=bilinear_bonus_int_order+ordershape)
+                    # Check imaginary tensor calc
+                    #print("prec computed",i,j,Omega[k],np.imag(MPTobj[i,j]))
+                    #print("From this fun",Integrate(sizefactor*inout*sigma*nu*InnerProduct(gfi+xivec[i]+gf0i,(gfj+xivec[j]+gf0j)),mesh,order=5))
+
+    shape = GridFunction(fesmech)
+    shape.Set((0, 0, 0), BND)
+
+    # Assemble (elastic type) system to give a representation of
+    a =BilinearForm(fesmech, symmetric=True)#, condense=True)
+    a += SymbolicBFI(InnerProduct(Sym(Grad(umech)),Sym(Grad(vmech)))+InnerProduct(umech,vmech), bonus_intorder=bilinear_bonus_int_order)
+    #a += SymbolicBFI(InnerProduct(Grad(umech),Grad(vmech)), bonus_intorder=bilinear_bonus_int_order)
+
+
+    # Solve the linear problem
+    Solver="bddc"
+    #if Solver == "bddc":
+    #    c = Preconditioner(a, "bddc")  # Apply the bddc preconditioner
+    with TaskManager():
+        if Solver == "bddc":
+            c = Preconditioner(a, "bddc")  # Apply the bddc preconditioner
+        a.Assemble()
+        
+        print("Assembled bilinear form for shape derivative")
+        dJ.Assemble()
+
+        print("Assembled linaer form for shape derivative")
+
+
+        if Solver == "local":
+            c = Preconditioner(a, "local")  # Apply the local preconditioner
+        c.Update()
+
+        # Solve the problem
+        #dJ.vec.data += a.harmonic_extension_trans * dJ.vec
+        res = dJ.vec.CreateVector()
+        res.data = dJ.vec - a.mat * shape.vec
+        inverse = CGSolver(a.mat, c.mat, precision=1e-12, maxsteps=Maxsteps, printrates=True)
+        shape.vec.data += inverse * res
+        #shape.vec.data += a.harmonic_extension * shape.vec
+        #shape.vec.data += a.inner_solve * dJ.vec
+
+
+
+    return shape
+
+def vtk_shape_output(shape, dom_nrs_metal,mur,sig,alpha,Omega,numelements,Order,mesh,Object,sweepname):
+
+    print(' creating vtk output', end='\r')
+    Refine=False
+    Sols = []
+    Sols.append(dom_nrs_metal)
+    Sols.append(shape)
+
+    # Creating Save Name:
+    strmur = DictionaryList(mur, False)
+    strsig = DictionaryList(sig, True)
+    #savename = "Results/" + Object[:-4] + f"/al_{alpha}_mu_{strmur}_sig_{strsig}" + "/om_" + FtoS(Omega) + f"_el_{numelements}_ord_{Order}/Data/"
+    savename='Results/' + sweepname + '/Data/'
+
+    if Refine == True:
+        vtk = VTKOutput(ma=mesh, coefs=Sols,
+                            names=["Object", "Shape"], filename=savename + Object[:-4], subdivision=3)
+    else:
+        vtk = VTKOutput(ma=mesh, coefs=Sols,
+                            names=["Object", "Shaoe"], filename=savename + Object[:-4], subdivision=0)
+    vtk.Do()
+
+        # Compressing vtk output and sending to zip file:
+    zipObj = ZipFile(savename + 'VTU.zip', 'w', ZIP_DEFLATED)
+    zipObj.write(savename + Object[:-4] + '.vtu', os.path.basename(savename + Object[:-4] + '.vtu'))
+    zipObj.close()
+    os.remove(savename + Object[:-4] + '.vtu')
+    print(' vtk output created')
+
+    return

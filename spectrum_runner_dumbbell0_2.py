@@ -7,7 +7,7 @@ import numpy as np
 
 if __name__ == '__main__':
    start_time = time();
-   geometry = "OCC_dumbell_0_2_prism_32.py"# "CSG_Knife_Knife_Santoku_carbonsteel_copper_rivets.py"
+   geometry = "OCC_dumbell_0_3_prism_32.py"# "CSG_Knife_Knife_Santoku_carbonsteel_copper_rivets.py"
    CPUs=[6,6,6,6,6,6,6]
    for order in [3,4,5]:
        print("solving order=",order)

@@ -71,16 +71,35 @@ def Shape_Rep(fes2,fesmech,u1Truncated,u2Truncated,u3Truncated,inout,mu_inv,alph
     dJ=LinearForm(fesmech)
 
     # We want to loop over frequencies
-    print(len(Omega),Sols.shape[1])
+    #print(len(Omega),Sols.shape[1])
 
     Mu0=4.*np.pi*1e-7
     # Construct shape functional (based on every 10th frequency)
     Jfun=0.
     cnt=0
-    for k in range(0,Sols.shape[1],100):
-        if Omega[k] > 1e4 or cnt > 20:
+    #print(TensorArray_obj,TensorArray_ms)
+
+    # identify frequencies to include
+    Omegaincl=np.zeros(len(Omega),dtype=float)
+    inl=np.zeros(len(Omega),dtype=int)
+    if Sols.shape[1] ==3000:
+        nskip=5
+    elif Sols.shape[1] ==100:
+        nskip=1
+    for k in range(0,Sols.shape[1],nskip):#500):
+        if Omega[k] > 1e9 or cnt > 6: #1e7
             break
-        nu=Omega[k]*Mu0*alpha**2 # without sigma
+        elif Omega[k] > 1e4:
+            inl[cnt]=k
+            Omegaincl[cnt]=Omega[k]
+            cnt+=1
+    ninl=cnt
+
+
+    # Loop over those frequencies selected for inclusion
+    for k in range(0,ninl):
+        omega=Omegaincl[k]
+        nu=omega*Mu0*alpha**2 # without sigma
         cnt+=1
 
         # Set up MPTs of object and measurements
@@ -89,17 +108,32 @@ def Shape_Rep(fes2,fesmech,u1Truncated,u2Truncated,u3Truncated,inout,mu_inv,alph
 
         for i in range(3):
             for j in range(3):
-                MPTobj[i,j]=TensorArray_obj[k,j+i*3]-N0_obj[i,j]
-                MPTms[i,j]=TensorArray_ms[k,j+i*3]-N0_ms[i,j]
+                MPTobj[i,j]=TensorArray_obj[inl[k],j+i*3]-N0_obj[i,j]
+                MPTms[i,j]=TensorArray_ms[inl[k],j+i*3]-N0_ms[i,j]
         MPTms=np.transpose(Q)@MPTms@Q
 
         
-
         # Compute the term sum_i, sum_j Hmeasure(i)@(MPT-MPTms)@Hexcite(j)
+        # Using Trap rule for integration over frequency
         term=0.
+        if k==0:
+            # first interval
+            dOmegaleft=0.
+            dOmegaright=Omegaincl[k+1]-Omegaincl[k]
+        elif k==ninl-1:
+            # last interval
+            dOmegaleft=Omegaincl[k]-Omegaincl[k-1]
+            dOmegaright=0.
+        else:
+            dOmegaleft=Omegaincl[k]-Omegaincl[k-1]
+            dOmegaright=Omegaincl[k+1]-Omegaincl[k]
+
+        #term=np.real(Hmeasure@((MPTobj[:,:]-MPTms[:,:])@Hexcite))/alpha**3*(dOmegaleft+dOmegaright)/2
+        term=np.conj(Hmeasure@((MPTobj[:,:]-MPTms[:,:])@Hexcite))/alpha**3*(dOmegaleft+dOmegaright)/2
+
         #term+=Hmeasure@((MPTobj[:,:]-MPTms[:,:])@Hexcite)/alpha**3
-        term+=np.real(Hmeasure@((MPTobj[:,:]-MPTms[:,:])@Hexcite))/alpha**3
-        print("omega=",Omega[k],"MPT diff",term)
+        
+        print("omega=",omega,"< 1e7 MPT diff",term)
         Jfun+=np.abs(term)**2
     print("Shape functional has value",Jfun)
     norm=Jfun # Normalisation term
@@ -114,18 +148,28 @@ def Shape_Rep(fes2,fesmech,u1Truncated,u2Truncated,u3Truncated,inout,mu_inv,alph
     G1i=((-sizefactor*( OuterProduct(curl(gfir),curl(gfji)) -  OuterProduct(curl(gfii),curl(gfjr)) )).Compile(realcompile=True))
     G2r=((-sizefactor*( InnerProduct(curl(gfir),curl(gfjr)) + InnerProduct(curl(gfii),curl(gfji))  )).Compile(realcompile=True))
     G2i=((-sizefactor*( InnerProduct(curl(gfir),curl(gfji)) -  InnerProduct(curl(gfii),curl(gfjr))  )).Compile(realcompile=True))
-    # Note due to 1j factor real and imag parts of H are swapped and includion of -ve factor for H1r and H2r
-    H1r=((-sizefactor*(OuterProduct(gfir+xii+gf0i,gfji) - OuterProduct(gfii,gfjr+xij+gf0j)  )).Compile(realcompile=True))
-    H1i=((sizefactor*(OuterProduct(gfir+xii+gf0i,gfjr+xij+gf0j) + OuterProduct(gfii,gfji))).Compile(realcompile=True))
-    H2r=((-sizefactor*( InnerProduct(gfir+xii+gf0i,gfji) - InnerProduct(gfii,gfjr+xij+gf0j)  )).Compile(realcompile=True))
-    H2i=((sizefactor* ( InnerProduct(gfir+xii+gf0i,gfjr+xij+gf0j)+InnerProduct(gfii,gfji)  )).Compile(realcompile=True))
+    # Note due to 1j factor real and imag parts of H are swapped and includion of -ve factor for H1r and H2r 
+    # I think this is incorrect! There is no 1j factor in I!!!
+    #H1r=((-sizefactor*(OuterProduct(gfir+xii+gf0i,gfji) - OuterProduct(gfii,gfjr+xij+gf0j)  )).Compile(realcompile=True))
+    #H1i=((sizefactor*(OuterProduct(gfir+xii+gf0i,gfjr+xij+gf0j) + OuterProduct(gfii,gfji))).Compile(realcompile=True))
+    #H2r=((-sizefactor*( InnerProduct(gfir+xii+gf0i,gfji) - InnerProduct(gfii,gfjr+xij+gf0j)  )).Compile(realcompile=True))
+    #H2i=((sizefactor* ( InnerProduct(gfir+xii+gf0i,gfjr+xij+gf0j)+InnerProduct(gfii,gfji)  )).Compile(realcompile=True))
+
+    H1i=((sizefactor*(OuterProduct(gfir+xii+gf0i,gfji) - OuterProduct(gfii,gfjr+xij+gf0j)  )).Compile(realcompile=True))
+    H1r=((sizefactor*(OuterProduct(gfir+xii+gf0i,gfjr+xij+gf0j) + OuterProduct(gfii,gfji))).Compile(realcompile=True))
+    H2i=((sizefactor*( InnerProduct(gfir+xii+gf0i,gfji) - InnerProduct(gfii,gfjr+xij+gf0j)  )).Compile(realcompile=True))
+    H2r=((sizefactor* ( InnerProduct(gfir+xii+gf0i,gfjr+xij+gf0j)+InnerProduct(gfii,gfji)  )).Compile(realcompile=True))
 
     with TaskManager():
-        for k in range(0,Sols.shape[1],100):
-            if Omega[k] > 1e4 or cnt > 20:
-                break
-    
-            nu=Omega[k]*Mu0*alpha**2 # without sigma
+        #for k in range(0,Sols.shape[1],1):#500):
+        #    if Omega[k] > 1e7 or cnt > 6: #1e7
+        #        break
+        #    elif Omega[k] < 1e4:
+        #        continue
+        # Loop over those frequencies selected for inclusion
+        for k in range(0,ninl):
+            omega=Omegaincl[k]
+            nu=omega*Mu0*alpha**2 # without sigma
             cnt+=1
 
             # Set up MPTs of object and measurements
@@ -134,36 +178,54 @@ def Shape_Rep(fes2,fesmech,u1Truncated,u2Truncated,u3Truncated,inout,mu_inv,alph
 
             for i in range(3):
                 for j in range(3):
-                    MPTobj[i,j]=TensorArray_obj[k,j+i*3]-N0_obj[i,j]
-                    MPTms[i,j]=TensorArray_ms[k,j+i*3]-N0_ms[i,j]
+                    MPTobj[i,j]=TensorArray_obj[inl[k],j+i*3]-N0_obj[i,j]
+                    MPTms[i,j]=TensorArray_ms[inl[k],j+i*3]-N0_ms[i,j]
             MPTms=np.transpose(Q)@MPTms@Q
 
 
             # Compute the term sum_i, sum_j Hmeasure(i)@(MPT-MPTms)@Hexcite(j)
             term=0.
             #term+=np.conj(Hmeasure@((MPTobj[:,:]-MPTms[:,:])@Hexcite))/alpha**3
-            term+=np.real(Hmeasure@((MPTobj[:,:]-MPTms[:,:])@Hexcite))/alpha**3
-            print("omega=",Omega[k],"MPT diff",term)
+            #term=np.real(Hmeasure@((MPTobj[:,:]-MPTms[:,:])@Hexcite))/alpha**3
+            # Compute the term sum_i, sum_j Hmeasure(i)@(MPT-MPTms)@Hexcite(j)
+            # using trap rule for integration over frequency
+            term=0.
+            if k==0:
+                # first interval
+                dOmegaleft=0.
+                dOmegaright=Omegaincl[k+1]-Omegaincl[k]
+            elif k==ninl-1:
+                # last interval
+                dOmegaleft=Omegaincl[k]-Omegaincl[k-1]
+                dOmegaright=0.
+            else:
+                dOmegaleft=Omegaincl[k]-Omegaincl[k-1]
+                dOmegaright=Omegaincl[k+1]-Omegaincl[k]
+
+            #term=np.real(Hmeasure@((MPTobj[:,:]-MPTms[:,:])@Hexcite))/alpha**3*(dOmegaleft+dOmegaright)/2
+            term=np.conj(Hmeasure@((MPTobj[:,:]-MPTms[:,:])@Hexcite))/alpha**3*(dOmegaleft+dOmegaright)/2
+
+            print("omega=",omega,"MPT diff",term)
 
             # For every frequency we want to construct the grid functions
 
             for i in range(3):
-                gi = np.squeeze(Sols[:,k, i])
+                gi = np.squeeze(Sols[:,inl[k], i])
 
                 # This is the grid function representing theta_i^(1) computed from POD at frequency omega(k)
                 gfi.vec.FV().NumPy()[:] = U[i,:, :]@gi
                 gfir.Set(gfi.real)
-                gfii.Set(gfi.imag)
+                gfii.Set(-gfi.imag)
                 tmp.vec.FV().NumPy()[:]=Theta0Sol[:, i]
                 gf0i.Set(tmp)
                 xii.Set(xivec[i])
 
                 for j in range(3):
-                    gj = np.squeeze(Sols[:,k, j])
+                    gj = np.squeeze(Sols[:,inl[k], j])
                     # This is the grid function representing theta_j^(1) computed from POD at frequency omega(k)
                     gfj.vec.FV().NumPy()[:] = U[j,:, :]@gj
                     gfjr.Set(gfj.real)
-                    gfji.Set(gfj.imag)
+                    gfji.Set(-gfj.imag)
                     tmp.vec.FV().NumPy()[:]=Theta0Sol[:, j]
                     gf0j.Set(tmp)
                     xij.Set(xivec[j])
@@ -201,8 +263,16 @@ def Shape_Rep(fes2,fesmech,u1Truncated,u2Truncated,u3Truncated,inout,mu_inv,alph
                     # nb nu defined without sigma above
                     #H1=(sizefactor*1j*OuterProduct(Conj(gfi+xivec[i]+gf0i),(gfj+xivec[j]+gf0j))).Compile()
                     #H2=(sizefactor*1j*InnerProduct(gfi+xivec[i]+gf0i,(gfj+xivec[j]+gf0j))).Compile()
-                    #dJ+=SymbolicLFI((1/norm)*2*Hmeasure[i]*Hexcite[j]*inout *sigma*nu *InnerProduct(np.real(term)*H1r-np.imag(term)*H1i,-2*Sym(Grad(vmech))),bonus_intorder=bilinear_bonus_int_order+ordershape)
-                    #dJ+=SymbolicLFI((1/norm)*2*Hmeasure[i]*Hexcite[j]*inout *sigma*nu *(np.real(term)*H2r-np.imag(term)*H2i)*div(vmech),bonus_intorder=bilinear_bonus_int_order+ordershape)
+                    # The 1j comes from M = R + i I
+                    # There is no 1j in I but we do need the 1j when finding M
+                    # So real( 1j  (u,v) with real v is
+                    # real( 1j u^* v) = real(1j u^*) v = imag (u) v
+                    # but u = (Hr + i Hi) * (re(term) + i im(term))
+                    #       = Hr*re(term) - Hi *im(term) + i ( Hr* im(term) + Hi* re(term))
+                    #   im(u) = Hr *im(term) + Hi *re(term)
+
+                    dJ+=SymbolicLFI((1/norm)*2*Hmeasure[i]*Hexcite[j]*inout *sigma*nu *InnerProduct(np.imag(term)*H1r+np.real(term)*H1i,-2*Sym(Grad(vmech))),bonus_intorder=bilinear_bonus_int_order+ordershape)
+                    dJ+=SymbolicLFI((1/norm)*2*Hmeasure[i]*Hexcite[j]*inout *sigma*nu *(np.imag(term)*H2r+np.imag(term)*H2i)*div(vmech),bonus_intorder=bilinear_bonus_int_order+ordershape)
                     # Check imaginary tensor calc
                     #print("prec computed",i,j,Omega[k],np.imag(MPTobj[i,j]))
                     #print("From this fun",Integrate(sizefactor*inout*sigma*nu*InnerProduct(gfi+xivec[i]+gf0i,(gfj+xivec[j]+gf0j)),mesh,order=5))
@@ -211,13 +281,19 @@ def Shape_Rep(fes2,fesmech,u1Truncated,u2Truncated,u3Truncated,inout,mu_inv,alph
     shape.Set((0, 0, 0), BND)
 
     # Assemble (elastic type) system to give a representation of
-    a =BilinearForm(fesmech, symmetric=True, condense=True)
-    a += SymbolicBFI(InnerProduct(Sym(Grad(umech)),Sym(Grad(vmech)))+InnerProduct(umech,vmech), bonus_intorder=bilinear_bonus_int_order)
+    a =BilinearForm(fesmech, symmetric=True)#, condense=True)
+    #a += SymbolicBFI(InnerProduct(Sym(Grad(umech)),Sym(Grad(vmech)))+InnerProduct(umech,vmech), bonus_intorder=bilinear_bonus_int_order)
+    # elastic metric
+    Gp=1
+    lp=1
+    a += SymbolicBFI(2*Gp*InnerProduct(Sym(Grad(umech)),Sym(Grad(vmech)))+lp*InnerProduct(div(umech),div(vmech)), bonus_intorder=bilinear_bonus_int_order)
+    
     #a += SymbolicBFI(InnerProduct(Grad(umech),Grad(vmech)), bonus_intorder=bilinear_bonus_int_order)
 
 
     # Solve the linear problem
-    Solver="bddc"
+    #Solver="bddc"
+    Solver="local"
     #if Solver == "bddc":
     #    c = Preconditioner(a, "bddc")  # Apply the bddc preconditioner
     with TaskManager():
@@ -236,13 +312,13 @@ def Shape_Rep(fes2,fesmech,u1Truncated,u2Truncated,u3Truncated,inout,mu_inv,alph
         c.Update()
 
         # Solve the problem
-        dJ.vec.data += a.harmonic_extension_trans * dJ.vec
+        #dJ.vec.data += a.harmonic_extension_trans * dJ.vec
         res = dJ.vec.CreateVector()
         res.data = dJ.vec - a.mat * shape.vec
-        inverse = CGSolver(a.mat, c.mat, precision=Tolerance, maxsteps=Maxsteps, printrates=True)
+        inverse = CGSolver(a.mat, c.mat, precision=1e-15, maxsteps=Maxsteps, printrates=True)
         shape.vec.data += inverse * res
-        shape.vec.data += a.harmonic_extension * shape.vec
-        shape.vec.data += a.inner_solve * dJ.vec
+        #shape.vec.data += a.harmonic_extension * shape.vec
+        #shape.vec.data += a.inner_solve * dJ.vec
 
 
 

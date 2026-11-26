@@ -67,6 +67,8 @@ def DeformedMesh(mesh, V, tau=1.0, verbose=True):
     mesh_new, info
     """
 
+    print("Using tau=",tau)
+
     if mesh.dim != 3:
         raise ValueError("DeformedMesh requires a 3D mesh")
 

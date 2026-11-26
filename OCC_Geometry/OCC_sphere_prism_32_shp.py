@@ -31,11 +31,11 @@ alpha = 0.001
 # Setting Boundary layer Options:
 max_target_frequency = 1e8
 boundary_layer_material = material_name[0]
-number_of_layers = 2
+number_of_layers = 0
 
 
 # setting radius
-r = 1.225
+r = 1.2
 
 # Generating OCC primative sphere centered at [0,0,0] with radius r:
 sphere = Sphere(Pnt(0,0,0), r=r)
@@ -49,7 +49,7 @@ sphere = pos_sphere + neg_sphere
 # For compatability, we want the non-conducting region to have the 'outer' boundary condition and be labeled as 'air'
 sphere.bc('default')
 sphere.mat(material_name[0])
-sphere.maxh = 0.5
+sphere.maxh = 0.125
 
 # Generating a large non-conducting region. For compatability with MPT-Calculator, we set the boundary condition to 'outer'
 # and the material name to 'air'.

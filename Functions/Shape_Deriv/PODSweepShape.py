@@ -433,11 +433,31 @@ def PODSweepShape(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
     fesmech=VectorH1(mesh, order=Ordershape,dirichlet="outer")
     #directory="/Users/pdl11/Coding/MPT-Calculator/Oct2025/MPT-Calculator/Results/OCC_sphere_to_box_prism_32_8/al_0.001_mu_32_sig_1e6/1e1-1e12_100_el_29366_ord_4_POD_13_1e-6"
     #directory="/home/pdl11/Coding/PaulMPTResults/Results/OCC_sphere_to_box_prism_32_8/al_0.001_mu_32_sig_1e6/1e1-1e12_100_el_29366_ord_4_POD_13_1e-6"
-    directory="/home/pdl11/Coding/MPT_calculator/Oct2026/MPT-Calculator/Results/OCC_dumbell_0_6_prism_32/al_0.001_mu_32_sig_1e6/1e-3-1e12_3000_el_53472_ord_4_POD_50_1e-6"
+    #directory="/home/pdl11/Coding/MPT_calculator/Oct2026/MPT-Calculator/Results/OCC_sphere_to_box_prism_32_6/al_0.001_mu_32_sig_1e6/1e-3-1e12_3000_el_29159_ord_4_POD_50_1e-6"
+    #directory="/home/pdl11/Coding/MPT_calculator/Oct2026/MPT-Calculator/Results/OCC_dumbell_0_6_prism_32/al_0.001_mu_32_sig_1e6/1e-3-1e12_3000_el_53472_ord_4_POD_50_1e-6"
+    directory="/home/pdl11/Coding/MPT_calculator/Oct2026/MPT-Calculator/Results/OCC_sphere_to_box_prism_32_inf/al_0.001_mu_32_sig_1e6/1e-3-1e12_3000_el_31089_ord_4_POD_50_1e-6"
+
     # Tensor Array_ms and N0_ms from this directory
     TensorArray_ms= np.genfromtxt(directory+'/Data/Tensors.csv', delimiter=',', dtype=complex)
     N0_ms= np.genfromtxt(directory+'/Data/N0.csv', delimiter=',')
     Minf_ms = np.genfromtxt(directory+'/Data/Minf.csv', delimiter=',')
+    
+    # Try to force these all to be diagonal?
+    """av=np.sum(np.diag(N0_ms))/3
+    N0_ms=av*np.eye(3)
+    av=np.sum(np.diag(Minf_ms))/3
+    Minf_ms=av*np.eye(3)
+    for k in range(len(Array)):
+        MPT=np.zeros((3,3),dtype=complex)
+        for i in range(3):
+            for j in range(3):
+                MPT[i,j]=TensorArray_ms[k,i*3+j]
+        av=np.sum(np.diag(MPT))/3
+        MPT=av*np.eye(3)
+        for i in range(3):
+            for j in range(3):
+                TensorArray_ms[k,i*3+j]=MPT[i,j]"""
+
     print(Minf,Minf_ms)
     # check for reordering
     Minf_eig,Q=np.linalg.eig(Minf_ms)
@@ -445,22 +465,69 @@ def PODSweepShape(Object, Order, alpha, inorout, mur, sig, Array, PODArray, PODT
     # reorder columns of Q
     print(Minf_eig,eigord,Q)
     Q=Q[:,eigord]
-    print(Q)
+    #CHECK POSSIBLE ISSUE WITH Q IF EIGENVALUES ARE ALL THE SAME?
+    #Q=np.eye(3)
+    #print(Q)
     print(Minf,np.transpose(Q)@Minf_ms@Q)
+
+    import time
+    time.sleep(10)
 
     ftest=np.genfromtxt(directory+'/Data/Frequencies.csv')
     if np.linalg.norm(ftest-Array)/np.linalg.norm(ftest) > 1e-10:
         print("issue with frequencies of data and computation!")
         print("error",np.linalg.norm(ftest-Array))
         print(Array,ftest)
+        print("Error")
     else:
         print("Data at the same frequencies as computation")
+    import time 
+    time.sleep(10)
+
     # SHould be updated with measured (read from file MPT coeffs)
     shape=Shape_Rep(fes2,fesmech,u1Truncated,u2Truncated,u3Truncated,inout,mu_inv,alpha,np.squeeze(np.asarray(Lower_Sols)),TensorArray,\
             TensorArray_ms,bilinear_bonus_int_ord,Ordershape,Theta0Sol,xivec,sigma,Array,Tolerance,Maxsteps,Solver,N0,N0_ms,fes,mesh,Q,fesfull)
 
-    print(Integrate(InnerProduct(shape,shape),mesh))
-    deformedmesh=DeformedMesh(mesh, shape, tau=0.1)
+    # Loop over every vertex, evaluate shape and check for max displacmenet, hence construct tau
+    maxsh=0.
+    for vertex in mesh.vertices:
+        # coordinate
+        pnt=vertex.point
+        #evaluate grid function
+        mp=mesh(*pnt)
+        value=shape(mp)
+        #print(value)
+        if maxsh < np.sqrt(value[0]**2+value[1]**2+value[2]**2):
+            maxsh=np.sqrt(value[0]**2+value[1]**2+value[2]**2)
+    #maxsh = ||shape||_\inf
+    # construct min edge length
+    vertex_points = {
+        v.nr: np.asarray(v.point, dtype=float)
+        for v in mesh.vertices
+    }
+
+
+    hmin = np.inf
+    for edge in mesh.edges:
+        v0, v1 = edge.vertices
+
+        p0 = vertex_points[v0.nr]
+        p1 = vertex_points[v1.nr]
+
+        hmin = min(hmin, np.linalg.norm(p1 - p0)) 
+    print("||shape||_inf",maxsh,"hmin",hmin)
+
+    mytau=-0.3*hmin/maxsh*10
+
+    print("tau value",mytau)
+
+    deformedmesh=DeformedMesh(mesh, shape, tau=mytau) # was tau=-0.25
+    # fix any skewed element
+    from netgen.meshing import MeshingParameters
+    mp = MeshingParameters()
+    deformedmesh.ngmesh.OptimizeMesh2d(mp)
+    deformedmesh.ngmesh.OptimizeVolumeMesh(mp)
+    deformedmesh.ngmesh.Update()
     deformedmesh.ngmesh.Save('Results/' + sweepname + "/Data/deformedi"+str(iteration)+".vol")
     deformedmesh.ngmesh.Save('VolFiles/'+ Object [:-3] +str(iteration)+".vol")
     import shutil

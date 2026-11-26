@@ -1,0 +1,47 @@
+solving order= 2
+Materials = ('object', 'air', 'object')
+Updated alpha from OCC file. Alpha=0.001
+OCC_sphere_prism_32_shp.geo
+[0, 1] 2 ['air', 'object']
+Mesh Contains Prisms? True
+N Prisms: 1320, N Tets: 16146
+[0, 1] 2 ['air', 'object']
+Using the config {'Single': False, 'MultiProcessing': False, 'Pod': True, 'OldPOD': False, 'use_iterative_POD': False, 'PODErrorBars': False, 'PlotPod': True, 'MPT_Eigen': False, 'Shape_Grad': True}
+ Running as POD
+OCC_sphere_prism_32_shp.geo
+ mesh contains 17466 elements
+[0, 1] 2 ['air', 'object']
+Using mesh curve 5
+Predicted unit object volume is 7.743993895531734
+considering conductor element 1 2 object
+volume of this part 7.743993895531734
+mu of this part 31.818653020540513
+sigma of this part 994332.9068918923
+Calculated conductor volume as sum 7.743993895531734
+Volume avg mu 31.818653020540513
+Volume avg sigma 994332.9068918923
+Running Bilinear Forms Check
+Mesh curve order set to:  5
+K: Iteration 1: bonus_intord = 2
+K: Iteration 2: bonus_intord = 4
+K: Iteration 3: bonus_intord = 6
+K: Iteration 4: bonus_intord = 8
+K: Iteration 5: bonus_intord = 10
+K: Iteration 6: bonus_intord = 12
+K Bilinear Form Converged using order 14
+C: Iteration 1: bonus_intord = 2
+C: Iteration 2: bonus_intord = 4
+C: Iteration 3: bonus_intord = 6
+C: Iteration 4: bonus_intord = 8
+C: Iteration 5: bonus_intord = 10
+C: Iteration 6: bonus_intord = 12
+C Bilinear Form Converged using order 14
+Solving Theta0:   0%|          | 0/3 [00:00<?, ?it/s]Solving Theta0:  33%|███▎      | 1/3 [00:01<00:02,  1.28s/it]Solving Theta0:  67%|██████▋   | 2/3 [00:02<00:01,  1.23s/it]Solving Theta0: 100%|██████████| 3/3 [00:03<00:00,  1.21s/it]Solving Theta0: 100%|██████████| 3/3 [00:03<00:00,  1.22s/it]
+ solved theta0 problems   
+Solving Thetainf:   0%|          | 0/3 [00:00<?, ?it/s]Solving Thetainf:  33%|███▎      | 1/3 [00:00<00:00,  2.33it/s]Solving Thetainf:  67%|██████▋   | 2/3 [00:00<00:00,  2.36it/s]Solving Thetainf: 100%|██████████| 3/3 [00:01<00:00,  2.37it/s]Solving Thetainf: 100%|██████████| 3/3 [00:01<00:00,  2.36it/s]
+ solved thetainf problems   
+[[-1.15560669e-08  8.88949530e-14 -3.60497601e-14]
+ [ 8.88949530e-14 -1.15558364e-08 -3.24995432e-14]
+ [-3.60497601e-14 -3.24995432e-14 -1.15559688e-08]]
+Solving Theta1:   0%|          | 0/13 [00:00<?, ?it/s]Solving Theta1:   8%|▊         | 1/13 [00:05<01:06,  5.57s/it]Solving Theta1:  15%|█▌        | 2/13 [00:10<00:54,  4.95s/it]Solving Theta1:  23%|██▎       | 3/13 [00:14<00:47,  4.70s/it]Solving Theta1:  31%|███       | 4/13 [00:18<00:41,  4.59s/it]Solving Theta1:  38%|███▊      | 5/13 [00:23<00:36,  4.54s/it]Solving Theta1:  46%|████▌     | 6/13 [00:27<00:31,  4.55s/it]Solving Theta1:  54%|█████▍    | 7/13 [00:33<00:29,  4.86s/it]Solving Theta1:  62%|██████▏   | 8/13 [00:39<00:26,  5.32s/it]Solving Theta1:  69%|██████▉   | 9/13 [00:46<00:22,  5.74s/it]Solving Theta1:  77%|███████▋  | 10/13 [00:53<00:18,  6.02s/it]Solving Theta1:  85%|████████▍ | 11/13 [00:59<00:12,  6.21s/it]Solving Theta1:  92%|█████████▏| 12/13 [01:06<00:06,  6.35s/it]/home/pdl11/.conda/envs/py13testing/lib/python3.13/multiprocessing/resource_tracker.py:324: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown: {'/mp-mih5fktw'}
+  warnings.warn(
